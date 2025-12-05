@@ -6,6 +6,7 @@ import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage';
 import { ResetPasswordPage } from '@/pages/ResetPasswordPage';
 import { DashboardPage } from '@/pages/DashboardPage';
 import { OAuthCallbackPage } from '@/pages/OAuthCallbackPage';
+import { EmailVerificationPage } from '@/pages/EmailVerificationPage';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 
 function App() {
@@ -60,6 +61,7 @@ function App() {
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/verify-email" element={<EmailVerificationPage />} />
           <Route path="/auth/google/callback" element={<OAuthCallbackPage />} />
           <Route path="/auth/github/callback" element={<OAuthCallbackPage />} />
           <Route
