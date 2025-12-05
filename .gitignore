@@ -164,6 +164,8 @@ out/
 *.pfx
 *.jks
 *.keystore
+**/keys/
+keys/
 
 # Backup files
 *.bak
