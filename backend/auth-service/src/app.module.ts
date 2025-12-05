@@ -8,6 +8,8 @@ import { RedisService } from './services/redis.service';
 import { EmailService } from './services/email.service';
 import { User } from './entities/user.entity';
 import { getDatabaseConfig } from './config/database.config';
+import { GoogleStrategy } from './strategies/google.strategy';
+import { GithubStrategy } from './strategies/github.strategy';
 
 @Module({
   imports: [
@@ -36,6 +38,6 @@ import { getDatabaseConfig } from './config/database.config';
     ]),
   ],
   controllers: [AuthController],
-  providers: [AuthService, RedisService, EmailService],
+  providers: [AuthService, RedisService, EmailService, GoogleStrategy, GithubStrategy],
 })
 export class AppModule {}
