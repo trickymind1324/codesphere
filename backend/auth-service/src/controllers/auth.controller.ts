@@ -17,6 +17,7 @@ import { RegisterDto } from '../dto/register.dto';
 import { LoginDto } from '../dto/login.dto';
 import { ForgotPasswordDto } from '../dto/forgot-password.dto';
 import { ResetPasswordDto } from '../dto/reset-password.dto';
+import { VerifyMfaDto } from '../dto/verify-mfa.dto';
 import { GoogleOAuthGuard } from '../guards/google-oauth.guard';
 import { GithubOAuthGuard } from '../guards/github-oauth.guard';
 
@@ -272,6 +273,59 @@ export class AuthController {
     // Redirect to frontend with access token
     const redirectUrl = `${process.env.FRONTEND_URL}/auth/callback?token=${result.tokens.accessToken}&isNewUser=${result.isNewUser}`;
     return res.redirect(redirectUrl);
+  }
+
+  /**
+   * POST /api/v1/auth/mfa/setup
+   * Setup MFA for authenticated user
+   */
+  @Post('mfa/setup')
+  @HttpCode(HttpStatus.OK)
+  async setupMfa(@Req() req: Request) {
+    // TODO: Extract user ID from JWT token using guard
+    const userId = req['user']?.id;
+    if (!userId) {
+      throw new UnauthorizedException('Authentication required');
+    }
+
+    return await this.authService.setupMfa(userId);
+  }
+
+  /**
+   * POST /api/v1/auth/mfa/verify
+   * Verify and enable MFA
+   */
+  @Post('mfa/verify')
+  @HttpCode(HttpStatus.OK)
+  async verifyMfa(
+    @Body() verifyMfaDto: VerifyMfaDto,
+    @Req() req: Request
+  ) {
+    const userId = req['user']?.id;
+    if (!userId) {
+      throw new UnauthorizedException('Authentication required');
+    }
+
+    return await this.authService.verifyAndEnableMfa(userId, verifyMfaDto.code);
+  }
+
+  /**
+   * POST /api/v1/auth/mfa/disable
+   * Disable MFA
+   */
+  @Post('mfa/disable')
+  @HttpCode(HttpStatus.OK)
+  async disableMfa(
+    @Body('password') password: string,
+    @Body('code') code: string,
+    @Req() req: Request
+  ) {
+    const userId = req['user']?.id;
+    if (!userId) {
+      throw new UnauthorizedException('Authentication required');
+    }
+
+    return await this.authService.disableMfa(userId, password, code);
   }
 
   /**

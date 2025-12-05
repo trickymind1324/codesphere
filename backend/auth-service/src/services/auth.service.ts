@@ -6,6 +6,7 @@ import { RegisterDto } from '../dto/register.dto';
 import { LoginDto } from '../dto/login.dto';
 import { hashPassword, verifyPassword, generateEmailVerificationToken, generatePasswordResetToken, isAccountLocked, calculateLockTime } from '../utils/crypto.util';
 import { JwtService, TokenPair } from '../utils/jwt.util';
+import { generateMfaSecret, generateMfaQrCode, verifyMfaCode, generateBackupCodes, hashBackupCodes, verifyBackupCode } from '../utils/mfa.util';
 import { RedisService } from './redis.service';
 import { EmailService } from './email.service';
 
@@ -108,7 +109,12 @@ export class AuthService {
       if (!mfa_code) {
         throw new UnauthorizedException('MFA code required');
       }
-      // TODO: Verify MFA code (will implement in Week 4)
+
+      // Verify MFA code (TOTP or backup code)
+      const isMfaValid = await this.verifyMfaLogin(user.id, mfa_code);
+      if (!isMfaValid) {
+        throw new UnauthorizedException('Invalid MFA code');
+      }
     }
 
     // Reset failed login attempts
@@ -453,5 +459,153 @@ export class AuthService {
       tokens,
       isNewUser,
     };
+  }
+
+  /**
+   * Setup MFA (TOTP) for user
+   */
+  async setupMfa(userId: string): Promise<{
+    secret: string;
+    qrCode: string;
+    backupCodes: string[];
+  }> {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    if (user.mfa_enabled) {
+      throw new BadRequestException('MFA is already enabled for this account');
+    }
+
+    // Generate MFA secret
+    const secret = generateMfaSecret();
+
+    // Generate QR code
+    const qrCode = await generateMfaQrCode(user.email, secret);
+
+    // Generate backup codes
+    const backupCodes = generateBackupCodes(10);
+    const hashedBackupCodes = await hashBackupCodes(backupCodes);
+
+    // Store secret and backup codes (not enabled yet until verified)
+    user.mfa_secret = secret;
+    user.mfa_backup_codes = hashedBackupCodes;
+    await this.userRepository.save(user);
+
+    return {
+      secret,
+      qrCode,
+      backupCodes, // Return unhashed codes for user to save
+    };
+  }
+
+  /**
+   * Verify and enable MFA
+   */
+  async verifyAndEnableMfa(userId: string, code: string): Promise<{ message: string }> {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    if (user.mfa_enabled) {
+      throw new BadRequestException('MFA is already enabled for this account');
+    }
+
+    if (!user.mfa_secret) {
+      throw new BadRequestException('MFA setup not initiated. Please start MFA setup first.');
+    }
+
+    // Verify the TOTP code
+    const isValid = verifyMfaCode(user.mfa_secret, code);
+
+    if (!isValid) {
+      throw new BadRequestException('Invalid MFA code. Please try again.');
+    }
+
+    // Enable MFA
+    user.mfa_enabled = true;
+    await this.userRepository.save(user);
+
+    return { message: 'MFA enabled successfully' };
+  }
+
+  /**
+   * Disable MFA
+   */
+  async disableMfa(userId: string, password: string, code: string): Promise<{ message: string }> {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    if (!user.mfa_enabled) {
+      throw new BadRequestException('MFA is not enabled for this account');
+    }
+
+    // Verify password
+    const isPasswordValid = await verifyPassword(user.password_hash, password);
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Invalid password');
+    }
+
+    // Verify MFA code or backup code
+    let isCodeValid = false;
+
+    // Try TOTP code first
+    if (user.mfa_secret) {
+      isCodeValid = verifyMfaCode(user.mfa_secret, code);
+    }
+
+    // If TOTP failed, try backup code
+    if (!isCodeValid && user.mfa_backup_codes) {
+      const backupResult = await verifyBackupCode(code, user.mfa_backup_codes);
+      isCodeValid = backupResult.valid;
+    }
+
+    if (!isCodeValid) {
+      throw new BadRequestException('Invalid MFA code or backup code');
+    }
+
+    // Disable MFA and clear secrets
+    user.mfa_enabled = false;
+    user.mfa_secret = null;
+    user.mfa_backup_codes = null;
+    await this.userRepository.save(user);
+
+    return { message: 'MFA disabled successfully' };
+  }
+
+  /**
+   * Verify MFA code during login (already handled in login method)
+   * This is a separate method for clarity
+   */
+  async verifyMfaLogin(userId: string, code: string): Promise<boolean> {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+
+    if (!user || !user.mfa_enabled || !user.mfa_secret) {
+      return false;
+    }
+
+    // Try TOTP code first
+    let isValid = verifyMfaCode(user.mfa_secret, code);
+
+    // If TOTP failed, try backup code
+    if (!isValid && user.mfa_backup_codes) {
+      const backupResult = await verifyBackupCode(code, user.mfa_backup_codes);
+      isValid = backupResult.valid;
+
+      if (isValid) {
+        // Update backup codes (remove used code)
+        user.mfa_backup_codes = backupResult.remainingCodes;
+        await this.userRepository.save(user);
+      }
+    }
+
+    return isValid;
   }
 }
