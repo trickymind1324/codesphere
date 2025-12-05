@@ -51,31 +51,7 @@ See **[docs/README.md](./docs/README.md)** for full documentation index.
 
 ---
 
-## 🚀 Quick Start
-
-### For New Developers
-
-1. **Read the docs:**
-   ```bash
-   cat CLAUDE.md  # Claude Code guidance
-   cat docs/README.md  # Full documentation index
-   cat docs/DEVELOPMENT-ROADMAP.md  # 52-week implementation plan
-   ```
-
-2. **Set up your environment:**
-   - See [Week 1-2 in Development Roadmap](./docs/DEVELOPMENT-ROADMAP.md#phase-0)
-   - Install: Node.js 18+, Docker, VS Code
-   - Clone repos (when created): `codesphere-frontend`, `codesphere-backend`
-
-3. **Pick your phase:**
-   - **Phase 0-1** (Weeks 1-6): Foundation, authentication
-   - **Phase 2** (Weeks 7-12): Problem solving IDE
-   - **Phase 3** (Weeks 13-16): Code execution engine
-   - See roadmap for details
-
----
-
-## 🎨 Brand
+## 🎨 Product
 
 **Name:** CodeSphere
 **Tagline:** "Where Code Meets Reality"
@@ -101,7 +77,6 @@ See **[docs/README.md](./docs/README.md)** for full documentation index.
 - **Growth ($999/mo):** 200 assessments/month, 20 team members, ATS integrations
 - **Enterprise (Custom):** Unlimited, SSO, dedicated support
 
-**Target ARR (Year 1):** $4.3M
 
 ---
 
