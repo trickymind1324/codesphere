@@ -1,0 +1,241 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: codesphere-postgres
+    environment:
+      POSTGRES_USER: codesphere
+      POSTGRES_PASSWORD: codesphere_dev_password
+      POSTGRES_DB: codesphere
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infrastructure/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U codesphere']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: codesphere-redis
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Elasticsearch
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: codesphere-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - 'ES_JAVA_OPTS=-Xms512m -Xmx512m'
+    ports:
+      - '9200:9200'
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -f http://localhost:9200/_cluster/health || exit 1']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # ClickHouse (for analytics)
+  clickhouse:
+    image: clickhouse/clickhouse-server:23.12-alpine
+    container_name: codesphere-clickhouse
+    ports:
+      - '8123:8123'
+      - '9000:9000'
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+    environment:
+      CLICKHOUSE_DB: codesphere
+      CLICKHOUSE_USER: codesphere
+      CLICKHOUSE_PASSWORD: codesphere_dev_password
+
+  # API Gateway (Node.js/NestJS)
+  api-gateway:
+    build:
+      context: ./backend/api-gateway
+      dockerfile: Dockerfile
+    container_name: codesphere-api-gateway
+    ports:
+      - '8000:8000'
+    environment:
+      - NODE_ENV=development
+      - PORT=8000
+      - REDIS_URL=redis://redis:6379
+      - AUTH_SERVICE_URL=http://auth-service:3001
+      - PROBLEM_SERVICE_URL=http://problem-service:3002
+      - ASSESSMENT_SERVICE_URL=http://assessment-service:3003
+      - CODE_EXECUTION_SERVICE_URL=http://code-execution-service:3004
+      - AI_ML_SERVICE_URL=http://ai-ml-service:3005
+      - ANALYTICS_SERVICE_URL=http://analytics-service:3006
+    depends_on:
+      - redis
+    volumes:
+      - ./backend/api-gateway:/app
+      - /app/node_modules
+    command: npm run dev
+
+  # Auth Service (Node.js/NestJS)
+  auth-service:
+    build:
+      context: ./backend/auth-service
+      dockerfile: Dockerfile
+    container_name: codesphere-auth-service
+    ports:
+      - '3001:3001'
+    environment:
+      - NODE_ENV=development
+      - PORT=3001
+      - DATABASE_URL=postgresql://codesphere:codesphere_dev_password@postgres:5432/codesphere
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=your-jwt-secret-key-here-change-in-production
+      - JWT_EXPIRES_IN=15m
+      - REFRESH_TOKEN_EXPIRES_IN=7d
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./backend/auth-service:/app
+      - /app/node_modules
+    command: npm run dev
+
+  # Problem Service (Go)
+  problem-service:
+    build:
+      context: ./backend/problem-service
+      dockerfile: Dockerfile
+    container_name: codesphere-problem-service
+    ports:
+      - '3002:3002'
+    environment:
+      - GO_ENV=development
+      - PORT=3002
+      - DATABASE_URL=postgresql://codesphere:codesphere_dev_password@postgres:5432/codesphere
+      - REDIS_URL=redis://redis:6379
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+    depends_on:
+      - postgres
+      - redis
+      - elasticsearch
+    volumes:
+      - ./backend/problem-service:/app
+
+  # Assessment Service (Go)
+  assessment-service:
+    build:
+      context: ./backend/assessment-service
+      dockerfile: Dockerfile
+    container_name: codesphere-assessment-service
+    ports:
+      - '3003:3003'
+    environment:
+      - GO_ENV=development
+      - PORT=3003
+      - DATABASE_URL=postgresql://codesphere:codesphere_dev_password@postgres:5432/codesphere
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./backend/assessment-service:/app
+
+  # Code Execution Service (Rust)
+  code-execution-service:
+    build:
+      context: ./backend/code-execution-service
+      dockerfile: Dockerfile
+    container_name: codesphere-code-execution-service
+    ports:
+      - '3004:3004'
+    environment:
+      - RUST_ENV=development
+      - PORT=3004
+      - DATABASE_URL=postgresql://codesphere:codesphere_dev_password@postgres:5432/codesphere
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./backend/code-execution-service:/app
+      - /var/run/docker.sock:/var/run/docker.sock
+    privileged: true
+
+  # AI/ML Service (Python/FastAPI)
+  ai-ml-service:
+    build:
+      context: ./backend/ai-ml-service
+      dockerfile: Dockerfile
+    container_name: codesphere-ai-ml-service
+    ports:
+      - '3005:3005'
+    environment:
+      - PYTHON_ENV=development
+      - PORT=3005
+      - DATABASE_URL=postgresql://codesphere:codesphere_dev_password@postgres:5432/codesphere
+      - REDIS_URL=redis://redis:6379
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./backend/ai-ml-service:/app
+
+  # Analytics Service (Python/FastAPI)
+  analytics-service:
+    build:
+      context: ./backend/analytics-service
+      dockerfile: Dockerfile
+    container_name: codesphere-analytics-service
+    ports:
+      - '3006:3006'
+    environment:
+      - PYTHON_ENV=development
+      - PORT=3006
+      - DATABASE_URL=postgresql://codesphere:codesphere_dev_password@postgres:5432/codesphere
+      - CLICKHOUSE_URL=http://clickhouse:8123
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - postgres
+      - clickhouse
+      - redis
+    volumes:
+      - ./backend/analytics-service:/app
+
+  # Frontend (React/Vite)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: codesphere-frontend
+    ports:
+      - '3000:3000'
+    environment:
+      - VITE_API_URL=http://localhost:8000
+      - VITE_WS_URL=ws://localhost:8000
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: npm run dev
+
+volumes:
+  postgres_data:
+  redis_data:
+  elasticsearch_data:
+  clickhouse_data:
