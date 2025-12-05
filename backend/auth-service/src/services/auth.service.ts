@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import { User } from '../entities/user.entity';
 import { RegisterDto } from '../dto/register.dto';
 import { LoginDto } from '../dto/login.dto';
-import { hashPassword, verifyPassword, generateEmailVerificationToken, isAccountLocked, calculateLockTime } from '../utils/crypto.util';
+import { hashPassword, verifyPassword, generateEmailVerificationToken, generatePasswordResetToken, isAccountLocked, calculateLockTime } from '../utils/crypto.util';
 import { JwtService, TokenPair } from '../utils/jwt.util';
 import { RedisService } from './redis.service';
 import { EmailService } from './email.service';
@@ -262,5 +262,196 @@ export class AuthService {
     await this.emailService.sendVerificationEmail(email, user.full_name, emailVerificationToken);
 
     return { message: 'Verification email sent' };
+  }
+
+  /**
+   * Request password reset
+   */
+  async forgotPassword(email: string): Promise<{ message: string }> {
+    const user = await this.userRepository.findOne({ where: { email } });
+
+    // Don't reveal if email exists or not (security)
+    if (!user) {
+      return { message: 'If your email is registered, you will receive a password reset link.' };
+    }
+
+    // Generate password reset token
+    const { token: passwordResetToken, expires: passwordResetExpires } = generatePasswordResetToken();
+
+    user.password_reset_token = passwordResetToken;
+    user.password_reset_expires = passwordResetExpires;
+    await this.userRepository.save(user);
+
+    // Send password reset email
+    await this.emailService.sendPasswordResetEmail(email, user.full_name, passwordResetToken);
+
+    return { message: 'If your email is registered, you will receive a password reset link.' };
+  }
+
+  /**
+   * Reset password with token
+   */
+  async resetPassword(token: string, newPassword: string, confirmPassword: string): Promise<{ message: string }> {
+    // Check if passwords match
+    if (newPassword !== confirmPassword) {
+      throw new BadRequestException('Passwords do not match');
+    }
+
+    // Find user by reset token
+    const user = await this.userRepository.findOne({
+      where: { password_reset_token: token },
+    });
+
+    if (!user) {
+      throw new BadRequestException('Invalid or expired reset token');
+    }
+
+    // Check if token has expired
+    if (user.password_reset_expires < new Date()) {
+      throw new BadRequestException('Reset token has expired. Please request a new one.');
+    }
+
+    // Validate new password strength
+    this.validatePasswordStrength(newPassword);
+
+    // Hash new password
+    const password_hash = await hashPassword(newPassword);
+
+    // Update password and clear reset token
+    user.password_hash = password_hash;
+    user.password_reset_token = null;
+    user.password_reset_expires = null;
+
+    // Reset failed login attempts
+    user.failed_login_attempts = 0;
+    user.account_locked_until = null;
+
+    await this.userRepository.save(user);
+
+    // Invalidate all existing refresh tokens for security
+    // User will need to login again with new password
+    await this.redisService.invalidateCache(`refresh_token:${user.id}:*`);
+
+    return { message: 'Password reset successfully. Please login with your new password.' };
+  }
+
+  /**
+   * Change password (authenticated user)
+   */
+  async changePassword(
+    userId: string,
+    currentPassword: string,
+    newPassword: string,
+    confirmPassword: string
+  ): Promise<{ message: string }> {
+    // Check if new passwords match
+    if (newPassword !== confirmPassword) {
+      throw new BadRequestException('New passwords do not match');
+    }
+
+    // Find user
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    // Verify current password
+    const isPasswordValid = await verifyPassword(user.password_hash, currentPassword);
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Current password is incorrect');
+    }
+
+    // Check if new password is same as current
+    const isSamePassword = await verifyPassword(user.password_hash, newPassword);
+    if (isSamePassword) {
+      throw new BadRequestException('New password must be different from current password');
+    }
+
+    // Validate new password strength
+    this.validatePasswordStrength(newPassword);
+
+    // Hash new password
+    const password_hash = await hashPassword(newPassword);
+
+    // Update password
+    user.password_hash = password_hash;
+    await this.userRepository.save(user);
+
+    // Invalidate all existing refresh tokens for security
+    await this.redisService.invalidateCache(`refresh_token:${user.id}:*`);
+
+    return { message: 'Password changed successfully. Please login with your new password.' };
+  }
+
+  /**
+   * Handle OAuth login/registration
+   */
+  async oauthLogin(oauthUser: {
+    oauthId: string;
+    email: string;
+    fullName: string;
+    avatarUrl?: string;
+    provider: string;
+  }): Promise<{ user: Partial<User>; tokens: TokenPair; isNewUser: boolean }> {
+    const { oauthId, email, fullName, avatarUrl, provider } = oauthUser;
+
+    // Check if user exists with this OAuth provider
+    let user = await this.userRepository.findOne({
+      where: { oauth_provider: provider, oauth_id: oauthId },
+    });
+
+    let isNewUser = false;
+
+    if (!user) {
+      // Check if user exists with this email (account linking)
+      user = await this.userRepository.findOne({ where: { email } });
+
+      if (user) {
+        // Link OAuth account to existing user
+        user.oauth_provider = provider;
+        user.oauth_id = oauthId;
+        if (avatarUrl) user.avatar_url = avatarUrl;
+        await this.userRepository.save(user);
+      } else {
+        // Create new user
+        isNewUser = true;
+        user = this.userRepository.create({
+          email,
+          full_name: fullName,
+          avatar_url: avatarUrl,
+          oauth_provider: provider,
+          oauth_id: oauthId,
+          email_verified: true, // OAuth emails are pre-verified
+          role: 'candidate', // Default role
+        });
+        await this.userRepository.save(user);
+      }
+    }
+
+    // Update last login
+    user.last_login_at = new Date();
+    await this.userRepository.save(user);
+
+    // Generate JWT tokens
+    const tokens = this.jwtService.generateTokenPair(
+      user.id,
+      user.email,
+      user.role,
+      user.tier,
+      false
+    );
+
+    // Store refresh token in Redis
+    await this.redisService.storeRefreshToken(user.id, tokens.refreshToken, 7);
+
+    // Remove sensitive data
+    const { password_hash, mfa_secret, email_verification_token, ...userWithoutSensitiveData } = user;
+
+    return {
+      user: userWithoutSensitiveData,
+      tokens,
+      isNewUser,
+    };
   }
 }
