@@ -1,0 +1,45 @@
+{
+  "name": "codesphere",
+  "version": "0.1.0",
+  "private": true,
+  "description": "CodeSphere - Where Code Meets Reality. A unified technical skill platform bridging algorithmic challenges with real-world engineering practice.",
+  "workspaces": [
+    "frontend",
+    "backend/*"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\"",
+    "dev:frontend": "npm run dev --workspace=frontend",
+    "dev:backend": "npm run dev --workspace=api-gateway",
+    "build": "npm run build --workspaces",
+    "build:frontend": "npm run build --workspace=frontend",
+    "test": "npm run test --workspaces",
+    "lint": "npm run lint --workspaces",
+    "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md}\"",
+    "prepare": "husky install"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "husky": "^8.0.3",
+    "lint-staged": "^15.2.0",
+    "prettier": "^3.1.1"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/codesphere.git"
+  },
+  "keywords": [
+    "coding-platform",
+    "assessment",
+    "leetcode-alternative",
+    "hackerrank-alternative",
+    "technical-interviews",
+    "ai-tutor"
+  ],
+  "author": "CodeSphere Team",
+  "license": "UNLICENSED"
+}
