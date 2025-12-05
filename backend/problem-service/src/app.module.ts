@@ -9,6 +9,17 @@ import { TestCase } from './entities/test-case.entity';
 import { Tag } from './entities/tag.entity';
 import { StarterCode } from './entities/starter-code.entity';
 
+// Controllers
+import { ProblemController } from './controllers/problem.controller';
+import { TagController } from './controllers/tag.controller';
+
+// Services
+import { ProblemService } from './services/problem.service';
+
+// Guards
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { RolesGuard } from './guards/roles.guard';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -22,7 +33,7 @@ import { StarterCode } from './entities/starter-code.entity';
     }),
     TypeOrmModule.forFeature([Problem, TestCase, Tag, StarterCode]),
   ],
-  controllers: [],
-  providers: [],
+  controllers: [ProblemController, TagController],
+  providers: [ProblemService, JwtAuthGuard, RolesGuard],
 })
 export class AppModule {}
