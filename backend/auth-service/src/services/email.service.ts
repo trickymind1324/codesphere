@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import * as nodemailer from 'nodemailer';
-import { Transporter } from 'nodemailer';
+import { createTransport, Transporter } from 'nodemailer';
 
 @Injectable()
 export class EmailService {
@@ -9,7 +8,7 @@ export class EmailService {
   constructor() {
     // Configure email transporter
     // In production, use SendGrid, AWS SES, or similar
-    this.transporter = nodemailer.createTransporter({
+    this.transporter = createTransport({
       host: process.env.EMAIL_HOST || 'smtp.gmail.com',
       port: parseInt(process.env.EMAIL_PORT || '587'),
       secure: false,
