@@ -6,6 +6,7 @@ import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage';
 import { ResetPasswordPage } from '@/pages/ResetPasswordPage';
 import { DashboardPage } from '@/pages/DashboardPage';
 import { ProblemsPage } from '@/pages/ProblemsPage';
+import { ProblemDetailPage } from '@/pages/ProblemDetailPage';
 import { OAuthCallbackPage } from '@/pages/OAuthCallbackPage';
 import { EmailVerificationPage } from '@/pages/EmailVerificationPage';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
@@ -78,6 +79,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <ProblemsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/problems/:slug"
+            element={
+              <ProtectedRoute>
+                <ProblemDetailPage />
               </ProtectedRoute>
             }
           />

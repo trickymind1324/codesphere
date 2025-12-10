@@ -1,0 +1,360 @@
+import { useState } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import Editor from '@monaco-editor/react';
+import { problemApi } from '@/api/problem.api';
+import { useAuthStore } from '@/stores/auth.store';
+import toast from 'react-hot-toast';
+
+const LANGUAGE_OPTIONS = [
+  { value: 'python', label: 'Python' },
+  { value: 'javascript', label: 'JavaScript' },
+  { value: 'typescript', label: 'TypeScript' },
+  { value: 'java', label: 'Java' },
+  { value: 'cpp', label: 'C++' },
+  { value: 'c', label: 'C' },
+  { value: 'go', label: 'Go' },
+];
+
+export function ProblemDetailPage() {
+  const { slug } = useParams<{ slug: string }>();
+  const { logout } = useAuthStore();
+  const [selectedLanguage, setSelectedLanguage] = useState('python');
+  const [code, setCode] = useState('');
+  const [activeTab, setActiveTab] = useState<'description' | 'submissions'>('description');
+  const [isRunning, setIsRunning] = useState(false);
+  const [testResults, setTestResults] = useState<any>(null);
+
+  const { data: problem, isLoading, error } = useQuery({
+    queryKey: ['problem', slug],
+    queryFn: () => problemApi.getProblem(slug!),
+    enabled: !!slug,
+    onSuccess: (data) => {
+      // Load starter code for selected language
+      const starterCode = data.starterCodes.find(
+        (sc) => sc.language === selectedLanguage
+      );
+      if (starterCode && !code) {
+        setCode(starterCode.code);
+      }
+    },
+  });
+
+  const handleLanguageChange = (language: string) => {
+    setSelectedLanguage(language);
+    const starterCode = problem?.starterCodes.find((sc) => sc.language === language);
+    if (starterCode) {
+      setCode(starterCode.code);
+    }
+  };
+
+  const handleRunCode = async () => {
+    if (!code.trim()) {
+      toast.error('Please write some code first');
+      return;
+    }
+
+    setIsRunning(true);
+    setTestResults(null);
+
+    try {
+      // TODO: Integrate with execution API
+      toast.success('Code execution coming soon!');
+    } catch (error) {
+      toast.error('Failed to run code');
+    } finally {
+      setIsRunning(false);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!code.trim()) {
+      toast.error('Please write some code first');
+      return;
+    }
+
+    setIsRunning(true);
+
+    try {
+      // TODO: Integrate with execution API
+      toast.success('Code submission coming soon!');
+    } catch (error) {
+      toast.error('Failed to submit code');
+    } finally {
+      setIsRunning(false);
+    }
+  };
+
+  const getDifficultyColor = (difficulty: string) => {
+    switch (difficulty) {
+      case 'easy':
+        return 'text-green-600 dark:text-green-400';
+      case 'medium':
+        return 'text-yellow-600 dark:text-yellow-400';
+      case 'hard':
+        return 'text-red-600 dark:text-red-400';
+      default:
+        return 'text-gray-600';
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="text-muted-foreground">Loading problem...</div>
+      </div>
+    );
+  }
+
+  if (error || !problem) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="text-center">
+          <div className="text-4xl mb-4">❌</div>
+          <h2 className="text-2xl font-bold">Problem not found</h2>
+          <p className="mt-2 text-muted-foreground">
+            The problem you're looking for doesn't exist.
+          </p>
+          <Link
+            to="/problems"
+            className="mt-4 inline-block text-primary hover:underline"
+          >
+            ← Back to problems
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex h-screen flex-col bg-background">
+      {/* Header */}
+      <nav className="flex items-center justify-between border-b border-border bg-card px-4 py-3">
+        <div className="flex items-center gap-4">
+          <Link to="/problems" className="text-sm text-muted-foreground hover:text-foreground">
+            ← Back
+          </Link>
+          <h1 className="text-lg font-semibold">{problem.title}</h1>
+          <span className={`text-sm font-medium ${getDifficultyColor(problem.difficulty)}`}>
+            {problem.difficulty.charAt(0).toUpperCase() + problem.difficulty.slice(1)}
+          </span>
+        </div>
+        <button
+          onClick={logout}
+          className="text-sm text-muted-foreground hover:text-foreground"
+        >
+          Sign Out
+        </button>
+      </nav>
+
+      {/* Main Content */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Left Panel - Problem Description */}
+        <div className="w-1/2 overflow-y-auto border-r border-border bg-card">
+          <div className="p-6">
+            {/* Tabs */}
+            <div className="mb-6 flex gap-4 border-b border-border">
+              <button
+                onClick={() => setActiveTab('description')}
+                className={`pb-2 text-sm font-medium ${
+                  activeTab === 'description'
+                    ? 'border-b-2 border-primary text-foreground'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                Description
+              </button>
+              <button
+                onClick={() => setActiveTab('submissions')}
+                className={`pb-2 text-sm font-medium ${
+                  activeTab === 'submissions'
+                    ? 'border-b-2 border-primary text-foreground'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                Submissions
+              </button>
+            </div>
+
+            {activeTab === 'description' ? (
+              <>
+                {/* Description */}
+                <div
+                  className="prose prose-sm dark:prose-invert max-w-none"
+                  dangerouslySetInnerHTML={{
+                    __html: problem.description.replace(/\n/g, '<br/>'),
+                  }}
+                />
+
+                {/* Examples */}
+                {problem.examples && problem.examples.length > 0 && (
+                  <div className="mt-6">
+                    <h3 className="mb-3 text-lg font-semibold">Examples</h3>
+                    {problem.examples.map((example, idx) => (
+                      <div key={idx} className="mb-4 rounded-lg bg-muted p-4">
+                        <p className="font-semibold">Example {idx + 1}:</p>
+                        <div className="mt-2 space-y-1 font-mono text-sm">
+                          <div>
+                            <span className="text-muted-foreground">Input:</span>{' '}
+                            {example.input}
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Output:</span>{' '}
+                            {example.output}
+                          </div>
+                          {example.explanation && (
+                            <div>
+                              <span className="text-muted-foreground">Explanation:</span>{' '}
+                              {example.explanation}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Constraints */}
+                {problem.constraints && problem.constraints.length > 0 && (
+                  <div className="mt-6">
+                    <h3 className="mb-3 text-lg font-semibold">Constraints</h3>
+                    <ul className="list-inside list-disc space-y-1 text-sm text-muted-foreground">
+                      {problem.constraints.map((constraint, idx) => (
+                        <li key={idx}>{constraint}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Hints */}
+                {problem.hints && problem.hints.length > 0 && (
+                  <div className="mt-6">
+                    <h3 className="mb-3 text-lg font-semibold">Hints</h3>
+                    <div className="space-y-2">
+                      {problem.hints.map((hint, idx) => (
+                        <details key={idx} className="rounded-lg bg-muted p-3">
+                          <summary className="cursor-pointer font-medium">
+                            Hint {idx + 1}
+                          </summary>
+                          <p className="mt-2 text-sm text-muted-foreground">{hint}</p>
+                        </details>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Tags */}
+                <div className="mt-6">
+                  <h3 className="mb-3 text-lg font-semibold">Tags</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {problem.tags.map((tag) => (
+                      <span
+                        key={tag.id}
+                        className="inline-flex items-center rounded-md bg-primary/10 px-3 py-1 text-sm font-medium text-primary"
+                      >
+                        {tag.name}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Companies */}
+                {problem.companies && problem.companies.length > 0 && (
+                  <div className="mt-6">
+                    <h3 className="mb-3 text-lg font-semibold">
+                      Companies that asked this
+                    </h3>
+                    <div className="flex flex-wrap gap-2">
+                      {problem.companies.map((company, idx) => (
+                        <span
+                          key={idx}
+                          className="inline-flex items-center rounded-md border border-border bg-card px-3 py-1 text-sm"
+                        >
+                          {company}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <div className="text-4xl mb-4">📝</div>
+                <h3 className="text-lg font-semibold">No submissions yet</h3>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Your submissions will appear here
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Right Panel - Code Editor */}
+        <div className="flex w-1/2 flex-col">
+          {/* Editor Header */}
+          <div className="flex items-center justify-between border-b border-border bg-card px-4 py-3">
+            <select
+              value={selectedLanguage}
+              onChange={(e) => handleLanguageChange(e.target.value)}
+              className="rounded-md border border-input bg-background px-3 py-1.5 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              {LANGUAGE_OPTIONS.filter((lang) =>
+                problem.starterCodes.some((sc) => sc.language === lang.value)
+              ).map((lang) => (
+                <option key={lang.value} value={lang.value}>
+                  {lang.label}
+                </option>
+              ))}
+            </select>
+            <div className="flex gap-2">
+              <button
+                onClick={handleRunCode}
+                disabled={isRunning}
+                className="rounded-md bg-accent px-4 py-1.5 text-sm font-medium hover:bg-accent/80 disabled:opacity-50"
+              >
+                {isRunning ? 'Running...' : 'Run Code'}
+              </button>
+              <button
+                onClick={handleSubmit}
+                disabled={isRunning}
+                className="rounded-md bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+              >
+                {isRunning ? 'Submitting...' : 'Submit'}
+              </button>
+            </div>
+          </div>
+
+          {/* Monaco Editor */}
+          <div className="flex-1">
+            <Editor
+              height="100%"
+              language={selectedLanguage === 'cpp' ? 'cpp' : selectedLanguage}
+              value={code}
+              onChange={(value) => setCode(value || '')}
+              theme="vs-dark"
+              options={{
+                minimap: { enabled: false },
+                fontSize: 14,
+                lineNumbers: 'on',
+                scrollBeyondLastLine: false,
+                automaticLayout: true,
+                tabSize: 2,
+              }}
+            />
+          </div>
+
+          {/* Test Results Panel */}
+          {testResults && (
+            <div className="border-t border-border bg-card p-4">
+              <h3 className="mb-2 font-semibold">Test Results</h3>
+              <div className="rounded-lg bg-muted p-3 font-mono text-sm">
+                {/* Results will be displayed here */}
+                <p className="text-muted-foreground">Test results will appear here...</p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
