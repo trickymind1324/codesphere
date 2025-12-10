@@ -5,6 +5,7 @@ import { RegisterPage } from '@/pages/RegisterPage';
 import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage';
 import { ResetPasswordPage } from '@/pages/ResetPasswordPage';
 import { DashboardPage } from '@/pages/DashboardPage';
+import { ProblemsPage } from '@/pages/ProblemsPage';
 import { OAuthCallbackPage } from '@/pages/OAuthCallbackPage';
 import { EmailVerificationPage } from '@/pages/EmailVerificationPage';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
@@ -69,6 +70,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <DashboardPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/problems"
+            element={
+              <ProtectedRoute>
+                <ProblemsPage />
               </ProtectedRoute>
             }
           />

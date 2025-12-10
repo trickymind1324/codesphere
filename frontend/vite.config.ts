@@ -62,8 +62,20 @@ export default defineConfig({
   server: {
     port: 3000,
     proxy: {
-      '/api': {
+      '/api/v1/auth': {
         target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/api/v1/problems': {
+        target: 'http://localhost:8001',
+        changeOrigin: true,
+      },
+      '/api/v1/tags': {
+        target: 'http://localhost:8001',
+        changeOrigin: true,
+      },
+      '/api/v1/execution': {
+        target: 'http://localhost:8002',
         changeOrigin: true,
       },
       '/ws': {
