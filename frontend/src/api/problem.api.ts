@@ -58,13 +58,13 @@ export interface TestCase {
 
 export interface QueryProblemsParams {
   page?: number;
-  limit?: number;
+  pageSize?: number;
   difficulty?: string;
   tags?: string[];
   search?: string;
   status?: string;
   sortBy?: string;
-  order?: 'ASC' | 'DESC';
+  sortOrder?: 'ASC' | 'DESC';
 }
 
 export interface ProblemsResponse {
@@ -80,7 +80,15 @@ export interface ProblemsResponse {
 export const problemApi = {
   // Get all problems with filters
   getProblems: async (params: QueryProblemsParams = {}): Promise<ProblemsResponse> => {
-    const response = await api.get('/api/v1/problems', { params });
+    // Remove empty string values
+    const cleanParams = Object.entries(params).reduce((acc, [key, value]) => {
+      if (value !== '' && value !== undefined && value !== null) {
+        acc[key] = value;
+      }
+      return acc;
+    }, {} as Record<string, any>);
+
+    const response = await api.get('/api/v1/problems', { params: cleanParams });
     return response.data;
   },
 
