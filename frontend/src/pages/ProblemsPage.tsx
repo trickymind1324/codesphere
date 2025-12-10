@@ -8,8 +8,8 @@ export function ProblemsPage() {
   const { user, logout } = useAuthStore();
   const [filters, setFilters] = useState<QueryProblemsParams>({
     page: 1,
-    limit: 20,
-    difficulty: '',
+    pageSize: 20,
+    difficulty: undefined,
     search: '',
   });
 
@@ -107,9 +107,9 @@ export function ProblemsPage() {
             className="flex-1 min-w-[200px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           />
           <select
-            value={filters.difficulty}
+            value={filters.difficulty || ''}
             onChange={(e) =>
-              setFilters({ ...filters, difficulty: e.target.value, page: 1 })
+              setFilters({ ...filters, difficulty: e.target.value || undefined, page: 1 })
             }
             className="rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
@@ -216,9 +216,9 @@ export function ProblemsPage() {
             {problemsData && problemsData.meta.totalPages > 1 && (
               <div className="flex items-center justify-between border-t border-border px-4 py-3">
                 <div className="text-sm text-muted-foreground">
-                  Showing {((filters.page || 1) - 1) * (filters.limit || 20) + 1} to{' '}
+                  Showing {((filters.page || 1) - 1) * (filters.pageSize || 20) + 1} to{' '}
                   {Math.min(
-                    (filters.page || 1) * (filters.limit || 20),
+                    (filters.page || 1) * (filters.pageSize || 20),
                     problemsData.meta.total
                   )}{' '}
                   of {problemsData.meta.total} problems
