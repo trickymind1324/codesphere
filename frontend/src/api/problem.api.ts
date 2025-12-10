@@ -69,12 +69,10 @@ export interface QueryProblemsParams {
 
 export interface ProblemsResponse {
   data: Problem[];
-  meta: {
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-  };
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
 }
 
 export const problemApi = {
