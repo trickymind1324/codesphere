@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import Editor from '@monaco-editor/react';
 import { problemApi } from '@/api/problem.api';
+import { executionApi, TestResult } from '@/api/execution.api';
 import { useAuthStore } from '@/stores/auth.store';
 import toast from 'react-hot-toast';
 
@@ -23,7 +24,12 @@ export function ProblemDetailPage() {
   const [code, setCode] = useState('');
   const [activeTab, setActiveTab] = useState<'description' | 'submissions'>('description');
   const [isRunning, setIsRunning] = useState(false);
-  const [testResults, setTestResults] = useState<any>(null);
+  const [testResults, setTestResults] = useState<{
+    status: string;
+    passedTests: number;
+    totalTests: number;
+    results: TestResult[];
+  } | null>(null);
 
   const { data: problem, isLoading, error } = useQuery({
     queryKey: ['problem', slug],
@@ -54,14 +60,33 @@ export function ProblemDetailPage() {
       return;
     }
 
+    if (!problem) return;
+
     setIsRunning(true);
     setTestResults(null);
 
     try {
-      // TODO: Integrate with execution API
-      toast.success('Code execution coming soon!');
-    } catch (error) {
-      toast.error('Failed to run code');
+      const response = await executionApi.testCode({
+        language: selectedLanguage,
+        code: code,
+        problemId: problem.id,
+      });
+
+      setTestResults({
+        status: response.status,
+        passedTests: response.passedTests,
+        totalTests: response.totalTests,
+        results: response.results,
+      });
+
+      if (response.status === 'success') {
+        toast.success(`All ${response.totalTests} tests passed!`);
+      } else {
+        toast.error(`${response.failedTests} of ${response.totalTests} tests failed`);
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to run code');
+      console.error('Execution error:', error);
     } finally {
       setIsRunning(false);
     }
@@ -73,13 +98,32 @@ export function ProblemDetailPage() {
       return;
     }
 
+    if (!problem) return;
+
     setIsRunning(true);
 
     try {
-      // TODO: Integrate with execution API
-      toast.success('Code submission coming soon!');
-    } catch (error) {
-      toast.error('Failed to submit code');
+      const response = await executionApi.submitCode({
+        language: selectedLanguage,
+        code: code,
+        problemId: problem.id,
+      });
+
+      setTestResults({
+        status: response.status,
+        passedTests: response.passedTests,
+        totalTests: response.totalTests,
+        results: response.results,
+      });
+
+      if (response.status === 'accepted') {
+        toast.success('Submission accepted! All tests passed! 🎉');
+      } else {
+        toast.error(`Submission failed: ${response.status.replace(/_/g, ' ')}`);
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to submit code');
+      console.error('Submission error:', error);
     } finally {
       setIsRunning(false);
     }
@@ -345,11 +389,85 @@ export function ProblemDetailPage() {
 
           {/* Test Results Panel */}
           {testResults && (
-            <div className="border-t border-border bg-card p-4">
-              <h3 className="mb-2 font-semibold">Test Results</h3>
-              <div className="rounded-lg bg-muted p-3 font-mono text-sm">
-                {/* Results will be displayed here */}
-                <p className="text-muted-foreground">Test results will appear here...</p>
+            <div className="max-h-[300px] overflow-y-auto border-t border-border bg-card p-4">
+              <div className="mb-3 flex items-center justify-between">
+                <h3 className="font-semibold">Test Results</h3>
+                <span
+                  className={`rounded-full px-3 py-1 text-sm font-medium ${
+                    testResults.status === 'success' || testResults.status === 'accepted'
+                      ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                      : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                  }`}
+                >
+                  {testResults.passedTests} / {testResults.totalTests} passed
+                </span>
+              </div>
+
+              <div className="space-y-3">
+                {testResults.results.map((result, idx) => (
+                  <div
+                    key={idx}
+                    className={`rounded-lg border p-3 ${
+                      result.passed
+                        ? 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950'
+                        : 'border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950'
+                    }`}
+                  >
+                    <div className="mb-2 flex items-center justify-between">
+                      <span className="font-medium">
+                        Test Case {idx + 1}
+                      </span>
+                      <span
+                        className={`rounded px-2 py-0.5 text-xs font-semibold ${
+                          result.passed
+                            ? 'bg-green-200 text-green-800 dark:bg-green-800 dark:text-green-200'
+                            : 'bg-red-200 text-red-800 dark:bg-red-800 dark:text-red-200'
+                        }`}
+                      >
+                        {result.passed ? 'PASSED' : 'FAILED'}
+                      </span>
+                    </div>
+
+                    <div className="space-y-2 text-sm">
+                      <div>
+                        <span className="font-medium">Input:</span>
+                        <pre className="mt-1 rounded bg-muted p-2 font-mono text-xs">
+                          {result.input}
+                        </pre>
+                      </div>
+
+                      {!result.passed && (
+                        <>
+                          <div>
+                            <span className="font-medium">Expected:</span>
+                            <pre className="mt-1 rounded bg-muted p-2 font-mono text-xs">
+                              {result.expectedOutput}
+                            </pre>
+                          </div>
+                          <div>
+                            <span className="font-medium">Your Output:</span>
+                            <pre className="mt-1 rounded bg-muted p-2 font-mono text-xs">
+                              {result.actualOutput}
+                            </pre>
+                          </div>
+                        </>
+                      )}
+
+                      {result.error && (
+                        <div>
+                          <span className="font-medium text-red-600">Error:</span>
+                          <pre className="mt-1 rounded bg-muted p-2 font-mono text-xs text-red-600">
+                            {result.error}
+                          </pre>
+                        </div>
+                      )}
+
+                      <div className="text-xs text-muted-foreground">
+                        Execution time: {result.executionTime}ms
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           )}
