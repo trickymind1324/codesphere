@@ -1,6 +1,6 @@
 import { useAuthStore } from '@/stores/auth.store';
 import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 export function DashboardPage() {
   const { user, logout } = useAuthStore();
@@ -73,10 +73,12 @@ export function DashboardPage() {
 
             <div className="rounded-lg border border-border bg-card p-6">
               <h3 className="font-semibold">Getting Started</h3>
-              <div className="mt-4 space-y-2 text-sm text-muted-foreground">
-                <p>Explore coding problems</p>
-                <p>Take assessments</p>
-                <p>Track your progress</p>
+              <div className="mt-4 space-y-2 text-sm">
+                <Link to="/problems" className="block text-primary hover:underline">
+                  → Explore coding problems
+                </Link>
+                <p className="text-muted-foreground">Take assessments</p>
+                <p className="text-muted-foreground">Track your progress</p>
               </div>
             </div>
           </div>
