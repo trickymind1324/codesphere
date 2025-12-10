@@ -213,15 +213,15 @@ export function ProblemsPage() {
             </div>
 
             {/* Pagination */}
-            {problemsData && problemsData.meta.totalPages > 1 && (
+            {problemsData && problemsData.totalPages > 1 && (
               <div className="flex items-center justify-between border-t border-border px-4 py-3">
                 <div className="text-sm text-muted-foreground">
                   Showing {((filters.page || 1) - 1) * (filters.pageSize || 20) + 1} to{' '}
                   {Math.min(
                     (filters.page || 1) * (filters.pageSize || 20),
-                    problemsData.meta.total
+                    problemsData.total
                   )}{' '}
-                  of {problemsData.meta.total} problems
+                  of {problemsData.total} problems
                 </div>
                 <div className="flex gap-2">
                   <button
@@ -234,7 +234,7 @@ export function ProblemsPage() {
                     Previous
                   </button>
                   <button
-                    disabled={(filters.page || 1) === problemsData.meta.totalPages}
+                    disabled={(filters.page || 1) === problemsData.totalPages}
                     onClick={() =>
                       setFilters({ ...filters, page: (filters.page || 1) + 1 })
                     }
