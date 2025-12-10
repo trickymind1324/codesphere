@@ -1,4 +1,4 @@
-import { axiosInstance } from '@/lib/axios';
+import { api } from '@/lib/axios';
 
 export interface Problem {
   id: string;
@@ -80,25 +80,25 @@ export interface ProblemsResponse {
 export const problemApi = {
   // Get all problems with filters
   getProblems: async (params: QueryProblemsParams = {}): Promise<ProblemsResponse> => {
-    const response = await axiosInstance.get('/api/v1/problems', { params });
+    const response = await api.get('/api/v1/problems', { params });
     return response.data;
   },
 
   // Get single problem by slug
   getProblem: async (slug: string): Promise<Problem> => {
-    const response = await axiosInstance.get(`/api/v1/problems/${slug}`);
+    const response = await api.get(`/api/v1/problems/${slug}`);
     return response.data;
   },
 
   // Get all tags
   getTags: async (): Promise<Tag[]> => {
-    const response = await axiosInstance.get('/api/v1/tags');
+    const response = await api.get('/api/v1/tags');
     return response.data;
   },
 
   // Get test cases for a problem (only visible ones)
   getTestCases: async (problemId: string): Promise<TestCase[]> => {
-    const response = await axiosInstance.get(`/api/v1/problems/${problemId}/test-cases`);
+    const response = await api.get(`/api/v1/problems/${problemId}/test-cases`);
     return response.data;
   },
 };
