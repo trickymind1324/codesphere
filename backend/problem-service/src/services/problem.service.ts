@@ -157,11 +157,20 @@ export class ProblemService {
    * Find one problem by ID or slug
    */
   async findOne(idOrSlug: string): Promise<Problem> {
+    // Check if the parameter is a valid UUID
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idOrSlug);
+
+    const whereConditions: any[] = [
+      { slug: idOrSlug, deletedAt: IsNull() },
+    ];
+
+    // Only add ID condition if it's a valid UUID
+    if (isUuid) {
+      whereConditions.unshift({ id: idOrSlug, deletedAt: IsNull() });
+    }
+
     const problem = await this.problemRepository.findOne({
-      where: [
-        { id: idOrSlug, deletedAt: IsNull() },
-        { slug: idOrSlug, deletedAt: IsNull() },
-      ],
+      where: whereConditions,
       relations: ['tags', 'testCases', 'starterCodes'],
     });
 

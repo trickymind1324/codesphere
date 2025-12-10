@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import Editor from '@monaco-editor/react';
@@ -35,16 +35,19 @@ export function ProblemDetailPage() {
     queryKey: ['problem', slug],
     queryFn: () => problemApi.getProblem(slug!),
     enabled: !!slug,
-    onSuccess: (data) => {
-      // Load starter code for selected language
-      const starterCode = data.starterCodes.find(
+  });
+
+  // Load starter code when problem data is available
+  useEffect(() => {
+    if (problem && problem.starterCodes && problem.starterCodes.length > 0) {
+      const starterCode = problem.starterCodes.find(
         (sc) => sc.language === selectedLanguage
       );
-      if (starterCode && !code) {
+      if (starterCode) {
         setCode(starterCode.code);
       }
-    },
-  });
+    }
+  }, [problem, selectedLanguage]);
 
   const handleLanguageChange = (language: string) => {
     setSelectedLanguage(language);
