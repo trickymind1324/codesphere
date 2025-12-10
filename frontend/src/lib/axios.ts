@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_URL = import.meta.env.VITE_API_URL || '';
 
 // Create axios instance
 export const api = axios.create({
@@ -39,7 +39,7 @@ api.interceptors.response.use(
       try {
         // Try to refresh token
         const response = await axios.post(
-          `${API_URL}/api/v1/auth/refresh`,
+          '/api/v1/auth/refresh',
           {},
           { withCredentials: true }
         );
