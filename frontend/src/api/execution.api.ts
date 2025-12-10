@@ -1,4 +1,4 @@
-import { axiosInstance } from '@/lib/axios';
+import { api } from '@/lib/axios';
 
 export interface ExecuteCodeRequest {
   language: string;
@@ -60,19 +60,19 @@ export interface SubmitCodeResponse {
 export const executionApi = {
   // Run code with custom input
   runCode: async (request: ExecuteCodeRequest): Promise<ExecuteCodeResponse> => {
-    const response = await axiosInstance.post('/api/v1/execution/run', request);
+    const response = await api.post('/api/v1/execution/run', request);
     return response.data;
   },
 
   // Test code against problem test cases
   testCode: async (request: TestCodeRequest): Promise<TestCodeResponse> => {
-    const response = await axiosInstance.post('/api/v1/execution/test', request);
+    const response = await api.post('/api/v1/execution/test', request);
     return response.data;
   },
 
   // Submit code for final evaluation
   submitCode: async (request: SubmitCodeRequest): Promise<SubmitCodeResponse> => {
-    const response = await axiosInstance.post('/api/v1/execution/submit', request);
+    const response = await api.post('/api/v1/execution/submit', request);
     return response.data;
   },
 };
