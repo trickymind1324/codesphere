@@ -8,7 +8,8 @@
     "build": "tsc",
     "migration:create": "typeorm migration:create",
     "migration:run": "ts-node run-migrations.ts",
-    "migration:revert": "typeorm migration:revert -d ormconfig.ts"
+    "migration:revert": "typeorm migration:revert -d ormconfig.ts",
+    "seed": "ts-node src/scripts/seed.ts"
   },
   "dependencies": {
     "@nestjs/common": "^10.3.0",
