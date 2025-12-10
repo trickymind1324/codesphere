@@ -161,10 +161,10 @@ export const authApi = {
    * OAuth login URL generators
    */
   getGoogleOAuthUrl(): string {
-    return `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/v1/auth/oauth/google`;
+    return `/api/v1/auth/oauth/google`;
   },
 
   getGithubOAuthUrl(): string {
-    return `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/v1/auth/oauth/github`;
+    return `/api/v1/auth/oauth/github`;
   },
 };
