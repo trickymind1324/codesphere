@@ -74,7 +74,7 @@ export default defineConfig({
         target: 'http://localhost:8001',
         changeOrigin: true,
       },
-      '/api/v1/execution': {
+      '/api/v1/execute': {
         target: 'http://localhost:8002',
         changeOrigin: true,
       },
