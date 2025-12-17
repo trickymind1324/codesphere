@@ -55,8 +55,12 @@ export class DockerExecutor {
   };
 
   constructor(private configService: ConfigService) {
+    const dockerHost = this.configService.get<string>('DOCKER_HOST') || '/var/run/docker.sock';
+    // Strip 'unix://' prefix if present
+    const socketPath = dockerHost.replace('unix://', '');
+
     this.docker = new Docker({
-      socketPath: this.configService.get<string>('DOCKER_HOST') || '/var/run/docker.sock',
+      socketPath,
     });
     this.tempDir = this.configService.get<string>('SANDBOX_TEMP_DIR') || '/tmp/codesphere-sandbox';
   }
