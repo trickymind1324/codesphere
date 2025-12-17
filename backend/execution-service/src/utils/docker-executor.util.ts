@@ -166,7 +166,7 @@ export class DockerExecutor {
           PidsLimit: 50,
           Binds: [`${workDir}:/app:ro`],
           ReadonlyRootfs: false,
-          AutoRemove: true,
+          AutoRemove: false, // Manual cleanup to avoid race conditions
         },
         WorkingDir: '/app',
       });
@@ -193,14 +193,17 @@ export class DockerExecutor {
       let stdout = '';
       let stderr = '';
 
+      let timedOut = false;
       await new Promise<void>((resolve, reject) => {
         const timeout = setTimeout(async () => {
+          timedOut = true;
           try {
             await container.kill();
-            reject(new Error('Time limit exceeded'));
           } catch (err) {
-            reject(err);
+            // Container may have already exited, ignore
+            this.logger.debug(`Failed to kill container (may have exited): ${err.message}`);
           }
+          reject(new Error('Time limit exceeded'));
         }, timeLimitMs);
 
         stream.on('data', (chunk) => {
@@ -229,16 +232,21 @@ export class DockerExecutor {
       const exitInfo = await container.wait();
       const executionTimeMs = Date.now() - startTime;
 
-      // Get container stats for memory usage
-      const stats = await container.stats({ stream: false });
-      const memoryUsageKb = Math.round(stats.memory_stats.usage / 1024);
+      // Get container stats for memory usage (best effort)
+      let memoryUsageKb = 0;
+      try {
+        const stats = await container.stats({ stream: false });
+        memoryUsageKb = Math.round(stats.memory_stats.usage / 1024);
+      } catch (err) {
+        this.logger.debug(`Failed to get container stats: ${err.message}`);
+      }
 
       // Determine execution status
       let status: ExecutionStatus;
-      if (exitInfo.StatusCode === 0) {
-        status = ExecutionStatus.SUCCESS;
-      } else if (executionTimeMs >= timeLimitMs) {
+      if (timedOut) {
         status = ExecutionStatus.TIME_LIMIT_EXCEEDED;
+      } else if (exitInfo.StatusCode === 0) {
+        status = ExecutionStatus.SUCCESS;
       } else if (memoryUsageKb >= memoryLimitMb * 1024) {
         status = ExecutionStatus.MEMORY_LIMIT_EXCEEDED;
       } else if (stderr.length > 0) {
@@ -271,6 +279,13 @@ export class DockerExecutor {
         error: error.message,
         executionTimeMs,
       };
+    } finally {
+      // Clean up container
+      try {
+        await container.remove({ force: true });
+      } catch (err) {
+        this.logger.debug(`Failed to remove container: ${err.message}`);
+      }
     }
   }
 
