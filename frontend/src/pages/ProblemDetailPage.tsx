@@ -77,12 +77,20 @@ export function ProblemDetailPage() {
 
       console.log('Test response:', response);
 
-      setTestResults({
+      const newTestResults = {
         status: response.status,
         passedTests: response.passedTests,
         totalTests: response.totalTests,
         results: response.results,
-      });
+      };
+
+      console.log('Setting testResults state to:', newTestResults);
+      setTestResults(newTestResults);
+
+      // Force re-render check
+      setTimeout(() => {
+        console.log('testResults state after set:', newTestResults);
+      }, 100);
 
       if (response.status === 'success') {
         toast.success(`All ${response.totalTests} tests passed!`);
@@ -385,7 +393,7 @@ export function ProblemDetailPage() {
           </div>
 
           {/* Monaco Editor */}
-          <div className="flex-1">
+          <div className={testResults ? "h-[calc(100%-300px)]" : "flex-1"}>
             <Editor
               height="100%"
               language={selectedLanguage === 'cpp' ? 'cpp' : selectedLanguage}
@@ -404,8 +412,9 @@ export function ProblemDetailPage() {
           </div>
 
           {/* Test Results Panel */}
+          {console.log('Rendering, testResults:', testResults)}
           {testResults && (
-            <div className="max-h-[300px] overflow-y-auto border-t border-border bg-card p-4">
+            <div className="h-[300px] overflow-y-auto border-t border-border bg-card p-4">
               <div className="mb-3 flex items-center justify-between">
                 <h3 className="font-semibold">Test Results</h3>
                 <span
