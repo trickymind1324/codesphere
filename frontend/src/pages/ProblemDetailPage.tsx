@@ -75,6 +75,8 @@ export function ProblemDetailPage() {
         problemId: problem.id,
       });
 
+      console.log('Test response:', response);
+
       setTestResults({
         status: response.status,
         passedTests: response.passedTests,
@@ -88,8 +90,19 @@ export function ProblemDetailPage() {
         toast.error(`${response.failedTests} of ${response.totalTests} tests failed`);
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to run code');
       console.error('Execution error:', error);
+      toast.error(error.response?.data?.message || 'Failed to run code');
+
+      // Still show test results if available in error response
+      if (error.response?.data?.result) {
+        const result = error.response.data.result;
+        setTestResults({
+          status: result.overallStatus === 'accepted' ? 'success' : 'failed',
+          passedTests: result.passedTestCases || 0,
+          totalTests: result.totalTestCases || 0,
+          results: result.results || [],
+        });
+      }
     } finally {
       setIsRunning(false);
     }
