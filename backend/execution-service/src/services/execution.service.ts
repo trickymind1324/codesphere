@@ -4,6 +4,7 @@ import { DockerExecutor } from '../utils/docker-executor.util';
 import {
   ExecuteCodeDto,
   ExecuteTestCasesDto,
+  TestProblemDto,
   SubmitSolutionDto,
   ProgrammingLanguage,
 } from '../dto/execute-code.dto';
@@ -156,6 +157,75 @@ export class ExecutionService {
   }
 
   /**
+   * Test code against problem's example test cases
+   */
+  async testProblem(dto: TestProblemDto): Promise<TestCasesExecutionResult> {
+    this.checkConcurrentExecutions();
+
+    try {
+      this.currentExecutions++;
+
+      // Fetch problem details from Problem Service
+      const problemServiceUrl = this.configService.get<string>('PROBLEM_SERVICE_URL');
+      const problemResponse = await axios.get(
+        `${problemServiceUrl}/api/v1/problems/${dto.problemId}`,
+        {
+          headers: {
+            'x-internal-service': 'true',
+          },
+        },
+      );
+
+      const problem = problemResponse.data;
+
+      if (!problem) {
+        throw new BadRequestException('Problem not found');
+      }
+
+      // Fetch test cases
+      const testCasesResponse = await axios.get(
+        `${problemServiceUrl}/api/v1/problems/${dto.problemId}/test-cases`,
+        {
+          headers: {
+            'x-internal-service': 'true',
+          },
+        },
+      );
+
+      const allTestCases = testCasesResponse.data;
+
+      if (!allTestCases || allTestCases.length === 0) {
+        throw new BadRequestException('No test cases found for this problem');
+      }
+
+      // Filter only example test cases (isExample = true)
+      const exampleTestCases = allTestCases.filter((tc: any) => tc.isExample === true);
+
+      if (exampleTestCases.length === 0) {
+        throw new BadRequestException('No example test cases found for this problem');
+      }
+
+      // Execute test cases
+      const testCasesDto: ExecuteTestCasesDto = {
+        code: dto.code,
+        language: dto.language,
+        testCases: exampleTestCases.map((tc: any) => ({
+          input: tc.input,
+          expectedOutput: tc.expectedOutput,
+        })),
+        timeLimitMs: problem.timeLimitMs,
+        memoryLimitMb: problem.memoryLimitMb,
+      };
+
+      const executionResult = await this.executeTestCases(testCasesDto);
+
+      return executionResult;
+    } finally {
+      this.currentExecutions--;
+    }
+  }
+
+  /**
    * Submit solution to a problem
    */
   async submitSolution(
@@ -171,6 +241,11 @@ export class ExecutionService {
       const problemServiceUrl = this.configService.get<string>('PROBLEM_SERVICE_URL');
       const problemResponse = await axios.get(
         `${problemServiceUrl}/api/v1/problems/${dto.problemId}`,
+        {
+          headers: {
+            'x-internal-service': 'true',
+          },
+        },
       );
 
       const problem = problemResponse.data;
@@ -182,6 +257,11 @@ export class ExecutionService {
       // Fetch test cases
       const testCasesResponse = await axios.get(
         `${problemServiceUrl}/api/v1/problems/${dto.problemId}/test-cases`,
+        {
+          headers: {
+            'x-internal-service': 'true',
+          },
+        },
       );
 
       const testCases = testCasesResponse.data;
