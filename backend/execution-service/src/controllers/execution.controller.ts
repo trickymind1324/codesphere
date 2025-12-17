@@ -11,6 +11,7 @@ import { ExecutionService } from '../services/execution.service';
 import {
   ExecuteCodeDto,
   ExecuteTestCasesDto,
+  TestProblemDto,
   SubmitSolutionDto,
 } from '../dto/execute-code.dto';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
@@ -34,13 +35,13 @@ export class ExecutionController {
   }
 
   /**
-   * Execute code against multiple test cases
+   * Execute code against problem's example test cases
    */
   @Post('test')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
-  async executeTestCases(@Body() dto: ExecuteTestCasesDto) {
-    const result = await this.executionService.executeTestCases(dto);
+  async testProblem(@Body() dto: TestProblemDto) {
+    const result = await this.executionService.testProblem(dto);
     return {
       message: 'Test cases executed successfully',
       result,

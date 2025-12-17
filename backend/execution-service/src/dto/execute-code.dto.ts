@@ -78,6 +78,17 @@ export class ExecuteTestCasesDto {
   memoryLimitMb?: number;
 }
 
+export class TestProblemDto {
+  @IsString()
+  problemId: string;
+
+  @IsString()
+  code: string;
+
+  @IsEnum(ProgrammingLanguage)
+  language: ProgrammingLanguage;
+}
+
 export class SubmitSolutionDto {
   @IsString()
   problemId: string;
