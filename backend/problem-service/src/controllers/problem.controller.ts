@@ -19,6 +19,7 @@ import { UpdateProblemDto } from '../dto/update-problem.dto';
 import { QueryProblemsDto } from '../dto/query-problems.dto';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { RolesGuard } from '../guards/roles.guard';
+import { OptionalAuthGuard } from '../guards/optional-auth.guard';
 
 export const Roles = (...roles: string[]) => SetMetadata('roles', roles);
 
@@ -89,12 +90,12 @@ export class ProblemController {
    * Get test cases for a problem
    */
   @Get(':id/test-cases')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(OptionalAuthGuard)
   async getTestCases(@Param('id') id: string, @Request() req) {
-    // Only show hidden test cases to admins/recruiters
-    const includeHidden = ['recruiter', 'company_admin', 'platform_admin'].includes(
-      req.user.role,
-    );
+    // Only show hidden test cases to admins/recruiters or internal service requests
+    const includeHidden =
+      req.isInternalRequest ||
+      (req.user && ['recruiter', 'company_admin', 'platform_admin'].includes(req.user.role));
     return this.problemService.getTestCases(id, includeHidden);
   }
 }
