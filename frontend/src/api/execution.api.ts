@@ -61,18 +61,59 @@ export const executionApi = {
   // Run code with custom input
   runCode: async (request: ExecuteCodeRequest): Promise<ExecuteCodeResponse> => {
     const response = await api.post('/api/v1/execute/run', request);
-    return response.data;
+    const { result } = response.data;
+
+    // Map backend field names to frontend interface
+    return {
+      status: result.status === 'success' ? 'success' :
+              result.status === 'time_limit_exceeded' ? 'timeout' :
+              result.status === 'runtime_error' ? 'runtime_error' : 'error',
+      output: result.stdout,
+      error: result.stderr || result.error,
+      executionTime: result.executionTimeMs,
+      memoryUsage: result.memoryUsageKb,
+    };
   },
 
   // Test code against problem test cases
   testCode: async (request: TestCodeRequest): Promise<TestCodeResponse> => {
     const response = await api.post('/api/v1/execute/test', request);
-    return response.data;
+    const { result } = response.data;
+
+    // Map backend field names to frontend interface
+    return {
+      status: result.overallStatus === 'accepted' ? 'success' :
+              result.overallStatus === 'wrong_answer' ? 'partial' : 'failed',
+      totalTests: result.totalTestCases,
+      passedTests: result.passedTestCases,
+      failedTests: result.failedTestCases,
+      results: result.results.map((r: any) => ({
+        testCaseId: r.testCaseId || '',
+        input: r.input,
+        expectedOutput: r.expectedOutput,
+        actualOutput: r.actualOutput,
+        passed: r.passed,
+        executionTime: r.executionTimeMs || 0,
+        error: r.error,
+      })),
+    };
   },
 
   // Submit code for final evaluation
   submitCode: async (request: SubmitCodeRequest): Promise<SubmitCodeResponse> => {
     const response = await api.post('/api/v1/execute/submit', request);
-    return response.data;
+    const { result } = response.data;
+
+    // Map backend field names to frontend interface
+    return {
+      submissionId: result.submissionId,
+      status: result.status,
+      totalTests: result.totalTestCases,
+      passedTests: result.passedTestCases,
+      failedTests: result.totalTestCases - result.passedTestCases,
+      executionTime: result.executionTimeMs || 0,
+      memoryUsage: result.memoryUsageKb || 0,
+      results: [], // Submission doesn't return individual results
+    };
   },
 };
