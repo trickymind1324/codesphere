@@ -6,6 +6,7 @@ import * as path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { ExecutionResult, ExecutionStatus } from '../dto/execution-result.dto';
 import { ProgrammingLanguage } from '../dto/execute-code.dto';
+import { CodeWrapper } from './code-wrapper.util';
 
 @Injectable()
 export class DockerExecutor {
@@ -94,9 +95,13 @@ export class DockerExecutor {
         throw new Error(`Unsupported language: ${language}`);
       }
 
+      // Wrap code with I/O handling if it's a function-based problem
+      const wrappedCode = CodeWrapper.wrap(code, language);
+      this.logger.debug(`Wrapped code for ${language}:\n${wrappedCode}`);
+
       // Write code to file
       const codeFilePath = path.join(workDir, langConfig.filename);
-      await fs.writeFile(codeFilePath, code);
+      await fs.writeFile(codeFilePath, wrappedCode);
 
       // Write stdin to file if provided
       let stdinFilePath: string | undefined;
