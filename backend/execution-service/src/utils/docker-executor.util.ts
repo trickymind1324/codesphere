@@ -18,27 +18,34 @@ export class DockerExecutor {
       image: 'codesphere-python:latest',
       filename: 'solution.py',
       buildRequired: false,
+      runCmd: ['python', 'solution.py'],
     },
     javascript: {
       image: 'codesphere-javascript:latest',
       filename: 'solution.js',
       buildRequired: false,
+      runCmd: ['node', 'solution.js'],
     },
     typescript: {
       image: 'codesphere-javascript:latest',
       filename: 'solution.ts',
       buildRequired: true,
       buildCmd: ['npx', 'ts-node', 'solution.ts'],
+      runCmd: ['npx', 'ts-node', 'solution.ts'],
     },
     java: {
       image: 'codesphere-java:latest',
       filename: 'Solution.java',
       buildRequired: true,
+      buildCmd: ['javac', 'Solution.java'],
+      runCmd: ['java', 'Solution'],
     },
     cpp: {
       image: 'codesphere-cpp:latest',
       filename: 'solution.cpp',
       buildRequired: true,
+      buildCmd: ['g++', '-o', 'solution', 'solution.cpp'],
+      runCmd: ['./solution'],
     },
     c: {
       image: 'codesphere-cpp:latest',
@@ -51,6 +58,8 @@ export class DockerExecutor {
       image: 'codesphere-go:latest',
       filename: 'solution.go',
       buildRequired: true,
+      buildCmd: ['go', 'build', '-o', 'solution', 'solution.go'],
+      runCmd: ['./solution'],
     },
   };
 
@@ -135,7 +144,7 @@ export class DockerExecutor {
       const container = await this.docker.createContainer({
         name: containerName,
         Image: langConfig.image,
-        Cmd: langConfig.buildRequired ? undefined : [langConfig.filename],
+        Cmd: langConfig.runCmd,
         Tty: false,
         AttachStdin: !!stdinFilePath,
         AttachStdout: true,
