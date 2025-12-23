@@ -309,12 +309,28 @@ export class ExecutionService {
         executionResult.results.reduce((sum, r) => sum + (r.memoryUsageKb || 0), 0) /
         executionResult.results.length;
 
-      // Update problem statistics (call Problem Service)
-      if (status === 'accepted') {
-        await this.updateProblemStatistics(dto.problemId, true);
-      } else {
-        await this.updateProblemStatistics(dto.problemId, false);
-      }
+      // Save submission to Problem Service
+      await this.saveSubmission({
+        userId,
+        problemId: dto.problemId,
+        code: dto.code,
+        language: dto.language,
+        status,
+        totalTestCases: executionResult.totalTestCases,
+        passedTestCases: executionResult.passedTestCases,
+        failedTestCases: executionResult.failedTestCases,
+        executionTimeMs: Math.round(avgExecutionTime),
+        memoryUsageKb: Math.round(avgMemoryUsage),
+        testResults: executionResult.results.map((r) => ({
+          testCaseId: '',
+          input: r.input,
+          expectedOutput: r.expectedOutput,
+          actualOutput: r.actualOutput,
+          passed: r.passed || false,
+          executionTimeMs: r.executionTimeMs || 0,
+          error: r.error,
+        })),
+      });
 
       return {
         submissionId,
@@ -392,6 +408,40 @@ export class ExecutionService {
       });
     } catch (error) {
       this.logger.error(`Failed to update problem statistics: ${error.message}`);
+    }
+  }
+
+  /**
+   * Save submission to Problem Service
+   */
+  private async saveSubmission(submissionData: {
+    userId: string;
+    problemId: string;
+    code: string;
+    language: ProgrammingLanguage;
+    status: string;
+    totalTestCases: number;
+    passedTestCases: number;
+    failedTestCases: number;
+    executionTimeMs: number;
+    memoryUsageKb: number;
+    testResults: any[];
+  }): Promise<void> {
+    try {
+      const problemServiceUrl = this.configService.get<string>('PROBLEM_SERVICE_URL');
+      await axios.post(
+        `${problemServiceUrl}/api/v1/submissions`,
+        submissionData,
+        {
+          headers: {
+            'x-internal-service': 'true',
+          },
+        },
+      );
+      this.logger.log(`Submission saved successfully for user ${submissionData.userId}`);
+    } catch (error) {
+      this.logger.error(`Failed to save submission: ${error.message}`, error.stack);
+      // Don't throw error - submission saving shouldn't fail the execution
     }
   }
 }

@@ -15,14 +15,41 @@ export function DashboardPage() {
     <div className="min-h-screen bg-background">
       <nav className="border-b border-border">
         <div className="container mx-auto flex items-center justify-between px-4 py-4">
-          <h1 className="text-2xl font-bold">CodeSphere</h1>
+          <div className="flex items-center gap-8">
+            <Link to="/" className="text-2xl font-bold">
+              CodeSphere
+            </Link>
+            <div className="flex gap-4">
+              <Link
+                to="/problems"
+                className="text-sm font-medium text-muted-foreground hover:text-foreground"
+              >
+                Problems
+              </Link>
+              <Link
+                to="/submissions"
+                className="text-sm font-medium text-muted-foreground hover:text-foreground"
+              >
+                Submissions
+              </Link>
+              <Link
+                to="/dashboard"
+                className="text-sm font-medium text-foreground hover:text-primary"
+              >
+                Dashboard
+              </Link>
+            </div>
+          </div>
           <div className="flex items-center gap-4">
             <span className="text-sm text-muted-foreground">
-              Welcome, {user?.name || user?.email}
+              {user?.name || user?.email}
             </span>
-            <Button variant="outline" onClick={handleLogout}>
+            <button
+              onClick={handleLogout}
+              className="text-sm text-muted-foreground hover:text-foreground"
+            >
               Sign Out
-            </Button>
+            </button>
           </div>
         </div>
       </nav>
