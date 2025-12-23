@@ -7,6 +7,7 @@ import { ResetPasswordPage } from '@/pages/ResetPasswordPage';
 import { DashboardPage } from '@/pages/DashboardPage';
 import { ProblemsPage } from '@/pages/ProblemsPage';
 import { ProblemDetailPage } from '@/pages/ProblemDetailPage';
+import { SubmissionsPage } from '@/pages/SubmissionsPage';
 import { OAuthCallbackPage } from '@/pages/OAuthCallbackPage';
 import { EmailVerificationPage } from '@/pages/EmailVerificationPage';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
@@ -87,6 +88,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <ProblemDetailPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/submissions"
+            element={
+              <ProtectedRoute>
+                <SubmissionsPage />
               </ProtectedRoute>
             }
           />

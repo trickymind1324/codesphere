@@ -66,6 +66,12 @@ export function ProblemsPage() {
                 Problems
               </Link>
               <Link
+                to="/submissions"
+                className="text-sm font-medium text-muted-foreground hover:text-foreground"
+              >
+                Submissions
+              </Link>
+              <Link
                 to="/dashboard"
                 className="text-sm font-medium text-muted-foreground hover:text-foreground"
               >
