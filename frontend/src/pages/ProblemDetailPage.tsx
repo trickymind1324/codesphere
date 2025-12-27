@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import Editor from '@monaco-editor/react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { problemApi } from '@/api/problem.api';
 import { executionApi, TestResult } from '@/api/execution.api';
 import { useAuthStore } from '@/stores/auth.store';
@@ -247,12 +249,38 @@ export function ProblemDetailPage() {
             {activeTab === 'description' ? (
               <>
                 {/* Description */}
-                <div
-                  className="prose prose-sm dark:prose-invert max-w-none"
-                  dangerouslySetInnerHTML={{
-                    __html: problem.description.replace(/\n/g, '<br/>'),
-                  }}
-                />
+                <div className="prose prose-sm dark:prose-invert max-w-none markdown-content">
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    components={{
+                      code: ({ inline, className, children, ...props }: any) => {
+                        return inline ? (
+                          <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm text-primary" {...props}>
+                            {children}
+                          </code>
+                        ) : (
+                          <code className={className} {...props}>
+                            {children}
+                          </code>
+                        );
+                      },
+                      strong: ({ children, ...props }: any) => (
+                        <strong className="font-bold text-foreground" {...props}>{children}</strong>
+                      ),
+                      em: ({ children, ...props }: any) => (
+                        <em className="italic" {...props}>{children}</em>
+                      ),
+                      ul: ({ children, ...props }: any) => (
+                        <ul className="list-disc pl-6 space-y-1" {...props}>{children}</ul>
+                      ),
+                      li: ({ children, ...props }: any) => (
+                        <li className="text-sm" {...props}>{children}</li>
+                      ),
+                    }}
+                  >
+                    {problem.description}
+                  </ReactMarkdown>
+                </div>
 
                 {/* Examples */}
                 {problem.examples && problem.examples.length > 0 && (
