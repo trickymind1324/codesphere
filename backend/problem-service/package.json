@@ -9,7 +9,8 @@
     "migration:create": "typeorm migration:create",
     "migration:run": "ts-node run-migrations.ts",
     "migration:revert": "typeorm migration:revert -d ormconfig.ts",
-    "seed": "ts-node src/scripts/seed.ts"
+    "seed": "ts-node src/scripts/seed.ts",
+    "seed:fix-hard": "ts-node src/scripts/fix-incomplete-hard-problems.ts"
   },
   "dependencies": {
     "@nestjs/common": "^10.3.0",
