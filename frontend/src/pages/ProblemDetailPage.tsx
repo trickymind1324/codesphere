@@ -226,21 +226,19 @@ export function ProblemDetailPage() {
             <div className="mb-6 flex gap-4 border-b border-border">
               <button
                 onClick={() => setActiveTab('description')}
-                className={`pb-2 text-sm font-medium ${
-                  activeTab === 'description'
+                className={`pb-2 text-sm font-medium ${activeTab === 'description'
                     ? 'border-b-2 border-primary text-foreground'
                     : 'text-muted-foreground hover:text-foreground'
-                }`}
+                  }`}
               >
                 Description
               </button>
               <button
                 onClick={() => setActiveTab('submissions')}
-                className={`pb-2 text-sm font-medium ${
-                  activeTab === 'submissions'
+                className={`pb-2 text-sm font-medium ${activeTab === 'submissions'
                     ? 'border-b-2 border-primary text-foreground'
                     : 'text-muted-foreground hover:text-foreground'
-                }`}
+                  }`}
               >
                 Submissions
               </button>
@@ -440,17 +438,15 @@ export function ProblemDetailPage() {
           </div>
 
           {/* Test Results Panel */}
-          {console.log('Rendering, testResults:', testResults)}
           {testResults && (
             <div className="h-[300px] overflow-y-auto border-t border-border bg-card p-4">
               <div className="mb-3 flex items-center justify-between">
                 <h3 className="font-semibold">Test Results</h3>
                 <span
-                  className={`rounded-full px-3 py-1 text-sm font-medium ${
-                    testResults.status === 'success' || testResults.status === 'accepted'
+                  className={`rounded-full px-3 py-1 text-sm font-medium ${testResults.status === 'success' || testResults.status === 'accepted'
                       ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
                       : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                  }`}
+                    }`}
                 >
                   {testResults.passedTests} / {testResults.totalTests} passed
                 </span>
@@ -460,22 +456,20 @@ export function ProblemDetailPage() {
                 {testResults.results.map((result, idx) => (
                   <div
                     key={idx}
-                    className={`rounded-lg border p-3 ${
-                      result.passed
+                    className={`rounded-lg border p-3 ${result.passed
                         ? 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950'
                         : 'border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950'
-                    }`}
+                      }`}
                   >
                     <div className="mb-2 flex items-center justify-between">
                       <span className="font-medium">
                         Test Case {idx + 1}
                       </span>
                       <span
-                        className={`rounded px-2 py-0.5 text-xs font-semibold ${
-                          result.passed
+                        className={`rounded px-2 py-0.5 text-xs font-semibold ${result.passed
                             ? 'bg-green-200 text-green-800 dark:bg-green-800 dark:text-green-200'
                             : 'bg-red-200 text-red-800 dark:bg-red-800 dark:text-red-200'
-                        }`}
+                          }`}
                       >
                         {result.passed ? 'PASSED' : 'FAILED'}
                       </span>
