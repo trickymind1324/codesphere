@@ -21,6 +21,7 @@ type LoginFormData = z.infer<typeof loginSchema>;
 export function LoginForm() {
   const navigate = useNavigate();
   const login = useAuthStore((state) => state.login);
+  const user = useAuthStore((state) => state.user);
   const [showMfaInput, setShowMfaInput] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -51,7 +52,14 @@ export function LoginForm() {
       });
 
       toast.success('Login successful!');
-      navigate('/dashboard');
+
+      // Redirect based on user role
+      const currentUser = useAuthStore.getState().user;
+      if (currentUser?.role === 'recruiter') {
+        navigate('/recruiter/dashboard');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (error: any) {
       console.error('Login error:', error);
 

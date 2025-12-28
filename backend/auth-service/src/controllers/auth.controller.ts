@@ -40,27 +40,39 @@ export class AuthController {
    * Login with email and password
    */
   @Post('login')
-  @HttpCode(HttpStatus.OK)
   async login(
     @Body() loginDto: LoginDto,
     @Req() req: Request,
-    @Res({ passthrough: true }) res: Response
+    @Res() res: Response
   ) {
-    const ipAddress = req.ip || req.socket.remoteAddress || 'unknown';
-    const result = await this.authService.login(loginDto, ipAddress);
+    try {
+      const ipAddress = req.ip || req.socket.remoteAddress || 'unknown';
+      const result = await this.authService.login(loginDto, ipAddress);
 
-    // Set refresh token as httpOnly cookie
-    res.cookie('refreshToken', result.tokens.refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: loginDto.remember_me ? 30 * 24 * 60 * 60 * 1000 : 7 * 24 * 60 * 60 * 1000, // 30 days or 7 days
-    });
+      // Extract primitive values to avoid any circular references
+      const refreshToken = String(result.tokens.refreshToken);
+      const accessToken = String(result.tokens.accessToken);
 
-    return {
-      user: result.user,
-      accessToken: result.tokens.accessToken,
-    };
+      // Set refresh token as httpOnly cookie
+      res.cookie('refreshToken', refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: loginDto.remember_me ? 30 * 24 * 60 * 60 * 1000 : 7 * 24 * 60 * 60 * 1000, // 30 days or 7 days
+      });
+
+      // Create completely clean response object
+      const responseData = JSON.parse(JSON.stringify({
+        user: result.user,
+        accessToken: accessToken,
+      }));
+
+      res.status(HttpStatus.OK).json(responseData);
+    } catch (error) {
+      res.status(HttpStatus.UNAUTHORIZED).json({
+        message: error.message || 'Login failed',
+      });
+    }
   }
 
   /**

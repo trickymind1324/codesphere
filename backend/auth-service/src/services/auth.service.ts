@@ -60,17 +60,18 @@ export class AuthService {
     await this.emailService.sendVerificationEmail(email, full_name, emailVerificationToken);
 
     // Return only safe user fields (exclude sensitive data and TypeORM metadata)
+    // Convert to plain object to avoid any circular references from TypeORM
     const userResponse = {
-      id: user.id,
-      email: user.email,
-      full_name: user.full_name,
-      avatar_url: user.avatar_url,
-      role: user.role,
-      tier: user.tier,
-      email_verified: user.email_verified,
-      mfa_enabled: user.mfa_enabled,
-      created_at: user.created_at,
-      updated_at: user.updated_at,
+      id: String(user.id),
+      email: String(user.email),
+      full_name: String(user.full_name || ''),
+      avatar_url: user.avatar_url ? String(user.avatar_url) : null,
+      role: String(user.role),
+      tier: String(user.tier),
+      email_verified: Boolean(user.email_verified),
+      mfa_enabled: Boolean(user.mfa_enabled),
+      created_at: user.created_at ? user.created_at.toISOString() : new Date().toISOString(),
+      updated_at: user.updated_at ? user.updated_at.toISOString() : new Date().toISOString(),
     };
 
     return {
@@ -148,22 +149,26 @@ export class AuthService {
     await this.redisService.storeRefreshToken(user.id, tokens.refreshToken, remember_me ? 30 : 7);
 
     // Return only safe user fields (exclude sensitive data and TypeORM metadata)
+    // Convert to plain object to avoid any circular references from TypeORM
     const userResponse = {
-      id: user.id,
-      email: user.email,
-      full_name: user.full_name,
-      avatar_url: user.avatar_url,
-      role: user.role,
-      tier: user.tier,
-      email_verified: user.email_verified,
-      mfa_enabled: user.mfa_enabled,
-      created_at: user.created_at,
-      updated_at: user.updated_at,
+      id: String(user.id),
+      email: String(user.email),
+      full_name: String(user.full_name || ''),
+      avatar_url: user.avatar_url ? String(user.avatar_url) : null,
+      role: String(user.role),
+      tier: String(user.tier),
+      email_verified: Boolean(user.email_verified),
+      mfa_enabled: Boolean(user.mfa_enabled),
+      created_at: user.created_at ? user.created_at.toISOString() : new Date().toISOString(),
+      updated_at: user.updated_at ? user.updated_at.toISOString() : new Date().toISOString(),
     };
 
     return {
       user: userResponse,
-      tokens,
+      tokens: {
+        accessToken: String(tokens.accessToken),
+        refreshToken: String(tokens.refreshToken),
+      },
     };
   }
 

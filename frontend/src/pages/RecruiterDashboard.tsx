@@ -81,9 +81,9 @@ export function RecruiterDashboard() {
   };
 
   const totalAssessments = assessmentsData?.total || 0;
-  const publishedCount = assessmentsData?.data.filter(a => a.status === AssessmentStatus.PUBLISHED).length || 0;
-  const draftCount = assessmentsData?.data.filter(a => a.status === AssessmentStatus.DRAFT).length || 0;
-  const totalInvitations = assessmentsData?.data.reduce((sum, a) => sum + a.invitationsCount, 0) || 0;
+  const publishedCount = assessmentsData?.data?.filter(a => a.status === AssessmentStatus.PUBLISHED).length || 0;
+  const draftCount = assessmentsData?.data?.filter(a => a.status === AssessmentStatus.DRAFT).length || 0;
+  const totalInvitations = assessmentsData?.data?.reduce((sum, a) => sum + a.invitationsCount, 0) || 0;
 
   return (
     <div className="min-h-screen bg-background">
@@ -245,7 +245,7 @@ export function RecruiterDashboard() {
         )}
 
         {/* Empty State */}
-        {!isLoading && !error && assessmentsData?.data.length === 0 && (
+        {!isLoading && !error && assessmentsData?.data?.length === 0 && (
           <div className="rounded-lg border border-border bg-card p-12 text-center">
             <svg
               className="mx-auto h-12 w-12 text-muted-foreground"
@@ -277,7 +277,7 @@ export function RecruiterDashboard() {
         )}
 
         {/* Assessments Table */}
-        {!isLoading && !error && assessmentsData && assessmentsData.data.length > 0 && (
+        {!isLoading && !error && assessmentsData && assessmentsData.data?.length > 0 && (
           <div className="rounded-lg border border-border bg-card overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
@@ -310,7 +310,7 @@ export function RecruiterDashboard() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {assessmentsData.data.map((assessment) => (
+                  {assessmentsData.data?.map((assessment) => (
                     <tr key={assessment.id} className="hover:bg-muted/50">
                       <td className="px-6 py-4">
                         <div>
