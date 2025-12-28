@@ -1,8 +1,8 @@
 # CodeSphere Phase 1 MVP - Progress Assessment & Roadmap
 
-**Document Version:** 1.4
-**Last Updated:** December 27, 2025
-**Current Completion:** ~83%
+**Document Version:** 1.5
+**Last Updated:** December 28, 2025
+**Current Completion:** ~87%
 
 ---
 
@@ -23,7 +23,7 @@
 
 ## Executive Summary
 
-### Overall Progress: **83% Complete**
+### Overall Progress: **87% Complete**
 
 **What's Working:**
 - ✅ Core technical infrastructure is production-ready
@@ -33,12 +33,13 @@
 - ✅ Problem browsing, filtering, and IDE are complete
 - ✅ Submission tracking system with full history and statistics
 - ✅ All algorithmic problems complete (Easy, Medium, Hard)
+- ✅ Assessment system backend complete (Week 3 of Phase 1B)
 
 **Critical Gaps:**
 - 🟡 Problem library: **50/60 problems** (83% complete) - Easy: 20/20 ✅, Medium: 15/15 ✅, Hard: 15/15 ✅, Debugging: 0/10
-- ❌ Enterprise features: **0% implemented** (assessments, recruiter dashboard)
+- 🟡 Enterprise features: **Backend complete** (assessments service running), **Frontend pending** (recruiter dashboard, assessment flow)
 
-**Timeline to MVP:** 6-8 weeks with focused effort
+**Timeline to MVP:** 3-4 weeks with focused effort
 
 ---
 
@@ -365,41 +366,49 @@ Submission {
 
 ## Enterprise Side Progress
 
-### 🔴 Not Implemented (0%)
+### 🟡 Partially Implemented (50%)
 
-All enterprise features are missing:
+Backend infrastructure complete, frontend implementation pending.
 
-#### 1. Assessment Creation System
-**Status:** 0%
+#### 1. Assessment Creation System ✅
+**Status:** Backend 100% ✅ | Frontend 0%
 
-**Required Backend:**
-- Assessment service (new microservice on port 8003)
-- Assessment entity (title, description, duration, problems, createdBy)
-- Assessment-Problem junction table
-- API endpoints:
-  - `POST /api/v1/assessments` - Create
-  - `GET /api/v1/assessments` - List (recruiter only)
-  - `GET /api/v1/assessments/:id` - Get details
-  - `PUT /api/v1/assessments/:id` - Update
-  - `DELETE /api/v1/assessments/:id` - Delete
+**✅ Completed Backend:**
+- ✅ Assessment service running on port 8003
+- ✅ Assessment entity (title, description, duration, problems, createdBy, status)
+- ✅ Assessment-Problem junction table with ordering and points
+- ✅ All CRUD API endpoints:
+  - `POST /api/v1/assessments` - Create assessment
+  - `GET /api/v1/assessments` - List assessments (recruiter only)
+  - `GET /api/v1/assessments/:id` - Get assessment details
+  - `PUT /api/v1/assessments/:id` - Update assessment
+  - `DELETE /api/v1/assessments/:id` - Delete assessment
+  - `POST /api/v1/assessments/:id/problems` - Add problems
+  - `DELETE /api/v1/assessments/:id/problems/:problemId` - Remove problem
+  - `PUT /api/v1/assessments/:id/status` - Update status
+  - `GET /api/v1/assessments/:id/statistics` - Get statistics
 
-**Required Frontend:**
+**❌ Pending Frontend:**
 - Recruiter dashboard (`/recruiter/dashboard`)
 - Assessment creation UI (`/recruiter/assessments/new`)
 - Problem selector with search/filter
 - Problem ordering (drag-and-drop)
 
-#### 2. Candidate Invitation System
-**Status:** 0%
+#### 2. Candidate Invitation System ✅
+**Status:** Backend 100% ✅ | Frontend 0%
 
-**Required Backend:**
-- AssessmentInvitation entity (uniqueToken, email, expiresAt, status)
-- Email service integration (NodeMailer/SendGrid)
-- API endpoints:
-  - `POST /api/v1/assessments/:id/invite` - Send invitations
-  - `GET /api/v1/invitations/:token` - Validate token
+**✅ Completed Backend:**
+- ✅ AssessmentInvitation entity (uniqueToken, email, expiresAt, status, score)
+- ✅ Email service with NodeMailer (professional HTML templates)
+- ✅ All invitation API endpoints:
+  - `POST /api/v1/assessments/:id/invite` - Send bulk invitations
+  - `GET /api/v1/assessments/:id/invitations` - List invitations
+  - `POST /api/v1/assessments/invitations/:id/resend` - Resend invitation
+  - `GET /api/v1/invitations/:token` - Validate token (public)
+  - `POST /api/v1/invitations/:token/start` - Start assessment (public)
+  - `POST /api/v1/invitations/:token/complete` - Complete assessment (public)
 
-**Required Frontend:**
+**❌ Pending Frontend:**
 - Invitation UI (`/recruiter/assessments/:id/invite`)
 - Bulk email input
 - Custom message template
@@ -408,10 +417,15 @@ All enterprise features are missing:
 - Time-limited session
 - Auto-submit on timeout
 
-#### 3. Recruiter Dashboard & Reporting
-**Status:** 0%
+#### 3. Recruiter Dashboard & Reporting ✅
+**Status:** Backend 100% ✅ | Frontend 0%
 
-**Required:**
+**✅ Completed Backend:**
+- ✅ Results API endpoint (`GET /api/v1/assessments/:id/results`)
+- ✅ Statistics endpoint with completion rate, avg scores
+- ✅ Candidate tracking with scores and timestamps
+
+**❌ Pending Frontend:**
 - Recruiter dashboard showing:
   - List of created assessments
   - Statistics (invites sent, completed, avg score)
@@ -1451,6 +1465,45 @@ cd backend/problem-service && npm run seed
 
 ## Recent Updates
 
+### December 28, 2025 - Assessment Service Backend Complete ✅ (Phase 1B Week 3)
+
+**Completed Features:**
+- ✅ Assessment service deployed and running on port 8003
+- ✅ PostgreSQL database (postgres-assessments) on port 5435
+- ✅ Three core entities: Assessment, AssessmentProblem, AssessmentInvitation
+- ✅ Complete CRUD operations for assessment management
+- ✅ Email service integration with NodeMailer (professional HTML templates)
+- ✅ All 17 API endpoints implemented and tested
+- ✅ JWT authentication and RBAC (recruiter-only routes)
+- ✅ Bulk invitation system with unique token generation
+
+**API Endpoints Implemented:**
+- Assessment CRUD: POST, GET, PUT, DELETE /api/v1/assessments
+- Problem management: POST/DELETE /api/v1/assessments/:id/problems
+- Status updates: PUT /api/v1/assessments/:id/status
+- Statistics: GET /api/v1/assessments/:id/statistics
+- Invitations: POST /api/v1/assessments/:id/invite
+- Public routes: GET/POST /api/v1/invitations/:token (validate, start, complete)
+
+**Technical Highlights:**
+- Token-based invitation system with 64-character unique tokens
+- Email templates for invitations and completion notifications
+- Assessment status tracking (draft, published, archived)
+- Invitation status tracking (pending, started, completed, expired)
+- Comprehensive scoring system with points and percentage calculation
+
+**Progress Impact:**
+- Overall completion increased from 83% to 87%
+- Enterprise Side Progress: 0% → 50% (backend complete)
+- Assessment Creation System: Backend 100% ✅
+- Candidate Invitation System: Backend 100% ✅
+- Recruiter Dashboard & Reporting: Backend 100% ✅
+
+**Next Priorities:**
+- Build recruiter frontend (dashboard, assessment form, problem selector, invitation UI)
+- Build candidate assessment flow (landing page, time-limited IDE, auto-submit)
+- Add 10 real-world debugging tasks to complete problem library
+
 ### December 27, 2025 - Hard Problem Set Complete ✅ (All Algorithmic Problems Done!)
 
 **Completed Features:**
@@ -1554,4 +1607,4 @@ cd backend/problem-service && npm run seed
 
 ---
 
-**Document End** | Last Updated: December 27, 2025 | Version 1.4
+**Document End** | Last Updated: December 28, 2025 | Version 1.5
