@@ -37,6 +37,24 @@ services:
       timeout: 5s
       retries: 5
 
+  # PostgreSQL for Assessment Service
+  postgres-assessments:
+    image: postgres:16-alpine
+    container_name: codesphere-postgres-assessments
+    environment:
+      POSTGRES_DB: codesphere_assessments
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5435:5432"
+    volumes:
+      - postgres-assessments-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   # Redis for Auth Service
   redis:
     image: redis:7-alpine
@@ -54,4 +72,5 @@ services:
 volumes:
   postgres-auth-data:
   postgres-problems-data:
+  postgres-assessments-data:
   redis-data:
