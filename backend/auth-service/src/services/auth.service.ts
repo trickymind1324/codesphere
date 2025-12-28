@@ -59,11 +59,22 @@ export class AuthService {
     // Send verification email
     await this.emailService.sendVerificationEmail(email, full_name, emailVerificationToken);
 
-    // Remove sensitive data before returning
-    const { password_hash: _, email_verification_token, ...userWithoutSensitiveData } = user;
+    // Return only safe user fields (exclude sensitive data and TypeORM metadata)
+    const userResponse = {
+      id: user.id,
+      email: user.email,
+      full_name: user.full_name,
+      avatar_url: user.avatar_url,
+      role: user.role,
+      tier: user.tier,
+      email_verified: user.email_verified,
+      mfa_enabled: user.mfa_enabled,
+      created_at: user.created_at,
+      updated_at: user.updated_at,
+    };
 
     return {
-      user: userWithoutSensitiveData,
+      user: userResponse,
       message: 'Registration successful. Please check your email to verify your account.',
     };
   }
@@ -136,11 +147,22 @@ export class AuthService {
     // Store refresh token in Redis with user session info
     await this.redisService.storeRefreshToken(user.id, tokens.refreshToken, remember_me ? 30 : 7);
 
-    // Remove sensitive data
-    const { password_hash, mfa_secret, email_verification_token, ...userWithoutSensitiveData } = user;
+    // Return only safe user fields (exclude sensitive data and TypeORM metadata)
+    const userResponse = {
+      id: user.id,
+      email: user.email,
+      full_name: user.full_name,
+      avatar_url: user.avatar_url,
+      role: user.role,
+      tier: user.tier,
+      email_verified: user.email_verified,
+      mfa_enabled: user.mfa_enabled,
+      created_at: user.created_at,
+      updated_at: user.updated_at,
+    };
 
     return {
-      user: userWithoutSensitiveData,
+      user: userResponse,
       tokens,
     };
   }
