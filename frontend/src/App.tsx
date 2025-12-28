@@ -11,6 +11,7 @@ import { SubmissionsPage } from '@/pages/SubmissionsPage';
 import { RecruiterDashboard } from '@/pages/RecruiterDashboard';
 import { AssessmentForm } from '@/pages/AssessmentForm';
 import { InvitationForm } from '@/pages/InvitationForm';
+import { ResultsPage } from '@/pages/ResultsPage';
 import { OAuthCallbackPage } from '@/pages/OAuthCallbackPage';
 import { EmailVerificationPage } from '@/pages/EmailVerificationPage';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
@@ -131,6 +132,14 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={['recruiter', 'company_admin', 'platform_admin']}>
                 <InvitationForm />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/recruiter/assessments/:id/results"
+            element={
+              <ProtectedRoute allowedRoles={['recruiter', 'company_admin', 'platform_admin']}>
+                <ResultsPage />
               </ProtectedRoute>
             }
           />
