@@ -8,6 +8,7 @@ import { DashboardPage } from '@/pages/DashboardPage';
 import { ProblemsPage } from '@/pages/ProblemsPage';
 import { ProblemDetailPage } from '@/pages/ProblemDetailPage';
 import { SubmissionsPage } from '@/pages/SubmissionsPage';
+import { RecruiterDashboard } from '@/pages/RecruiterDashboard';
 import { OAuthCallbackPage } from '@/pages/OAuthCallbackPage';
 import { EmailVerificationPage } from '@/pages/EmailVerificationPage';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
@@ -96,6 +97,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <SubmissionsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/recruiter/dashboard"
+            element={
+              <ProtectedRoute allowedRoles={['recruiter', 'company_admin', 'platform_admin']}>
+                <RecruiterDashboard />
               </ProtectedRoute>
             }
           />
