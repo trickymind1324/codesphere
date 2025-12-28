@@ -9,6 +9,7 @@ import { ProblemsPage } from '@/pages/ProblemsPage';
 import { ProblemDetailPage } from '@/pages/ProblemDetailPage';
 import { SubmissionsPage } from '@/pages/SubmissionsPage';
 import { RecruiterDashboard } from '@/pages/RecruiterDashboard';
+import { AssessmentForm } from '@/pages/AssessmentForm';
 import { OAuthCallbackPage } from '@/pages/OAuthCallbackPage';
 import { EmailVerificationPage } from '@/pages/EmailVerificationPage';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
@@ -105,6 +106,22 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={['recruiter', 'company_admin', 'platform_admin']}>
                 <RecruiterDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/recruiter/assessments/new"
+            element={
+              <ProtectedRoute allowedRoles={['recruiter', 'company_admin', 'platform_admin']}>
+                <AssessmentForm />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/recruiter/assessments/:id/edit"
+            element={
+              <ProtectedRoute allowedRoles={['recruiter', 'company_admin', 'platform_admin']}>
+                <AssessmentForm />
               </ProtectedRoute>
             }
           />
