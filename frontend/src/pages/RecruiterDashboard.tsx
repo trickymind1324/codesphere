@@ -1,13 +1,12 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { assessmentApi, AssessmentStatus, QueryAssessmentsParams } from '@/api/assessment.api';
-import { useAuthStore } from '@/stores/auth.store';
+import { AppLayout } from '@/components/layout/AppLayout';
 import toast from 'react-hot-toast';
 
 export function RecruiterDashboard() {
   const navigate = useNavigate();
-  const { user, logout } = useAuthStore();
   const [filters, setFilters] = useState<QueryAssessmentsParams>({
     page: 1,
     pageSize: 20,
@@ -86,44 +85,7 @@ export function RecruiterDashboard() {
   const totalInvitations = assessmentsData?.data?.reduce((sum, a) => sum + a.invitationsCount, 0) || 0;
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Navigation */}
-      <nav className="border-b border-border bg-card">
-        <div className="container mx-auto flex items-center justify-between px-4 py-4">
-          <div className="flex items-center gap-8">
-            <Link to="/" className="text-2xl font-bold">
-              CodeSphere
-            </Link>
-            <div className="flex gap-4">
-              <Link
-                to="/recruiter/dashboard"
-                className="text-sm font-medium text-primary"
-              >
-                Dashboard
-              </Link>
-              <Link
-                to="/problems"
-                className="text-sm font-medium text-muted-foreground hover:text-foreground"
-              >
-                Problems
-              </Link>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-muted-foreground">
-              {user?.email} ({user?.role})
-            </span>
-            <button
-              onClick={logout}
-              className="text-sm font-medium text-muted-foreground hover:text-foreground"
-            >
-              Logout
-            </button>
-          </div>
-        </div>
-      </nav>
-
+    <AppLayout>
       {/* Header */}
       <div className="border-b border-border bg-card">
         <div className="container mx-auto px-4 py-8">
@@ -445,6 +407,6 @@ export function RecruiterDashboard() {
           </div>
         )}
       </div>
-    </div>
+    </AppLayout>
   );
 }

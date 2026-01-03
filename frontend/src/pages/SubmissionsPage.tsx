@@ -2,10 +2,9 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { submissionApi, QuerySubmissionsParams } from '@/api/submission.api';
-import { useAuthStore } from '@/stores/auth.store';
+import { AppLayout } from '@/components/layout/AppLayout';
 
 export function SubmissionsPage() {
-  const { user, logout } = useAuthStore();
   const [filters, setFilters] = useState<QuerySubmissionsParams>({
     page: 1,
     pageSize: 20,
@@ -82,49 +81,7 @@ export function SubmissionsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Navigation */}
-      <nav className="border-b border-border bg-card">
-        <div className="container mx-auto flex items-center justify-between px-4 py-4">
-          <div className="flex items-center gap-8">
-            <Link to="/" className="text-2xl font-bold">
-              CodeSphere
-            </Link>
-            <div className="flex gap-4">
-              <Link
-                to="/problems"
-                className="text-sm font-medium text-muted-foreground hover:text-foreground"
-              >
-                Problems
-              </Link>
-              <Link
-                to="/submissions"
-                className="text-sm font-medium text-foreground hover:text-primary"
-              >
-                Submissions
-              </Link>
-              <Link
-                to="/dashboard"
-                className="text-sm font-medium text-muted-foreground hover:text-foreground"
-              >
-                Dashboard
-              </Link>
-            </div>
-          </div>
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-muted-foreground">
-              {user?.name || user?.email}
-            </span>
-            <button
-              onClick={logout}
-              className="text-sm text-muted-foreground hover:text-foreground"
-            >
-              Sign Out
-            </button>
-          </div>
-        </div>
-      </nav>
-
+    <AppLayout>
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold tracking-tight">My Submissions</h1>
@@ -346,6 +303,6 @@ export function SubmissionsPage() {
           </div>
         )}
       </div>
-    </div>
+    </AppLayout>
   );
 }

@@ -74,7 +74,7 @@ function App() {
           <Route
             path="/dashboard"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={['candidate']}>
                 <DashboardPage />
               </ProtectedRoute>
             }
@@ -82,7 +82,7 @@ function App() {
           <Route
             path="/problems"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={['candidate']}>
                 <ProblemsPage />
               </ProtectedRoute>
             }
@@ -90,7 +90,7 @@ function App() {
           <Route
             path="/problems/:slug"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={['candidate']}>
                 <ProblemDetailPage />
               </ProtectedRoute>
             }
@@ -98,7 +98,7 @@ function App() {
           <Route
             path="/submissions"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={['candidate']}>
                 <SubmissionsPage />
               </ProtectedRoute>
             }
