@@ -7,12 +7,12 @@ import { submissionApi } from '@/api/submission.api';
 export function DashboardPage() {
   const { user } = useAuthStore();
 
-  const { data: userStats } = useQuery({
+  const { data: userStats, isLoading: statsLoading } = useQuery({
     queryKey: ['userStats'],
     queryFn: () => submissionApi.getUserStats(),
   });
 
-  const { data: recentSubmissions } = useQuery({
+  const { data: recentSubmissions, isLoading: submissionsLoading } = useQuery({
     queryKey: ['recentSubmissions'],
     queryFn: () => submissionApi.getSubmissions({ page: 1, pageSize: 5 }),
   });
@@ -24,7 +24,7 @@ export function DashboardPage() {
     return 'Good evening';
   };
 
-  const acceptanceRate = userStats?.totalSubmissions
+  const acceptanceRate = userStats?.totalSubmissions && userStats?.acceptedSubmissions
     ? Math.round((userStats.acceptedSubmissions / userStats.totalSubmissions) * 100)
     : 0;
 
@@ -175,7 +175,7 @@ export function DashboardPage() {
                   </Link>
                 </div>
 
-                {recentSubmissions && recentSubmissions.data.length > 0 ? (
+                {recentSubmissions?.data && recentSubmissions.data.length > 0 ? (
                   <div className="space-y-3">
                     {recentSubmissions.data.map((submission: any) => (
                       <div
