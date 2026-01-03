@@ -442,6 +442,7 @@ export function RecruiterDashboard() {
           </div>
         )}
       </div>
+      </div>
     </AppLayout>
   );
 }
