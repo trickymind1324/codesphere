@@ -84,83 +84,118 @@ export function RecruiterDashboard() {
   const draftCount = assessmentsData?.data?.filter(a => a.status === AssessmentStatus.DRAFT).length || 0;
   const totalInvitations = assessmentsData?.data?.reduce((sum, a) => sum + a.invitationsCount, 0) || 0;
 
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 18) return 'Good afternoon';
+    return 'Good evening';
+  };
+
   return (
     <AppLayout>
-      {/* Header */}
-      <div className="border-b border-border bg-card">
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">Recruiter Dashboard</h1>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Manage assessments, invite candidates, and view results
-              </p>
-            </div>
-            <button
-              onClick={() => navigate('/recruiter/assessments/new')}
-              className="inline-flex items-center gap-2 rounded-md bg-primary px-6 py-3 text-sm font-medium text-primary-foreground shadow-sm hover:bg-primary/90"
-            >
-              <svg
-                className="h-4 w-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
+        {/* Hero Header */}
+        <div className="border-b border-gray-200 bg-white/50 backdrop-blur-sm dark:border-gray-800 dark:bg-gray-900/50">
+          <div className="container mx-auto px-4 py-12">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-4xl font-bold tracking-tight text-gray-900 dark:text-white">
+                  {getGreeting()}, Recruiter! 👔
+                </h1>
+                <p className="mt-2 text-lg text-gray-600 dark:text-gray-400">
+                  Manage assessments and track candidate performance
+                </p>
+              </div>
+              <button
+                onClick={() => navigate('/recruiter/assessments/new')}
+                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-3 text-sm font-medium text-white shadow-lg transition-all hover:scale-105 hover:shadow-xl"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 4v16m8-8H4"
-                />
-              </svg>
-              Create Assessment
-            </button>
-          </div>
-
-          {/* Statistics Cards */}
-          <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="rounded-lg border border-border bg-background p-6">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium text-muted-foreground">Total Assessments</p>
-                <svg className="h-5 w-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
-              </div>
-              <p className="mt-2 text-3xl font-bold">{totalAssessments}</p>
+                Create Assessment
+              </button>
             </div>
 
-            <div className="rounded-lg border border-border bg-background p-6">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium text-muted-foreground">Published</p>
-                <svg className="h-5 w-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+            {/* Statistics Cards */}
+            <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              {/* Total Assessments */}
+              <div className="group relative overflow-hidden rounded-xl border border-gray-200 bg-gradient-to-br from-purple-500 to-indigo-600 p-6 shadow-lg transition-all hover:scale-105 hover:shadow-xl dark:border-gray-700">
+                <div className="absolute right-0 top-0 h-32 w-32 translate-x-8 -translate-y-8 rounded-full bg-white/10"></div>
+                <div className="relative">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-purple-100">Total Assessments</p>
+                      <p className="mt-2 text-4xl font-bold text-white">{totalAssessments}</p>
+                    </div>
+                    <div className="rounded-full bg-white/20 p-3">
+                      <svg className="h-8 w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <p className="mt-2 text-3xl font-bold">{publishedCount}</p>
-            </div>
 
-            <div className="rounded-lg border border-border bg-background p-6">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium text-muted-foreground">Drafts</p>
-                <svg className="h-5 w-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
+              {/* Published */}
+              <div className="group relative overflow-hidden rounded-xl border border-gray-200 bg-gradient-to-br from-green-500 to-emerald-600 p-6 shadow-lg transition-all hover:scale-105 hover:shadow-xl dark:border-gray-700">
+                <div className="absolute right-0 top-0 h-32 w-32 translate-x-8 -translate-y-8 rounded-full bg-white/10"></div>
+                <div className="relative">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-green-100">Published</p>
+                      <p className="mt-2 text-4xl font-bold text-white">{publishedCount}</p>
+                    </div>
+                    <div className="rounded-full bg-white/20 p-3">
+                      <svg className="h-8 w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div className="mt-4 text-sm text-green-100">Active assessments</div>
+                </div>
               </div>
-              <p className="mt-2 text-3xl font-bold">{draftCount}</p>
-            </div>
 
-            <div className="rounded-lg border border-border bg-background p-6">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium text-muted-foreground">Total Invitations</p>
-                <svg className="h-5 w-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
+              {/* Drafts */}
+              <div className="group relative overflow-hidden rounded-xl border border-gray-200 bg-gradient-to-br from-yellow-500 to-orange-600 p-6 shadow-lg transition-all hover:scale-105 hover:shadow-xl dark:border-gray-700">
+                <div className="absolute right-0 top-0 h-32 w-32 translate-x-8 -translate-y-8 rounded-full bg-white/10"></div>
+                <div className="relative">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-yellow-100">Drafts</p>
+                      <p className="mt-2 text-4xl font-bold text-white">{draftCount}</p>
+                    </div>
+                    <div className="rounded-full bg-white/20 p-3">
+                      <svg className="h-8 w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div className="mt-4 text-sm text-yellow-100">Pending publishing</div>
+                </div>
               </div>
-              <p className="mt-2 text-3xl font-bold">{totalInvitations}</p>
+
+              {/* Total Invitations */}
+              <div className="group relative overflow-hidden rounded-xl border border-gray-200 bg-gradient-to-br from-blue-500 to-cyan-600 p-6 shadow-lg transition-all hover:scale-105 hover:shadow-xl dark:border-gray-700">
+                <div className="absolute right-0 top-0 h-32 w-32 translate-x-8 -translate-y-8 rounded-full bg-white/10"></div>
+                <div className="relative">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-blue-100">Invitations</p>
+                      <p className="mt-2 text-4xl font-bold text-white">{totalInvitations}</p>
+                    </div>
+                    <div className="rounded-full bg-white/20 p-3">
+                      <svg className="h-8 w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div className="mt-4 text-sm text-blue-100">Candidates invited</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
       {/* Main Content */}
       <div className="container mx-auto px-4 py-8">
