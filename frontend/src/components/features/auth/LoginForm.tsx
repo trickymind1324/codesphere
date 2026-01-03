@@ -21,7 +21,6 @@ type LoginFormData = z.infer<typeof loginSchema>;
 export function LoginForm() {
   const navigate = useNavigate();
   const login = useAuthStore((state) => state.login);
-  const user = useAuthStore((state) => state.user);
   const [showMfaInput, setShowMfaInput] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 

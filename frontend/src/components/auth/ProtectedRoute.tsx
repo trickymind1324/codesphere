@@ -52,9 +52,26 @@ export function ProtectedRoute({
 
   // Check role-based access
   if (allowedRoles && !allowedRoles.includes(user.role)) {
+    // Redirect to appropriate dashboard instead of showing error
+    const isRecruiterRoute = allowedRoles.some(role =>
+      ['recruiter', 'company_admin', 'platform_admin'].includes(role)
+    );
+    const isRecruiter = ['recruiter', 'company_admin', 'platform_admin'].includes(user.role);
+
+    // If candidate tries to access recruiter route, redirect to candidate dashboard
+    if (isRecruiterRoute && !isRecruiter) {
+      return <Navigate to="/problems" replace />;
+    }
+
+    // If recruiter tries to access candidate route, redirect to recruiter dashboard
+    if (!isRecruiterRoute && isRecruiter) {
+      return <Navigate to="/recruiter/dashboard" replace />;
+    }
+
+    // Fallback error page for other cases
     return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="max-w-md space-y-4 text-center">
+      <div className="flex h-screen items-center justify-center bg-gray-50 dark:bg-gray-950">
+        <div className="max-w-md space-y-4 text-center p-6">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-100 dark:bg-red-900">
             <svg
               className="h-8 w-8 text-red-600 dark:text-red-400"
@@ -70,14 +87,14 @@ export function ProtectedRoute({
               />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold tracking-tight">Access Denied</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Access Denied</h1>
+          <p className="text-gray-600 dark:text-gray-400">
             You don't have permission to access this page. This page is restricted to{' '}
             {allowedRoles.join(', ')} accounts.
           </p>
           <button
             onClick={() => window.history.back()}
-            className="text-primary hover:underline"
+            className="text-blue-600 hover:underline dark:text-blue-400"
           >
             Go Back
           </button>

@@ -2,10 +2,9 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { problemApi, QueryProblemsParams } from '@/api/problem.api';
-import { useAuthStore } from '@/stores/auth.store';
+import { AppLayout } from '@/components/layout/AppLayout';
 
 export function ProblemsPage() {
-  const { user, logout } = useAuthStore();
   const [filters, setFilters] = useState<QueryProblemsParams>({
     page: 1,
     pageSize: 20,
@@ -17,24 +16,6 @@ export function ProblemsPage() {
     queryKey: ['problems', filters],
     queryFn: () => problemApi.getProblems(filters),
   });
-
-  const { data: tags } = useQuery({
-    queryKey: ['tags'],
-    queryFn: () => problemApi.getTags(),
-  });
-
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case 'easy':
-        return 'text-green-600 dark:text-green-400';
-      case 'medium':
-        return 'text-yellow-600 dark:text-yellow-400';
-      case 'hard':
-        return 'text-red-600 dark:text-red-400';
-      default:
-        return 'text-gray-600';
-    }
-  };
 
   const getDifficultyBadge = (difficulty: string) => {
     switch (difficulty) {
@@ -50,49 +31,7 @@ export function ProblemsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Navigation */}
-      <nav className="border-b border-border bg-card">
-        <div className="container mx-auto flex items-center justify-between px-4 py-4">
-          <div className="flex items-center gap-8">
-            <Link to="/" className="text-2xl font-bold">
-              CodeSphere
-            </Link>
-            <div className="flex gap-4">
-              <Link
-                to="/problems"
-                className="text-sm font-medium text-foreground hover:text-primary"
-              >
-                Problems
-              </Link>
-              <Link
-                to="/submissions"
-                className="text-sm font-medium text-muted-foreground hover:text-foreground"
-              >
-                Submissions
-              </Link>
-              <Link
-                to="/dashboard"
-                className="text-sm font-medium text-muted-foreground hover:text-foreground"
-              >
-                Dashboard
-              </Link>
-            </div>
-          </div>
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-muted-foreground">
-              {user?.name || user?.email}
-            </span>
-            <button
-              onClick={logout}
-              className="text-sm text-muted-foreground hover:text-foreground"
-            >
-              Sign Out
-            </button>
-          </div>
-        </div>
-      </nav>
-
+    <AppLayout>
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold tracking-tight">Problems</h1>
@@ -267,6 +206,6 @@ export function ProblemsPage() {
           </div>
         )}
       </div>
-    </div>
+    </AppLayout>
   );
 }
