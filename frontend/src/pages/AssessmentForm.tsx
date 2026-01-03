@@ -570,7 +570,7 @@ export function AssessmentForm() {
                           </span>
                         </div>
                         <p className="mt-1 text-sm text-muted-foreground">
-                          Acceptance: {problem.acceptanceRate.toFixed(1)}%
+                          Acceptance: {problem.acceptanceRate ? Number(problem.acceptanceRate).toFixed(1) : '0.0'}%
                         </p>
                       </div>
                       <button
