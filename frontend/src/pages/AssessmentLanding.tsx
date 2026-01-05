@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery, useMutation } from '@tantml/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { assessmentApi, AssessmentStatus, InvitationStatus } from '@/api/assessment.api';
 import toast from 'react-hot-toast';
 
