@@ -78,6 +78,14 @@ export default defineConfig({
         target: 'http://localhost:8002',
         changeOrigin: true,
       },
+      '/api/v1/assessments': {
+        target: 'http://localhost:8003',
+        changeOrigin: true,
+      },
+      '/api/v1/invitations': {
+        target: 'http://localhost:8003',
+        changeOrigin: true,
+      },
       '/ws': {
         target: 'ws://localhost:3001',
         ws: true,
