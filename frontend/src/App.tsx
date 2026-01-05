@@ -12,6 +12,9 @@ import { RecruiterDashboard } from '@/pages/RecruiterDashboard';
 import { AssessmentForm } from '@/pages/AssessmentForm';
 import { InvitationForm } from '@/pages/InvitationForm';
 import { ResultsPage } from '@/pages/ResultsPage';
+import { AssessmentLanding } from '@/pages/AssessmentLanding';
+import { AssessmentIDE } from '@/pages/AssessmentIDE';
+import { AssessmentCompleted } from '@/pages/AssessmentCompleted';
 import { OAuthCallbackPage } from '@/pages/OAuthCallbackPage';
 import { EmailVerificationPage } from '@/pages/EmailVerificationPage';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
@@ -143,6 +146,9 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route path="/assessment/:token" element={<AssessmentLanding />} />
+          <Route path="/assessment/:token/problem/:index" element={<AssessmentIDE />} />
+          <Route path="/assessment/:token/completed" element={<AssessmentCompleted />} />
         </Routes>
       </div>
     </>
