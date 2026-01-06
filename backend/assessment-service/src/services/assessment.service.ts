@@ -42,7 +42,17 @@ export class AssessmentService {
     return this.findOne(savedAssessment.id);
   }
 
-  async findAll(userId?: string): Promise<Assessment[]> {
+  async findAll(
+    userId?: string,
+    page: number = 1,
+    pageSize: number = 20,
+  ): Promise<{
+    data: Assessment[];
+    total: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+  }> {
     const query = this.assessmentRepository
       .createQueryBuilder('assessment')
       .leftJoinAndSelect('assessment.assessmentProblems', 'problems')
@@ -52,7 +62,19 @@ export class AssessmentService {
       query.where('assessment.createdBy = :userId', { userId });
     }
 
-    return query.getMany();
+    const total = await query.getCount();
+    const data = await query
+      .skip((page - 1) * pageSize)
+      .take(pageSize)
+      .getMany();
+
+    return {
+      data,
+      total,
+      page,
+      pageSize,
+      totalPages: Math.ceil(total / pageSize),
+    };
   }
 
   async findOne(id: string): Promise<Assessment> {
