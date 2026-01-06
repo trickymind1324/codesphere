@@ -29,14 +29,14 @@ export class AssessmentController {
     @Body() createAssessmentDto: CreateAssessmentDto,
     @Request() req,
   ) {
-    return this.assessmentService.create(createAssessmentDto, req.user.userId);
+    return this.assessmentService.create(createAssessmentDto, req.user.sub);
   }
 
   @Get()
   async findAll(@Request() req) {
     // If user is recruiter/admin, show their assessments
     // If platform admin, show all
-    const userId = req.user.role === 'platform_admin' ? undefined : req.user.userId;
+    const userId = req.user.role === 'platform_admin' ? undefined : req.user.sub;
     return this.assessmentService.findAll(userId);
   }
 
@@ -51,7 +51,7 @@ export class AssessmentController {
     @Body() updateAssessmentDto: UpdateAssessmentDto,
     @Request() req,
   ) {
-    return this.assessmentService.update(id, updateAssessmentDto, req.user.userId);
+    return this.assessmentService.update(id, updateAssessmentDto, req.user.sub);
   }
 
   @Delete(':id')
@@ -85,7 +85,7 @@ export class AssessmentController {
     @Body() body: { status: AssessmentStatus },
     @Request() req,
   ) {
-    return this.assessmentService.updateStatus(id, body.status, req.user.userId);
+    return this.assessmentService.updateStatus(id, body.status, req.user.sub);
   }
 
   @Get(':id/statistics')
