@@ -6,6 +6,7 @@ import {
   Delete,
   Body,
   Param,
+  Query,
   UseGuards,
   Request,
   HttpCode,
@@ -33,11 +34,17 @@ export class AssessmentController {
   }
 
   @Get()
-  async findAll(@Request() req) {
+  async findAll(
+    @Request() req,
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+  ) {
     // If user is recruiter/admin, show their assessments
     // If platform admin, show all
     const userId = req.user.role === 'platform_admin' ? undefined : req.user.sub;
-    return this.assessmentService.findAll(userId);
+    const pageNum = page ? parseInt(page, 10) : 1;
+    const pageSizeNum = pageSize ? parseInt(pageSize, 10) : 20;
+    return this.assessmentService.findAll(userId, pageNum, pageSizeNum);
   }
 
   @Get(':id')
