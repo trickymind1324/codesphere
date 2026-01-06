@@ -20,8 +20,15 @@ export class JwtAuthGuard implements CanActivate {
     }
 
     try {
-      const secret = this.configService.get<string>('JWT_ACCESS_SECRET');
-      const payload = jwt.verify(token, secret);
+      // Use public key for RSA token verification
+      const publicKey = this.configService.get<string>('JWT_PUBLIC_KEY');
+      if (!publicKey) {
+        throw new Error('JWT_PUBLIC_KEY not configured');
+      }
+
+      const payload = jwt.verify(token, publicKey, {
+        algorithms: ['RS256'], // RSA algorithm
+      });
 
       // Attach user info to request
       request.user = payload;
