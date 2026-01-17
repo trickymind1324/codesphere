@@ -52,10 +52,8 @@ if __name__ == "__main__":
     import sys
     import json
 
-    # Read input lines
-    lines = []
-    for line in sys.stdin:
-        lines.append(line.strip())
+    # Read all input lines at once
+    lines = [line.strip() for line in sys.stdin.readlines()]
 
     # Parse parameters from JSON
     args = []
