@@ -110,6 +110,27 @@ export class DockerExecutor {
         await fs.writeFile(stdinFilePath, stdin);
       }
 
+      // Build/compile code if required (for C, C++, Java, Go)
+      if (langConfig.buildRequired && langConfig.buildCmd) {
+        this.logger.debug(`Building ${language} code with: ${langConfig.buildCmd.join(' ')}`);
+        const buildResult = await this.runInContainer(
+          { ...langConfig, runCmd: langConfig.buildCmd },
+          workDir,
+          undefined,
+          30000, // 30s build timeout
+          memoryLimitMb,
+        );
+
+        if (buildResult.status !== ExecutionStatus.SUCCESS) {
+          this.logger.error(`Build failed: ${buildResult.stderr || buildResult.error}`);
+          return {
+            status: ExecutionStatus.COMPILE_ERROR,
+            error: buildResult.stderr || buildResult.error || 'Compilation failed',
+            stderr: buildResult.stderr,
+          };
+        }
+      }
+
       // Execute code in Docker container
       const result = await this.runInContainer(
         langConfig,

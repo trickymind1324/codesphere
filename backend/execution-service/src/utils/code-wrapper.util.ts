@@ -346,6 +346,9 @@ ${paramList.map((param, idx) => {
       return { type: parts[0] + (parts[0] === 'char' && parts[1]?.startsWith('*') ? '*' : ''), name: parts[parts.length - 1].replace('*', '') };
     }).filter(p => p.name);
 
+    // Strip #include statements from user code to avoid duplicates
+    const cleanedCode = code.replace(/^#include\s+[<"].*[>"]\s*$/gm, '').trim();
+
     const wrapper = `
 #include <stdio.h>
 #include <stdlib.h>
@@ -363,7 +366,7 @@ void parseString(const char* input, char* output, size_t maxLen) {
     }
 }
 
-${code}
+${cleanedCode}
 
 int main() {
     FILE* inputFile = fopen("/app/input.txt", "r");
