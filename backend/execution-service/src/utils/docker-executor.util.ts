@@ -171,10 +171,7 @@ export class DockerExecutor {
         WorkingDir: '/app',
       });
 
-      // Start container
-      await container.start();
-
-      // Attach to container to get output
+      // Attach to container BEFORE starting (to avoid race condition)
       const stream = await container.attach({
         stream: true,
         stdout: true,
@@ -182,12 +179,17 @@ export class DockerExecutor {
         stdin: !!stdinFilePath,
       });
 
-      // Write stdin if provided
+      // Write stdin if provided (before starting container)
       if (stdinFilePath) {
         const stdinContent = await fs.readFile(stdinFilePath, 'utf-8');
-        stream.write(stdinContent);
+        // Ensure content ends with newline
+        const contentToWrite = stdinContent.endsWith('\n') ? stdinContent : stdinContent + '\n';
+        stream.write(contentToWrite);
         stream.end();
       }
+
+      // Start container AFTER attaching stdin
+      await container.start();
 
       // Collect output
       let stdout = '';
