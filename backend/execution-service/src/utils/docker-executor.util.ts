@@ -146,16 +146,17 @@ export class DockerExecutor {
 
     try {
       // Create container
+      // Note: We use file-based input (/app/input.txt) instead of stdin to avoid timing issues
       const container = await this.docker.createContainer({
         name: containerName,
         Image: langConfig.image,
         Cmd: langConfig.runCmd,
         Tty: false,
-        AttachStdin: !!stdinFilePath,
+        AttachStdin: false,
         AttachStdout: true,
         AttachStderr: true,
-        OpenStdin: !!stdinFilePath,
-        StdinOnce: !!stdinFilePath,
+        OpenStdin: false,
+        StdinOnce: false,
         HostConfig: {
           Memory: memoryLimitMb * 1024 * 1024,
           MemorySwap: memoryLimitMb * 1024 * 1024,
@@ -171,24 +172,15 @@ export class DockerExecutor {
         WorkingDir: '/app',
       });
 
-      // Attach to container BEFORE starting (to avoid race condition)
+      // Attach to get output streams
       const stream = await container.attach({
         stream: true,
         stdout: true,
         stderr: true,
-        stdin: !!stdinFilePath,
+        stdin: false,
       });
 
-      // Write stdin if provided (before starting container)
-      if (stdinFilePath) {
-        const stdinContent = await fs.readFile(stdinFilePath, 'utf-8');
-        // Ensure content ends with newline
-        const contentToWrite = stdinContent.endsWith('\n') ? stdinContent : stdinContent + '\n';
-        stream.write(contentToWrite);
-        stream.end();
-      }
-
-      // Start container AFTER attaching stdin
+      // Start container (input.txt file is already mounted in workDir)
       await container.start();
 
       // Collect output
