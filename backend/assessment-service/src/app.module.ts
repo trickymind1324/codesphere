@@ -12,6 +12,7 @@ import { AssessmentInvitation } from './entities/assessment-invitation.entity';
 import { AssessmentService } from './services/assessment.service';
 import { EmailService } from './services/email.service';
 import { InvitationService } from './services/invitation.service';
+import { ProblemService } from './services/problem.service';
 
 // Controllers
 import { AssessmentController } from './controllers/assessment.controller';
@@ -37,6 +38,6 @@ import {
     InvitationController,
     PublicInvitationController,
   ],
-  providers: [AssessmentService, EmailService, InvitationService],
+  providers: [AssessmentService, EmailService, InvitationService, ProblemService],
 })
 export class AppModule {}

@@ -9,6 +9,7 @@ import { Assessment, AssessmentStatus } from '../entities/assessment.entity';
 import { AssessmentProblem } from '../entities/assessment-problem.entity';
 import { CreateAssessmentDto } from '../dto/create-assessment.dto';
 import { UpdateAssessmentDto } from '../dto/update-assessment.dto';
+import { ProblemService } from './problem.service';
 
 @Injectable()
 export class AssessmentService {
@@ -17,6 +18,7 @@ export class AssessmentService {
     private assessmentRepository: Repository<Assessment>,
     @InjectRepository(AssessmentProblem)
     private assessmentProblemRepository: Repository<AssessmentProblem>,
+    private problemService: ProblemService,
   ) {}
 
   async create(
@@ -68,6 +70,30 @@ export class AssessmentService {
       .take(pageSize)
       .getMany();
 
+    // Fetch problem details for all assessments
+    const allProblemIds = new Set<string>();
+    data.forEach((assessment) => {
+      assessment.assessmentProblems?.forEach((ap) => {
+        allProblemIds.add(ap.problemId);
+      });
+    });
+
+    if (allProblemIds.size > 0) {
+      const problemDetails = await this.problemService.getMultipleProblems(
+        Array.from(allProblemIds),
+      );
+
+      // Attach problem details to each assessment problem
+      data.forEach((assessment) => {
+        assessment.assessmentProblems?.forEach((ap) => {
+          const details = problemDetails.get(ap.problemId);
+          if (details) {
+            (ap as any).problem = details;
+          }
+        });
+      });
+    }
+
     return {
       data,
       total,
@@ -85,6 +111,20 @@ export class AssessmentService {
 
     if (!assessment) {
       throw new NotFoundException(`Assessment with ID ${id} not found`);
+    }
+
+    // Fetch problem details from problem service
+    if (assessment.assessmentProblems?.length > 0) {
+      const problemIds = assessment.assessmentProblems.map((ap) => ap.problemId);
+      const problemDetails = await this.problemService.getMultipleProblems(problemIds);
+
+      // Attach problem details to each assessment problem
+      assessment.assessmentProblems.forEach((ap) => {
+        const details = problemDetails.get(ap.problemId);
+        if (details) {
+          (ap as any).problem = details;
+        }
+      });
     }
 
     return assessment;
