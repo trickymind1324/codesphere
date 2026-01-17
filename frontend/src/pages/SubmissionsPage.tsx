@@ -187,7 +187,7 @@ export function SubmissionsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {submissionsData?.data.map((submission) => (
+                  {submissionsData?.data?.map((submission) => (
                     <tr
                       key={submission.id}
                       className="hover:bg-muted/50 transition-colors"
@@ -283,7 +283,7 @@ export function SubmissionsPage() {
         )}
 
         {/* Empty State */}
-        {!isLoading && submissionsData?.data.length === 0 && (
+        {!isLoading && submissionsData?.data?.length === 0 && (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <div className="text-4xl mb-4">📝</div>
             <h3 className="text-lg font-semibold">No submissions yet</h3>
