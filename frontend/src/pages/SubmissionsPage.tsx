@@ -108,10 +108,10 @@ export function SubmissionsPage() {
               <div className="text-sm text-muted-foreground">Problems Solved</div>
             </div>
             <div className="rounded-lg border border-border bg-card p-4">
-              <div className="text-2xl font-bold">{userStats.languagesUsed.length}</div>
+              <div className="text-2xl font-bold">{userStats.languagesUsed?.length || 0}</div>
               <div className="text-sm text-muted-foreground">Languages Used</div>
               <div className="mt-1 text-xs text-muted-foreground">
-                {userStats.languagesUsed.join(', ')}
+                {userStats.languagesUsed?.join(', ') || 'None'}
               </div>
             </div>
           </div>
