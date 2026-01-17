@@ -57,11 +57,19 @@ if __name__ == "__main__":
     for line in sys.stdin:
         lines.append(line.strip())
 
-    # Parse parameters
-${paramList.map((param, idx) => `    ${param} = lines[${idx}] if ${idx} < len(lines) else ""`).join('\n')}
+    # Parse parameters from JSON
+    args = []
+    for i in range(${paramList.length}):
+        if i < len(lines) and lines[i]:
+            try:
+                args.append(json.loads(lines[i]))
+            except json.JSONDecodeError:
+                args.append(lines[i])
+        else:
+            args.append(None)
 
     # Call function
-    result = ${functionName}(${paramList.join(', ')})
+    result = ${functionName}(*args)
 
     # Print result (convert boolean to lowercase string for consistency)
     if isinstance(result, bool):
@@ -107,9 +115,21 @@ rl.on('line', (line) => {
 });
 
 rl.on('close', () => {
-${paramList.map((param, idx) => `    const ${param} = lines[${idx}] || "";`).join('\n')}
+    // Parse parameters from JSON
+    const args = [];
+    for (let i = 0; i < ${paramList.length}; i++) {
+        if (i < lines.length && lines[i]) {
+            try {
+                args.push(JSON.parse(lines[i]));
+            } catch (e) {
+                args.push(lines[i]);
+            }
+        } else {
+            args.push(null);
+        }
+    }
 
-    const result = ${functionName}(${paramList.join(', ')});
+    const result = ${functionName}(...args);
 
     if (typeof result === 'boolean') {
         console.log(result.toString());
@@ -167,8 +187,14 @@ ${code}
 
         Solution solution = new Solution();
 
-        // Parse parameters
-${paramList.map((param, idx) => `        String ${param.name} = ${idx} < lines.size() ? lines.get(${idx}) : "";`).join('\n')}
+        // Parse parameters from JSON-style input
+${paramList.map((param, idx) => {
+  if (param.type === 'String') {
+    return `        String ${param.name} = ${idx} < lines.size() ? parseString(lines.get(${idx})) : "";`;
+  } else {
+    return `        ${param.type} ${param.name} = ${idx} < lines.size() ? ${param.type}.valueOf(lines.get(${idx})) : null;`;
+  }
+}).join('\n')}
 
         // Call method
         ${returnType} result = solution.${methodName}(${paramList.map(p => p.name).join(', ')});
@@ -181,6 +207,13 @@ ${paramList.map((param, idx) => `        String ${param.name} = ${idx} < lines.s
         }
 
         scanner.close();
+    }
+
+    private static String parseString(String input) {
+        if (input.startsWith("\\"") && input.endsWith("\\"")) {
+            return input.substring(1, input.length() - 1);
+        }
+        return input;
     }
 }
 `;
@@ -211,6 +244,13 @@ ${paramList.map((param, idx) => `        String ${param.name} = ${idx} < lines.s
 #include <vector>
 using namespace std;
 
+string parseString(string input) {
+    if (input.length() >= 2 && input[0] == '"' && input[input.length()-1] == '"') {
+        return input.substr(1, input.length() - 2);
+    }
+    return input;
+}
+
 ${code}
 
 int main() {
@@ -221,7 +261,13 @@ int main() {
         lines.push_back(line);
     }
 
-${paramList.map((param, idx) => `    string ${param.name} = ${idx} < lines.size() ? lines[${idx}] : "";`).join('\n')}
+${paramList.map((param, idx) => {
+  if (param.type === 'string') {
+    return `    string ${param.name} = ${idx} < lines.size() ? parseString(lines[${idx}]) : "";`;
+  } else {
+    return `    auto ${param.name} = ${idx} < lines.size() ? lines[${idx}] : "";`;
+  }
+}).join('\n')}
 
     auto result = ${functionName}(${paramList.map(p => p.name).join(', ')});
 
@@ -259,6 +305,7 @@ package main
 
 import (
     "bufio"
+    "encoding/json"
     "fmt"
     "os"
     "strings"
@@ -274,10 +321,19 @@ func main() {
         lines = append(lines, strings.TrimSpace(scanner.Text()))
     }
 
-${paramList.map((param, idx) => `    var ${param.name} string
+${paramList.map((param, idx) => {
+  if (param.type === 'string') {
+    return `    var ${param.name} string
     if ${idx} < len(lines) {
-        ${param.name} = lines[${idx}]
-    }`).join('\n')}
+        json.Unmarshal([]byte(lines[${idx}]), &${param.name})
+    }`;
+  } else {
+    return `    var ${param.name} ${param.type}
+    if ${idx} < len(lines) {
+        json.Unmarshal([]byte(lines[${idx}]), &${param.name})
+    }`;
+  }
+}).join('\n')}
 
     result := ${functionName}(${paramList.map(p => p.name).join(', ')})
 
