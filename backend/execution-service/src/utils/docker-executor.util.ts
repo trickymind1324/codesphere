@@ -165,7 +165,7 @@ export class DockerExecutor {
             ? 'bridge'
             : 'none',
           PidsLimit: 50,
-          Binds: [`${workDir}:/app:ro`],
+          Binds: [`${workDir}:/app`], // Remove :ro to allow compilation
           ReadonlyRootfs: false,
           AutoRemove: false, // Manual cleanup to avoid race conditions
         },

@@ -189,16 +189,34 @@ function processInput() {
     const wrapper = `
 import java.util.*;
 import java.io.*;
+import java.nio.file.*;
 
 public class Solution {
 ${code}
 
     public static void main(String[] args) {
-        Scanner scanner = new Scanner(System.in);
         List<String> lines = new ArrayList<>();
 
-        while (scanner.hasNextLine()) {
-            lines.add(scanner.nextLine().trim());
+        try {
+            // Read from file if it exists, otherwise from stdin
+            File inputFile = new File("/app/input.txt");
+            if (inputFile.exists()) {
+                lines = Files.readAllLines(Paths.get("/app/input.txt"));
+                // Remove empty lines
+                lines.removeIf(String::isEmpty);
+            } else {
+                Scanner scanner = new Scanner(System.in);
+                while (scanner.hasNextLine()) {
+                    String line = scanner.nextLine().trim();
+                    if (!line.isEmpty()) {
+                        lines.add(line);
+                    }
+                }
+                scanner.close();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.exit(1);
         }
 
         Solution solution = new Solution();
@@ -221,8 +239,6 @@ ${paramList.map((param, idx) => {
         } else {
             System.out.println(result);
         }
-
-        scanner.close();
     }
 
     private static String parseString(String input) {
@@ -258,6 +274,7 @@ ${paramList.map((param, idx) => {
 #include <iostream>
 #include <string>
 #include <vector>
+#include <fstream>
 using namespace std;
 
 string parseString(string input) {
@@ -273,8 +290,19 @@ int main() {
     vector<string> lines;
     string line;
 
-    while (getline(cin, line)) {
-        lines.push_back(line);
+    // Read from file if it exists, otherwise from stdin
+    ifstream inputFile("/app/input.txt");
+    if (inputFile.is_open()) {
+        while (getline(inputFile, line)) {
+            if (!line.empty()) {
+                lines.push_back(line);
+            }
+        }
+        inputFile.close();
+    } else {
+        while (getline(cin, line)) {
+            lines.push_back(line);
+        }
     }
 
 ${paramList.map((param, idx) => {
@@ -330,11 +358,26 @@ import (
 ${code}
 
 func main() {
-    scanner := bufio.NewScanner(os.Stdin)
     var lines []string
 
-    for scanner.Scan() {
-        lines = append(lines, strings.TrimSpace(scanner.Text()))
+    // Read from file if it exists, otherwise from stdin
+    if file, err := os.Open("/app/input.txt"); err == nil {
+        defer file.close()
+        scanner := bufio.NewScanner(file)
+        for scanner.Scan() {
+            line := strings.TrimSpace(scanner.Text())
+            if line != "" {
+                lines = append(lines, line)
+            }
+        }
+    } else {
+        scanner := bufio.NewScanner(os.Stdin)
+        for scanner.Scan() {
+            line := strings.TrimSpace(scanner.Text())
+            if line != "" {
+                lines = append(lines, line)
+            }
+        }
     }
 
 ${paramList.map((param, idx) => {
