@@ -123,7 +123,7 @@ export function ProblemsPage() {
                       </td>
                       <td className="px-4 py-3 text-sm text-muted-foreground">
                         {problem.acceptanceRate > 0
-                          ? `${problem.acceptanceRate.toFixed(1)}%`
+                          ? `${Number(problem.acceptanceRate).toFixed(1)}%`
                           : 'N/A'}
                       </td>
                       <td className="px-4 py-3">

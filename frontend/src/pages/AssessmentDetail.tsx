@@ -187,7 +187,7 @@ export function AssessmentDetail() {
                 <div>
                   <p className="text-sm text-muted-foreground">Completion Rate</p>
                   <p className="mt-1 text-2xl font-semibold text-foreground">
-                    {statistics.completionRate ? `${statistics.completionRate.toFixed(1)}%` : '0%'}
+                    {statistics.completionRate ? `${Number(statistics.completionRate).toFixed(1)}%` : '0%'}
                   </p>
                 </div>
               </div>

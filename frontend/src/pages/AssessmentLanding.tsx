@@ -101,7 +101,7 @@ export function AssessmentLanding() {
             {invitation.score !== undefined && (
               <div className="mt-4 rounded-md bg-green-100 dark:bg-green-900 p-4">
                 <p className="text-lg font-semibold text-green-900 dark:text-green-100">
-                  Your Score: {invitation.percentage?.toFixed(1)}%
+                  Your Score: {invitation.percentage != null ? Number(invitation.percentage).toFixed(1) : '0'}%
                 </p>
                 <p className="text-sm text-green-700 dark:text-green-300">
                   {invitation.problemsSolved} / {invitation.totalProblems} problems solved
