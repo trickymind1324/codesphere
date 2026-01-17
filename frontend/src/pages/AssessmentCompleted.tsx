@@ -87,7 +87,7 @@ export function AssessmentCompleted() {
                   <div className="rounded-lg bg-muted p-4">
                     <p className="text-sm text-muted-foreground">Score</p>
                     <p className="mt-1 text-2xl font-bold text-foreground">
-                      {invitation.percentage.toFixed(1)}%
+                      {Number(invitation.percentage).toFixed(1)}%
                     </p>
                   </div>
                 )}
