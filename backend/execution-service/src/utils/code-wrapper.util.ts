@@ -19,8 +19,9 @@ export class CodeWrapper {
       case ProgrammingLanguage.JAVA:
         return this.wrapJava(code);
       case ProgrammingLanguage.CPP:
-      case ProgrammingLanguage.C:
         return this.wrapCpp(code);
+      case ProgrammingLanguage.C:
+        return this.wrapC(code);
       case ProgrammingLanguage.GO:
         return this.wrapGo(code);
       default:
@@ -319,6 +320,96 @@ ${paramList.map((param, idx) => {
         cout << (result ? "true" : "false") << endl;
     } else {
         cout << result << endl;
+    }
+
+    return 0;
+}
+`;
+
+    return wrapper;
+  }
+
+  /**
+   * Wrap C code with I/O handling
+   */
+  private static wrapC(code: string): string {
+    const functionMatch = code.match(/(\w+)\s+(\w+)\s*\((.*?)\)/);
+
+    if (!functionMatch) {
+      return code;
+    }
+
+    const [, returnType, functionName, params] = functionMatch;
+    const paramList = params.split(',').map(p => {
+      const parts = p.trim().split(/\s+/);
+      // C uses char* for strings
+      return { type: parts[0] + (parts[0] === 'char' && parts[1]?.startsWith('*') ? '*' : ''), name: parts[parts.length - 1].replace('*', '') };
+    }).filter(p => p.name);
+
+    const wrapper = `
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdbool.h>
+
+void parseString(const char* input, char* output, size_t maxLen) {
+    size_t len = strlen(input);
+    if (len >= 2 && input[0] == '"' && input[len-1] == '"') {
+        strncpy(output, input + 1, len - 2);
+        output[len - 2] = '\\0';
+    } else {
+        strncpy(output, input, maxLen - 1);
+        output[maxLen - 1] = '\\0';
+    }
+}
+
+${code}
+
+int main() {
+    FILE* inputFile = fopen("/app/input.txt", "r");
+    char lines[10][1024];
+    int lineCount = 0;
+
+    if (inputFile != NULL) {
+        while (fgets(lines[lineCount], sizeof(lines[lineCount]), inputFile) != NULL && lineCount < 10) {
+            // Remove newline
+            lines[lineCount][strcspn(lines[lineCount], "\\n")] = 0;
+            if (strlen(lines[lineCount]) > 0) {
+                lineCount++;
+            }
+        }
+        fclose(inputFile);
+    } else {
+        while (fgets(lines[lineCount], sizeof(lines[lineCount]), stdin) != NULL && lineCount < 10) {
+            lines[lineCount][strcspn(lines[lineCount], "\\n")] = 0;
+            if (strlen(lines[lineCount]) > 0) {
+                lineCount++;
+            }
+        }
+    }
+
+${paramList.map((param, idx) => {
+  if (param.type === 'char*') {
+    return `    char ${param.name}_buffer[1024];
+    if (${idx} < lineCount) {
+        parseString(lines[${idx}], ${param.name}_buffer, sizeof(${param.name}_buffer));
+    } else {
+        ${param.name}_buffer[0] = '\\0';
+    }
+    char* ${param.name} = ${param.name}_buffer;`;
+  } else if (param.type === 'int') {
+    return `    int ${param.name} = ${idx} < lineCount ? atoi(lines[${idx}]) : 0;`;
+  } else {
+    return `    // TODO: Handle ${param.type} ${param.name}`;
+  }
+}).join('\n')}
+
+    ${returnType === 'bool' ? 'bool' : returnType} result = ${functionName}(${paramList.map(p => p.name).join(', ')});
+
+    if (strcmp("${returnType}", "bool") == 0) {
+        printf("%s\\n", result ? "true" : "false");
+    } else {
+        printf("%d\\n", result);
     }
 
     return 0;
