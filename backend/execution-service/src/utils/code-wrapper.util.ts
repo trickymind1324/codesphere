@@ -51,9 +51,14 @@ ${code}
 if __name__ == "__main__":
     import sys
     import json
+    import os
 
-    # Read all input lines at once
-    lines = [line.strip() for line in sys.stdin.readlines()]
+    # Read input from file if it exists, otherwise from stdin
+    if os.path.exists('/app/input.txt'):
+        with open('/app/input.txt', 'r') as f:
+            lines = [line.strip() for line in f.readlines()]
+    else:
+        lines = [line.strip() for line in sys.stdin.readlines()]
 
     # Parse parameters from JSON
     args = []
@@ -100,19 +105,32 @@ if __name__ == "__main__":
 ${code}
 
 // Auto-generated I/O wrapper
-const readline = require('readline');
-const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-    terminal: false
-});
+const fs = require('fs');
 
-const lines = [];
-rl.on('line', (line) => {
-    lines.push(line.trim());
-});
+// Read input from file if it exists, otherwise from stdin
+let lines = [];
+if (fs.existsSync('/app/input.txt')) {
+    const content = fs.readFileSync('/app/input.txt', 'utf-8');
+    lines = content.split('\\n').map(line => line.trim()).filter(line => line);
+    processInput();
+} else {
+    const readline = require('readline');
+    const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout,
+        terminal: false
+    });
 
-rl.on('close', () => {
+    rl.on('line', (line) => {
+        lines.push(line.trim());
+    });
+
+    rl.on('close', () => {
+        processInput();
+    });
+}
+
+function processInput() {
     // Parse parameters from JSON
     const args = [];
     for (let i = 0; i < ${paramList.length}; i++) {
@@ -136,7 +154,7 @@ rl.on('close', () => {
     } else {
         console.log(result);
     }
-});
+}
 `;
 
     return wrapper;
