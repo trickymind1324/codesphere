@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import Editor from '@monaco-editor/react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { problemApi } from '@/api/problem.api';
 import { executionApi, TestResult } from '@/api/execution.api';
+import { submissionApi } from '@/api/submission.api';
 import { useAuthStore } from '@/stores/auth.store';
 import toast from 'react-hot-toast';
 
@@ -21,6 +22,8 @@ const LANGUAGE_OPTIONS = [
 
 export function ProblemDetailPage() {
   const { slug } = useParams<{ slug: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const submissionId = searchParams.get('submissionId');
   const { logout } = useAuthStore();
   const [selectedLanguage, setSelectedLanguage] = useState('python');
   const [code, setCode] = useState('');
@@ -39,9 +42,29 @@ export function ProblemDetailPage() {
     enabled: !!slug,
   });
 
-  // Load starter code when problem data is available
+  // Fetch submissions for this problem
+  const { data: submissionsData } = useQuery({
+    queryKey: ['problem-submissions', problem?.id],
+    queryFn: () => submissionApi.getSubmissions({ problemId: problem!.id, pageSize: 50 }),
+    enabled: !!problem?.id,
+  });
+
+  // Fetch specific submission if submissionId is provided
+  const { data: loadedSubmission } = useQuery({
+    queryKey: ['submission', submissionId],
+    queryFn: () => submissionApi.getSubmission(submissionId!),
+    enabled: !!submissionId,
+  });
+
+  // Load code when problem/submission data is available
   useEffect(() => {
-    if (problem && problem.starterCodes && problem.starterCodes.length > 0) {
+    // If a submission is loaded, use its code and language
+    if (loadedSubmission) {
+      setCode(loadedSubmission.code);
+      setSelectedLanguage(loadedSubmission.language);
+    }
+    // Otherwise, load starter code
+    else if (problem && problem.starterCodes && problem.starterCodes.length > 0) {
       const starterCode = problem.starterCodes.find(
         (sc) => sc.language === selectedLanguage
       );
@@ -49,11 +72,24 @@ export function ProblemDetailPage() {
         setCode(starterCode.code);
       }
     }
-  }, [problem, selectedLanguage]);
+  }, [problem, selectedLanguage, loadedSubmission]);
 
   const handleLanguageChange = (language: string) => {
     setSelectedLanguage(language);
+    // If viewing a submission, don't change the code
+    if (loadedSubmission) {
+      return;
+    }
     const starterCode = problem?.starterCodes.find((sc) => sc.language === language);
+    if (starterCode) {
+      setCode(starterCode.code);
+    }
+  };
+
+  const handleClearSubmission = () => {
+    setSearchParams({});
+    // Reset to starter code
+    const starterCode = problem?.starterCodes.find((sc) => sc.language === selectedLanguage);
     if (starterCode) {
       setCode(starterCode.code);
     }
@@ -372,12 +408,61 @@ export function ProblemDetailPage() {
                 )}
               </>
             ) : (
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <div className="text-4xl mb-4">📝</div>
-                <h3 className="text-lg font-semibold">No submissions yet</h3>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  Your submissions will appear here
-                </p>
+              <div>
+                <h3 className="mb-4 text-lg font-semibold">Your Submissions</h3>
+                {submissionsData && submissionsData.data.length > 0 ? (
+                  <div className="space-y-3">
+                    {submissionsData.data.map((submission) => (
+                      <button
+                        key={submission.id}
+                        onClick={() => {
+                          setSearchParams({ submissionId: submission.id });
+                          setActiveTab('description');
+                        }}
+                        className={`w-full text-left rounded-lg border p-4 transition-colors hover:bg-muted/50 ${
+                          submissionId === submission.id ? 'border-primary bg-primary/5' : 'border-border'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <span
+                              className={`rounded-full px-3 py-1 text-xs font-medium ${
+                                submission.status === 'accepted'
+                                  ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                                  : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                              }`}
+                            >
+                              {submission.status === 'accepted' ? 'Accepted' : submission.status.replace(/_/g, ' ')}
+                            </span>
+                            <span className="rounded-md bg-muted px-2 py-1 text-xs font-mono">
+                              {submission.language}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              {submission.passedTestCases}/{submission.totalTestCases} passed
+                            </span>
+                          </div>
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(submission.createdAt).toLocaleString()}
+                          </span>
+                        </div>
+                        {submission.executionTimeMs && (
+                          <div className="mt-2 text-xs text-muted-foreground">
+                            Runtime: {submission.executionTimeMs}ms
+                            {submission.memoryUsageKb && ` • Memory: ${(submission.memoryUsageKb / 1024).toFixed(2)}MB`}
+                          </div>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <div className="text-4xl mb-4">📝</div>
+                    <h3 className="text-lg font-semibold">No submissions yet</h3>
+                    <p className="mt-2 text-sm text-muted-foreground">
+                      Your submissions will appear here
+                    </p>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -385,12 +470,39 @@ export function ProblemDetailPage() {
 
         {/* Right Panel - Code Editor */}
         <div className="flex w-1/2 flex-col">
+          {/* Submission Notice Banner */}
+          {loadedSubmission && (
+            <div className="flex items-center justify-between border-b border-border bg-primary/10 px-4 py-2">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium">
+                  Viewing submission from {new Date(loadedSubmission.createdAt).toLocaleString()}
+                </span>
+                <span
+                  className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                    loadedSubmission.status === 'accepted'
+                      ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                      : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                  }`}
+                >
+                  {loadedSubmission.status === 'accepted' ? 'Accepted' : loadedSubmission.status.replace(/_/g, ' ')}
+                </span>
+              </div>
+              <button
+                onClick={handleClearSubmission}
+                className="text-sm text-muted-foreground hover:text-foreground"
+              >
+                Clear & Reset to Starter Code
+              </button>
+            </div>
+          )}
+
           {/* Editor Header */}
           <div className="flex items-center justify-between border-b border-border bg-card px-4 py-3">
             <select
               value={selectedLanguage}
               onChange={(e) => handleLanguageChange(e.target.value)}
-              className="rounded-md border border-input bg-background px-3 py-1.5 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              disabled={!!loadedSubmission}
+              className="rounded-md border border-input bg-background px-3 py-1.5 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {LANGUAGE_OPTIONS.filter((lang) =>
                 problem.starterCodes.some((sc) => sc.language === lang.value)
