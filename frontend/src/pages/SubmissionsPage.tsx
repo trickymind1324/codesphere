@@ -190,16 +190,14 @@ export function SubmissionsPage() {
                   {submissionsData?.data?.map((submission) => (
                     <tr
                       key={submission.id}
-                      className="hover:bg-muted/50 transition-colors"
+                      className="hover:bg-muted/50 transition-colors cursor-pointer"
+                      onClick={() => window.location.href = `/problems/${submission.problem.slug}?submissionId=${submission.id}`}
                     >
                       <td className="px-4 py-3 text-sm text-muted-foreground">
                         {formatDate(submission.createdAt)}
                       </td>
                       <td className="px-4 py-3">
-                        <Link
-                          to={`/problems/${submission.problem.slug}`}
-                          className="flex flex-col gap-1"
-                        >
+                        <div className="flex flex-col gap-1">
                           <span className="font-medium hover:text-primary">
                             {submission.problem.title}
                           </span>
@@ -209,7 +207,7 @@ export function SubmissionsPage() {
                             {submission.problem.difficulty.charAt(0).toUpperCase() +
                               submission.problem.difficulty.slice(1)}
                           </span>
-                        </Link>
+                        </div>
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex flex-col gap-1">
