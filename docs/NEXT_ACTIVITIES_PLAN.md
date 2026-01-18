@@ -30,10 +30,110 @@
 - ✅ Authentication with RS256
 
 **Remaining Work:**
+- 🔴 **CRITICAL:** Configure email service with real SMTP credentials (BLOCKING)
 - 🎯 End-to-end testing of all user flows
 - 🎯 Cross-browser compatibility testing
 - 🎯 Performance validation
 - 🎯 Bug fixes and polish
+
+---
+
+## Priority 0: Email Service Configuration (30 minutes - 1 hour) ⚠️ BLOCKING
+
+**Issue:** Email invitation system has placeholder SMTP credentials and won't actually send emails.
+
+**Current `.env` Configuration:**
+```env
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your-email@gmail.com          ← NEEDS REAL EMAIL
+SMTP_PASSWORD=your-app-password         ← NEEDS REAL PASSWORD
+SMTP_FROM=CodeSphere <noreply@codesphere.com>
+```
+
+**Options for SMTP Configuration:**
+
+### Option 1: Gmail with App Passwords (Fastest - Recommended for Testing)
+
+**Steps:**
+1. Go to Google Account settings
+2. Enable 2-Factor Authentication (if not already enabled)
+3. Generate App Password: https://myaccount.google.com/apppasswords
+4. Update `.env`:
+   ```env
+   SMTP_USER=your-actual-email@gmail.com
+   SMTP_PASSWORD=generated-app-password-here
+   ```
+5. Restart assessment service
+6. Test by sending invitation
+
+**Pros:** Free, quick setup (5 minutes)
+**Cons:** Gmail has daily sending limits (500 emails/day)
+
+---
+
+### Option 2: SendGrid (Recommended for Production)
+
+**Steps:**
+1. Create free SendGrid account: https://sendgrid.com
+2. Verify email domain (or use single sender verification)
+3. Generate API key
+4. Update `.env`:
+   ```env
+   SMTP_HOST=smtp.sendgrid.net
+   SMTP_PORT=587
+   SMTP_USER=apikey
+   SMTP_PASSWORD=your-sendgrid-api-key
+   SMTP_FROM=noreply@yourdomain.com
+   ```
+5. Restart assessment service
+
+**Pros:** 100 emails/day free, professional, better deliverability
+**Cons:** Requires account setup (~15 minutes)
+
+---
+
+### Option 3: AWS SES (Production Grade)
+
+**Steps:**
+1. Create AWS account
+2. Set up SES in AWS Console
+3. Verify email domain
+4. Generate SMTP credentials
+5. Update `.env` with AWS SMTP settings
+
+**Pros:** Highly scalable, production-ready
+**Cons:** More complex setup (~30 minutes)
+
+---
+
+### Testing Email Delivery
+
+After configuring SMTP:
+
+1. Restart assessment service:
+   ```bash
+   cd /Users/sunny18/Project-1/backend/assessment-service
+   npm run dev
+   ```
+
+2. Test invitation flow:
+   - Login as recruiter
+   - Create assessment
+   - Send invitation to your own email
+   - Check inbox (and spam folder)
+
+3. Verify email contains:
+   - Assessment title
+   - Unique token link
+   - Expiry date
+   - Proper formatting
+
+**Success Criteria:**
+- ✅ Email arrives in inbox (not spam)
+- ✅ Link works when clicked
+- ✅ Token validates correctly
+- ✅ Assessment loads properly
 
 ---
 
