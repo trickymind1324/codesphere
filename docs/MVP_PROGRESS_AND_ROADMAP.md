@@ -47,10 +47,14 @@
 - ✅ Fixed frontend numeric type conversion errors
 
 **Remaining Work:**
+- 🔴 **CRITICAL BLOCKER:** Email service SMTP credentials not configured (placeholder values only)
 - 🟡 **Testing & Polish** (Phase 5): Edge cases, error handling, cross-browser testing
 - 🟡 **End-to-end testing**: Full user flows validation
 
-**Timeline to MVP:** 1-2 days for final testing and polish, then READY FOR LAUNCH 🚀
+**Timeline to MVP:**
+- 1-2 hours to configure email service (BLOCKING)
+- 1-2 days for final testing and polish
+- Then READY FOR LAUNCH 🚀
 
 ---
 
