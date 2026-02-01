@@ -12,6 +12,7 @@ import {
 import { TestCase } from './test-case.entity';
 import { Tag } from './tag.entity';
 import { StarterCode } from './starter-code.entity';
+import { ProblemFile } from './problem-file.entity';
 
 export enum ProblemDifficulty {
   EASY = 'easy',
@@ -23,6 +24,16 @@ export enum ProblemStatus {
   DRAFT = 'draft',
   PUBLISHED = 'published',
   ARCHIVED = 'archived',
+}
+
+export enum ProblemType {
+  ALGORITHMIC = 'algorithmic',
+  DEBUGGING = 'debugging',
+}
+
+export interface ExecutionConfig {
+  entryCommand: string; // e.g., "python main.py"
+  workingDirectory?: string;
 }
 
 @Entity('problems')
@@ -57,6 +68,19 @@ export class Problem {
   })
   @Index()
   status: ProblemStatus;
+
+  // Problem type: algorithmic (single-file) or debugging (multi-file)
+  @Column({
+    type: 'enum',
+    enum: ProblemType,
+    default: ProblemType.ALGORITHMIC,
+  })
+  @Index()
+  problemType: ProblemType;
+
+  // Execution configuration for debugging problems
+  @Column('jsonb', { nullable: true })
+  executionConfig: ExecutionConfig;
 
   // Premium content flag
   @Column({ default: false })
@@ -126,6 +150,13 @@ export class Problem {
     eager: true,
   })
   starterCodes: StarterCode[];
+
+  // Problem files for debugging problems (multi-file)
+  @OneToMany(() => ProblemFile, (problemFile) => problemFile.problem, {
+    cascade: true,
+    eager: false,
+  })
+  problemFiles: ProblemFile[];
 
   // Audit fields
   @Column({ nullable: true })

@@ -51,6 +51,13 @@ export class Submission {
   @Column('text')
   code: string;
 
+  // Multi-file submissions for debugging problems
+  @Column('jsonb', { nullable: true })
+  files: {
+    filePath: string;
+    content: string;
+  }[];
+
   @Column({
     type: 'enum',
     enum: ProgrammingLanguage,

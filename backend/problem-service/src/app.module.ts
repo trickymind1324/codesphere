@@ -9,6 +9,7 @@ import { TestCase } from './entities/test-case.entity';
 import { Tag } from './entities/tag.entity';
 import { StarterCode } from './entities/starter-code.entity';
 import { Submission } from './entities/submission.entity';
+import { ProblemFile } from './entities/problem-file.entity';
 
 // Controllers
 import { ProblemController } from './controllers/problem.controller';
@@ -35,7 +36,7 @@ import { OptionalAuthGuard } from './guards/optional-auth.guard';
       useFactory: getDatabaseConfig,
       inject: [ConfigService],
     }),
-    TypeOrmModule.forFeature([Problem, TestCase, Tag, StarterCode, Submission]),
+    TypeOrmModule.forFeature([Problem, TestCase, Tag, StarterCode, Submission, ProblemFile]),
   ],
   controllers: [ProblemController, TagController, SubmissionController],
   providers: [ProblemService, SubmissionService, JwtAuthGuard, RolesGuard, OptionalAuthGuard],

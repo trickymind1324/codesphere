@@ -5,6 +5,7 @@ import {
   IsArray,
   IsOptional,
   IsNumber,
+  IsObject,
   ValidateNested,
   ArrayMinSize,
   MinLength,
@@ -13,8 +14,9 @@ import {
   Max,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { ProblemDifficulty, ProblemStatus } from '../entities/problem.entity';
+import { ProblemDifficulty, ProblemStatus, ProblemType } from '../entities/problem.entity';
 import { ProgrammingLanguage } from '../entities/starter-code.entity';
+import { ValidationType } from '../entities/test-case.entity';
 
 export class ExampleDto {
   @IsString()
@@ -57,6 +59,43 @@ export class TestCaseDto {
   @Min(0)
   @Max(100)
   weight?: number;
+
+  @IsOptional()
+  @IsEnum(ValidationType)
+  validationType?: ValidationType;
+}
+
+export class ExecutionConfigDto {
+  @IsString()
+  entryCommand: string;
+
+  @IsOptional()
+  @IsString()
+  workingDirectory?: string;
+}
+
+export class ProblemFileDto {
+  @IsEnum(ProgrammingLanguage)
+  language: ProgrammingLanguage;
+
+  @IsString()
+  filePath: string;
+
+  @IsString()
+  content: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isEntryPoint?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  isReadOnly?: boolean;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  order?: number;
 }
 
 export class StarterCodeDto {
@@ -87,6 +126,15 @@ export class CreateProblemDto {
   @IsOptional()
   @IsEnum(ProblemStatus)
   status?: ProblemStatus;
+
+  @IsOptional()
+  @IsEnum(ProblemType)
+  problemType?: ProblemType;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => ExecutionConfigDto)
+  executionConfig?: ExecutionConfigDto;
 
   @IsOptional()
   @IsBoolean()
@@ -148,4 +196,10 @@ export class CreateProblemDto {
   @ValidateNested({ each: true })
   @Type(() => StarterCodeDto)
   starterCodes?: StarterCodeDto[];
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ProblemFileDto)
+  problemFiles?: ProblemFileDto[];
 }
