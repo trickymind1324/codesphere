@@ -27,6 +27,12 @@ export interface Problem {
   starterCodes: StarterCode[];
   createdAt: string;
   updatedAt: string;
+  // Multi-file debugging support
+  problemType?: 'algorithmic' | 'debugging';
+  executionConfig?: {
+    entryCommand: string;
+    workingDirectory?: string;
+  };
 }
 
 export interface Tag {
@@ -54,6 +60,18 @@ export interface TestCase {
   isHidden: boolean;
   order: number;
   weight: number;
+  validationType?: 'exact' | 'contains' | 'regex' | 'exit_code';
+}
+
+export interface ProblemFile {
+  id: string;
+  problemId: string;
+  language: string;
+  filePath: string;
+  content: string;
+  isEntryPoint: boolean;
+  isReadOnly: boolean;
+  order: number;
 }
 
 export interface QueryProblemsParams {
@@ -105,6 +123,14 @@ export const problemApi = {
   // Get test cases for a problem (only visible ones)
   getTestCases: async (problemId: string): Promise<TestCase[]> => {
     const response = await api.get(`/api/v1/problems/${problemId}/test-cases`);
+    return response.data;
+  },
+
+  // Get problem files for debugging problems (multi-file)
+  getProblemFiles: async (problemId: string, language: string): Promise<ProblemFile[]> => {
+    const response = await api.get(`/api/v1/problems/${problemId}/files`, {
+      params: { language },
+    });
     return response.data;
   },
 };
