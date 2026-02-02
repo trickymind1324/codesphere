@@ -12,6 +12,7 @@ import {
   SetMetadata,
   HttpCode,
   HttpStatus,
+  BadRequestException,
 } from '@nestjs/common';
 import { ProblemService } from '../services/problem.service';
 import { CreateProblemDto } from '../dto/create-problem.dto';
@@ -20,6 +21,7 @@ import { QueryProblemsDto } from '../dto/query-problems.dto';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { RolesGuard } from '../guards/roles.guard';
 import { OptionalAuthGuard } from '../guards/optional-auth.guard';
+import { ProgrammingLanguage } from '../entities/starter-code.entity';
 
 export const Roles = (...roles: string[]) => SetMetadata('roles', roles);
 
@@ -97,5 +99,26 @@ export class ProblemController {
       req.isInternalRequest ||
       (req.user && ['recruiter', 'company_admin', 'platform_admin'].includes(req.user.role));
     return this.problemService.getTestCases(id, includeHidden);
+  }
+
+  /**
+   * Get problem files for debugging problems (multi-file)
+   */
+  @Get(':id/files')
+  async getProblemFiles(
+    @Param('id') id: string,
+    @Query('language') language: string,
+  ) {
+    if (!language) {
+      throw new BadRequestException('Language query parameter is required');
+    }
+
+    // Validate language
+    const validLanguages = Object.values(ProgrammingLanguage);
+    if (!validLanguages.includes(language as ProgrammingLanguage)) {
+      throw new BadRequestException(`Invalid language. Must be one of: ${validLanguages.join(', ')}`);
+    }
+
+    return this.problemService.getProblemFiles(id, language as ProgrammingLanguage);
   }
 }

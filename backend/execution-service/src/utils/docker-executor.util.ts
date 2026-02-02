@@ -8,13 +8,21 @@ import { ExecutionResult, ExecutionStatus } from '../dto/execution-result.dto';
 import { ProgrammingLanguage } from '../dto/execute-code.dto';
 import { CodeWrapper } from './code-wrapper.util';
 
+interface LanguageConfig {
+  image: string;
+  filename: string;
+  buildRequired: boolean;
+  buildCmd?: string[];
+  runCmd: string[];
+}
+
 @Injectable()
 export class DockerExecutor {
   private readonly logger = new Logger(DockerExecutor.name);
   private readonly docker: Docker;
   private readonly tempDir: string;
 
-  private readonly languageConfig = {
+  private readonly languageConfig: Record<string, LanguageConfig> = {
     python: {
       image: 'codesphere-python:latest',
       filename: 'solution.py',
@@ -155,6 +163,79 @@ export class DockerExecutor {
     }
   }
 
+  /**
+   * Execute a multi-file project (for debugging problems)
+   * Unlike execute(), this method:
+   * - Writes multiple files to the work directory
+   * - Does NOT wrap code with CodeWrapper
+   * - Executes the entry command directly
+   */
+  async executeProject(
+    files: { filePath: string; content: string }[],
+    language: ProgrammingLanguage,
+    entryCommand: string,
+    stdin: string = '',
+    timeLimitMs: number = 5000,
+    memoryLimitMb: number = 256,
+  ): Promise<ExecutionResult> {
+    const executionId = uuidv4();
+    const workDir = path.join(this.tempDir, executionId);
+
+    try {
+      // Create temporary directory
+      await fs.mkdir(workDir, { recursive: true });
+
+      // Get language configuration for the Docker image
+      const langConfig = this.languageConfig[language];
+      if (!langConfig) {
+        throw new Error(`Unsupported language: ${language}`);
+      }
+
+      // Write all files to the work directory with proper directory structure
+      for (const file of files) {
+        const fullPath = path.join(workDir, file.filePath);
+        const dirPath = path.dirname(fullPath);
+
+        // Create directory if it doesn't exist
+        await fs.mkdir(dirPath, { recursive: true });
+
+        // Write file content (no wrapping - raw code)
+        await fs.writeFile(fullPath, file.content);
+        this.logger.debug(`Wrote file: ${file.filePath}`);
+      }
+
+      // Write stdin to input.txt if provided
+      if (stdin) {
+        await fs.writeFile(path.join(workDir, 'input.txt'), stdin);
+      }
+
+      // Parse entry command into array
+      const cmdParts = entryCommand.split(' ').filter(part => part.trim());
+
+      // Execute the project directly (no build step for now - entry command handles everything)
+      const result = await this.runInContainer(
+        { ...langConfig, runCmd: cmdParts },
+        workDir,
+        stdin ? path.join(workDir, 'input.txt') : undefined,
+        timeLimitMs,
+        memoryLimitMb,
+      );
+
+      return result;
+    } catch (error) {
+      this.logger.error(`Project execution error: ${error.message}`, error.stack);
+      return {
+        status: ExecutionStatus.INTERNAL_ERROR,
+        error: error.message,
+      };
+    } finally {
+      // Cleanup temporary files
+      if (this.configService.get<boolean>('CLEANUP_TEMP_FILES', true)) {
+        await this.cleanupWorkDir(workDir);
+      }
+    }
+  }
+
   private async runInContainer(
     langConfig: any,
     workDir: string,
@@ -164,11 +245,12 @@ export class DockerExecutor {
   ): Promise<ExecutionResult> {
     const containerName = `codesphere-exec-${uuidv4()}`;
     const startTime = Date.now();
+    let container: Docker.Container | null = null;
 
     try {
       // Create container
       // Note: We use file-based input (/app/input.txt) instead of stdin to avoid timing issues
-      const container = await this.docker.createContainer({
+      container = await this.docker.createContainer({
         name: containerName,
         Image: langConfig.image,
         Cmd: langConfig.runCmd,
@@ -213,7 +295,9 @@ export class DockerExecutor {
         const timeout = setTimeout(async () => {
           timedOut = true;
           try {
-            await container.kill();
+            if (container) {
+              await container.kill();
+            }
           } catch (err) {
             // Container may have already exited, ignore
             this.logger.debug(`Failed to kill container (may have exited): ${err.message}`);
@@ -296,10 +380,12 @@ export class DockerExecutor {
       };
     } finally {
       // Clean up container
-      try {
-        await container.remove({ force: true });
-      } catch (err) {
-        this.logger.debug(`Failed to remove container: ${err.message}`);
+      if (container) {
+        try {
+          await container.remove({ force: true });
+        } catch (err) {
+          this.logger.debug(`Failed to remove container: ${err.message}`);
+        }
       }
     }
   }

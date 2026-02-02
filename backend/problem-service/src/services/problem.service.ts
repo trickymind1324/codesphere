@@ -9,7 +9,8 @@ import { Repository, ILike, In, IsNull } from 'typeorm';
 import { Problem } from '../entities/problem.entity';
 import { TestCase } from '../entities/test-case.entity';
 import { Tag } from '../entities/tag.entity';
-import { StarterCode } from '../entities/starter-code.entity';
+import { StarterCode, ProgrammingLanguage } from '../entities/starter-code.entity';
+import { ProblemFile } from '../entities/problem-file.entity';
 import { CreateProblemDto } from '../dto/create-problem.dto';
 import { UpdateProblemDto } from '../dto/update-problem.dto';
 import { QueryProblemsDto } from '../dto/query-problems.dto';
@@ -25,6 +26,8 @@ export class ProblemService {
     private tagRepository: Repository<Tag>,
     @InjectRepository(StarterCode)
     private starterCodeRepository: Repository<StarterCode>,
+    @InjectRepository(ProblemFile)
+    private problemFileRepository: Repository<ProblemFile>,
   ) {}
 
   /**
@@ -309,6 +312,26 @@ export class ProblemService {
     );
 
     await this.problemRepository.save(problem);
+  }
+
+  /**
+   * Get problem files for debugging problems
+   */
+  async getProblemFiles(
+    problemId: string,
+    language: ProgrammingLanguage,
+  ): Promise<ProblemFile[]> {
+    const problem = await this.findOne(problemId);
+
+    const files = await this.problemFileRepository.find({
+      where: {
+        problemId: problem.id,
+        language,
+      },
+      order: { order: 'ASC' },
+    });
+
+    return files;
   }
 
   /**
