@@ -6,7 +6,9 @@ import {
   ExecuteTestCasesDto,
   TestProblemDto,
   SubmitSolutionDto,
+  ExecuteProjectDto,
   ProgrammingLanguage,
+  ValidationType,
 } from '../dto/execute-code.dto';
 import {
   ExecutionResult,
@@ -107,11 +109,15 @@ export class ExecutionService {
           error: executionResult.stderr || executionResult.error,
         };
 
-        // Check if test case passed
+        // Check if test case passed using appropriate validation type
         if (executionResult.status === ExecutionStatus.SUCCESS && testCase.expectedOutput) {
-          const passed =
-            this.normalizeOutput(executionResult.stdout) ===
-            this.normalizeOutput(testCase.expectedOutput);
+          const validationType = testCase.validationType || ValidationType.EXACT;
+          const passed = this.validateOutput(
+            executionResult.stdout || '',
+            testCase.expectedOutput,
+            validationType,
+            executionResult.exitCode,
+          );
           testCaseResult.passed = passed;
 
           if (passed) {
@@ -212,6 +218,7 @@ export class ExecutionService {
         testCases: exampleTestCases.map((tc: any) => ({
           input: tc.input,
           expectedOutput: tc.expectedOutput,
+          validationType: tc.validationType || ValidationType.EXACT,
         })),
         timeLimitMs: problem.timeLimitMs,
         memoryLimitMb: problem.memoryLimitMb,
@@ -277,6 +284,7 @@ export class ExecutionService {
         testCases: testCases.map((tc: any) => ({
           input: tc.input,
           expectedOutput: tc.expectedOutput,
+          validationType: tc.validationType || ValidationType.EXACT,
         })),
         timeLimitMs: problem.timeLimitMs,
         memoryLimitMb: problem.memoryLimitMb,
@@ -348,6 +356,44 @@ export class ExecutionService {
   }
 
   /**
+   * Execute a multi-file project (for debugging problems)
+   */
+  async executeProject(dto: ExecuteProjectDto): Promise<ExecutionResult> {
+    this.checkConcurrentExecutions();
+
+    try {
+      this.currentExecutions++;
+
+      const timeLimitMs =
+        dto.timeLimitMs || this.configService.get<number>('MAX_EXECUTION_TIME_MS', 5000);
+      const memoryLimitMb =
+        dto.memoryLimitMb || this.configService.get<number>('MAX_MEMORY_MB', 256);
+
+      const result = await this.dockerExecutor.executeProject(
+        dto.files,
+        dto.language,
+        dto.entryCommand,
+        dto.stdin || '',
+        timeLimitMs,
+        memoryLimitMb,
+      );
+
+      // Check output size
+      const maxOutputSize = this.configService.get<number>('MAX_OUTPUT_SIZE_BYTES', 1048576);
+      if (result.stdout && result.stdout.length > maxOutputSize) {
+        return {
+          status: ExecutionStatus.OUTPUT_LIMIT_EXCEEDED,
+          error: 'Output size limit exceeded',
+        };
+      }
+
+      return result;
+    } finally {
+      this.currentExecutions--;
+    }
+  }
+
+  /**
    * Check if concurrent execution limit is reached
    */
   private checkConcurrentExecutions(): void {
@@ -363,6 +409,40 @@ export class ExecutionService {
    */
   private normalizeOutput(output: string): string {
     return output.trim().replace(/\r\n/g, '\n');
+  }
+
+  /**
+   * Validate output based on validation type
+   */
+  private validateOutput(
+    actualOutput: string,
+    expectedOutput: string,
+    validationType: ValidationType,
+    exitCode?: number,
+  ): boolean {
+    switch (validationType) {
+      case ValidationType.EXACT:
+        return this.normalizeOutput(actualOutput) === this.normalizeOutput(expectedOutput);
+
+      case ValidationType.CONTAINS:
+        return actualOutput.includes(expectedOutput);
+
+      case ValidationType.REGEX:
+        try {
+          const regex = new RegExp(expectedOutput);
+          return regex.test(actualOutput);
+        } catch (error) {
+          this.logger.error(`Invalid regex pattern: ${expectedOutput}`);
+          return false;
+        }
+
+      case ValidationType.EXIT_CODE:
+        const expectedExitCode = parseInt(expectedOutput, 10);
+        return exitCode === expectedExitCode;
+
+      default:
+        return this.normalizeOutput(actualOutput) === this.normalizeOutput(expectedOutput);
+    }
   }
 
   /**

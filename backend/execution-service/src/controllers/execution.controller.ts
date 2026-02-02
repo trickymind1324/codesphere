@@ -13,6 +13,7 @@ import {
   ExecuteTestCasesDto,
   TestProblemDto,
   SubmitSolutionDto,
+  ExecuteProjectDto,
 } from '../dto/execute-code.dto';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 
@@ -58,6 +59,20 @@ export class ExecutionController {
     const result = await this.executionService.submitSolution(dto, req.user.sub);
     return {
       message: 'Solution submitted successfully',
+      result,
+    };
+  }
+
+  /**
+   * Execute a multi-file project (for debugging problems)
+   */
+  @Post('project')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async executeProject(@Body() dto: ExecuteProjectDto) {
+    const result = await this.executionService.executeProject(dto);
+    return {
+      message: 'Project executed successfully',
       result,
     };
   }

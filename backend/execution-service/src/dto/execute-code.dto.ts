@@ -20,6 +20,13 @@ export enum ProgrammingLanguage {
   GO = 'go',
 }
 
+export enum ValidationType {
+  EXACT = 'exact', // stdout.trim() === expectedOutput.trim()
+  CONTAINS = 'contains', // stdout.includes(expectedOutput)
+  REGEX = 'regex', // new RegExp(expectedOutput).test(stdout)
+  EXIT_CODE = 'exit_code', // exitCode === parseInt(expectedOutput)
+}
+
 export class TestCaseInput {
   @IsString()
   input: string;
@@ -27,6 +34,10 @@ export class TestCaseInput {
   @IsOptional()
   @IsString()
   expectedOutput?: string;
+
+  @IsOptional()
+  @IsEnum(ValidationType)
+  validationType?: ValidationType;
 }
 
 export class ExecuteCodeDto {
@@ -98,4 +109,45 @@ export class SubmitSolutionDto {
 
   @IsEnum(ProgrammingLanguage)
   language: ProgrammingLanguage;
+}
+
+export class ProjectFileDto {
+  @IsString()
+  filePath: string;
+
+  @IsString()
+  content: string;
+}
+
+export class ExecuteProjectDto {
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ProjectFileDto)
+  files: ProjectFileDto[];
+
+  @IsEnum(ProgrammingLanguage)
+  language: ProgrammingLanguage;
+
+  @IsString()
+  entryCommand: string;
+
+  @IsOptional()
+  @IsString()
+  problemId?: string;
+
+  @IsOptional()
+  @IsString()
+  stdin?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(100)
+  @Max(30000)
+  timeLimitMs?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(16)
+  @Max(512)
+  memoryLimitMb?: number;
 }
