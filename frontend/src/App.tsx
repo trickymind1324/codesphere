@@ -6,7 +6,7 @@ import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage';
 import { ResetPasswordPage } from '@/pages/ResetPasswordPage';
 import { DashboardPage } from '@/pages/DashboardPage';
 import { ProblemsPage } from '@/pages/ProblemsPage';
-import { ProblemDetailPage } from '@/pages/ProblemDetailPage';
+import { ProblemRouter } from '@/pages/ProblemRouter';
 import { SubmissionsPage } from '@/pages/SubmissionsPage';
 import { RecruiterDashboard } from '@/pages/RecruiterDashboard';
 import { AssessmentForm } from '@/pages/AssessmentForm';
@@ -95,7 +95,7 @@ function App() {
             path="/problems/:slug"
             element={
               <ProtectedRoute allowedRoles={['candidate']}>
-                <ProblemDetailPage />
+                <ProblemRouter />
               </ProtectedRoute>
             }
           />

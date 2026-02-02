@@ -57,6 +57,32 @@ export interface SubmitCodeResponse {
   results: TestResult[];
 }
 
+// Multi-file project execution for debugging problems
+export interface ProjectFile {
+  filePath: string;
+  content: string;
+}
+
+export interface ExecuteProjectRequest {
+  files: ProjectFile[];
+  language: string;
+  entryCommand: string;
+  problemId?: string;
+  stdin?: string;
+  timeLimitMs?: number;
+  memoryLimitMb?: number;
+}
+
+export interface ExecuteProjectResponse {
+  status: 'success' | 'error' | 'timeout' | 'runtime_error' | 'compile_error';
+  stdout?: string;
+  stderr?: string;
+  error?: string;
+  executionTime?: number;
+  memoryUsage?: number;
+  exitCode?: number;
+}
+
 export const executionApi = {
   // Run code with custom input
   runCode: async (request: ExecuteCodeRequest): Promise<ExecuteCodeResponse> => {
@@ -120,6 +146,32 @@ export const executionApi = {
       executionTime: result.executionTimeMs || 0,
       memoryUsage: result.memoryUsageKb || 0,
       results: [], // Submission doesn't return individual results
+    };
+  },
+
+  // Execute a multi-file project (for debugging problems)
+  executeProject: async (request: ExecuteProjectRequest): Promise<ExecuteProjectResponse> => {
+    const response = await api.post('/api/v1/execute/project', request);
+    const { result } = response.data;
+
+    // Map backend status to frontend status
+    const statusMap: Record<string, ExecuteProjectResponse['status']> = {
+      success: 'success',
+      runtime_error: 'runtime_error',
+      time_limit_exceeded: 'timeout',
+      memory_limit_exceeded: 'error',
+      compile_error: 'compile_error',
+      internal_error: 'error',
+    };
+
+    return {
+      status: statusMap[result.status] || 'error',
+      stdout: result.stdout,
+      stderr: result.stderr,
+      error: result.error,
+      executionTime: result.executionTimeMs,
+      memoryUsage: result.memoryUsageKb,
+      exitCode: result.exitCode,
     };
   },
 };
