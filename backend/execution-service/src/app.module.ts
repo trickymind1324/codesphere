@@ -13,6 +13,9 @@ import { DockerExecutor } from './utils/docker-executor.util';
 // Guards
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
+// Gateways
+import { ExecutionGateway } from './gateways/execution.gateway';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -21,6 +24,6 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
     }),
   ],
   controllers: [ExecutionController],
-  providers: [ExecutionService, DockerExecutor, JwtAuthGuard],
+  providers: [ExecutionService, DockerExecutor, JwtAuthGuard, ExecutionGateway],
 })
 export class AppModule {}

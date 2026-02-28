@@ -8,6 +8,12 @@ import { ExecutionResult, ExecutionStatus } from '../dto/execution-result.dto';
 import { ProgrammingLanguage } from '../dto/execute-code.dto';
 import { CodeWrapper } from './code-wrapper.util';
 
+export interface StreamingHandle {
+  resultPromise: Promise<ExecutionResult>;
+  kill: () => Promise<void>;
+  containerId: string;
+}
+
 interface LanguageConfig {
   image: string;
   filename: string;
@@ -234,6 +240,191 @@ export class DockerExecutor {
         await this.cleanupWorkDir(workDir);
       }
     }
+  }
+
+  /**
+   * Streaming variant of executeProject - emits output chunks via callback
+   * instead of buffering all output before returning.
+   */
+  async executeProjectStreaming(
+    files: { filePath: string; content: string }[],
+    language: ProgrammingLanguage,
+    entryCommand: string,
+    onOutput: (stream: 'stdout' | 'stderr', data: string) => void,
+    stdin: string = '',
+    timeLimitMs: number = 5000,
+    memoryLimitMb: number = 256,
+  ): Promise<StreamingHandle> {
+    const executionId = uuidv4();
+    const workDir = path.join(this.tempDir, executionId);
+    const containerName = `codesphere-exec-${uuidv4()}`;
+
+    const langConfig = this.languageConfig[language];
+    if (!langConfig) {
+      throw new Error(`Unsupported language: ${language}`);
+    }
+
+    // Prepare files on disk
+    await fs.mkdir(workDir, { recursive: true });
+
+    for (const file of files) {
+      const fullPath = path.join(workDir, file.filePath);
+      await fs.mkdir(path.dirname(fullPath), { recursive: true });
+      await fs.writeFile(fullPath, file.content);
+    }
+
+    if (stdin) {
+      await fs.writeFile(path.join(workDir, 'input.txt'), stdin);
+    }
+
+    const cmdParts = entryCommand.split(' ').filter(part => part.trim());
+
+    // Create container
+    const container = await this.docker.createContainer({
+      name: containerName,
+      Image: langConfig.image,
+      Cmd: cmdParts,
+      Tty: false,
+      AttachStdin: false,
+      AttachStdout: true,
+      AttachStderr: true,
+      OpenStdin: false,
+      StdinOnce: false,
+      HostConfig: {
+        Memory: memoryLimitMb * 1024 * 1024,
+        MemorySwap: memoryLimitMb * 1024 * 1024,
+        NanoCpus: 1000000000,
+        NetworkMode: this.configService.get<boolean>('SANDBOX_NETWORK_ENABLED', false)
+          ? 'bridge'
+          : 'none',
+        PidsLimit: 50,
+        Binds: [`${workDir}:/app`],
+        ReadonlyRootfs: false,
+        AutoRemove: false,
+      },
+      WorkingDir: '/app',
+    });
+
+    const stream = await container.attach({
+      stream: true,
+      stdout: true,
+      stderr: true,
+      stdin: false,
+    });
+
+    const startTime = Date.now();
+    await container.start();
+
+    let stdout = '';
+    let stderr = '';
+    let timedOut = false;
+    let killed = false;
+
+    const killContainer = async () => {
+      if (killed) return;
+      killed = true;
+      try {
+        await container.kill();
+      } catch (err) {
+        this.logger.debug(`Failed to kill container: ${err.message}`);
+      }
+    };
+
+    const resultPromise = new Promise<ExecutionResult>((resolve) => {
+      const timeout = setTimeout(async () => {
+        timedOut = true;
+        await killContainer();
+      }, timeLimitMs);
+
+      stream.on('data', (chunk: Buffer) => {
+        if (chunk[0] === 1) {
+          const data = chunk.subarray(8).toString('utf-8');
+          stdout += data;
+          onOutput('stdout', data);
+        } else if (chunk[0] === 2) {
+          const data = chunk.subarray(8).toString('utf-8');
+          stderr += data;
+          onOutput('stderr', data);
+        }
+      });
+
+      stream.on('end', () => {
+        clearTimeout(timeout);
+      });
+
+      stream.on('error', () => {
+        clearTimeout(timeout);
+      });
+
+      container.wait().then(async (exitInfo) => {
+        clearTimeout(timeout);
+        const executionTimeMs = Date.now() - startTime;
+
+        let memoryUsageKb = 0;
+        try {
+          const stats = await container.stats({ stream: false });
+          memoryUsageKb = Math.round(stats.memory_stats.usage / 1024);
+        } catch (err) {
+          this.logger.debug(`Failed to get container stats: ${err.message}`);
+        }
+
+        let status: ExecutionStatus;
+        if (timedOut) {
+          status = ExecutionStatus.TIME_LIMIT_EXCEEDED;
+        } else if (killed) {
+          status = ExecutionStatus.INTERNAL_ERROR;
+        } else if (exitInfo.StatusCode === 0) {
+          status = ExecutionStatus.SUCCESS;
+        } else if (memoryUsageKb >= memoryLimitMb * 1024) {
+          status = ExecutionStatus.MEMORY_LIMIT_EXCEEDED;
+        } else if (stderr.length > 0) {
+          status = ExecutionStatus.RUNTIME_ERROR;
+        } else {
+          status = ExecutionStatus.RUNTIME_ERROR;
+        }
+
+        // Cleanup
+        try { await container.remove({ force: true }); } catch {}
+        if (this.configService.get<boolean>('CLEANUP_TEMP_FILES', true)) {
+          await this.cleanupWorkDir(workDir);
+        }
+
+        resolve({
+          status,
+          stdout: stdout.trim(),
+          stderr: stderr.trim(),
+          exitCode: exitInfo.StatusCode,
+          executionTimeMs,
+          memoryUsageKb,
+        });
+      }).catch(async (error) => {
+        const executionTimeMs = Date.now() - startTime;
+        try { await container.remove({ force: true }); } catch {}
+        if (this.configService.get<boolean>('CLEANUP_TEMP_FILES', true)) {
+          await this.cleanupWorkDir(workDir);
+        }
+
+        if (timedOut) {
+          resolve({
+            status: ExecutionStatus.TIME_LIMIT_EXCEEDED,
+            executionTimeMs,
+            error: 'Execution time limit exceeded',
+          });
+        } else {
+          resolve({
+            status: ExecutionStatus.INTERNAL_ERROR,
+            error: error.message,
+            executionTimeMs,
+          });
+        }
+      });
+    });
+
+    return {
+      resultPromise,
+      kill: killContainer,
+      containerId: containerName,
+    };
   }
 
   private async runInContainer(

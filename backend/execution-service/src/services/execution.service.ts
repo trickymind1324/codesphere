@@ -394,6 +394,27 @@ export class ExecutionService {
   }
 
   /**
+   * Acquire an execution slot from the shared concurrency pool.
+   * Used by the WebSocket gateway to share the same pool as HTTP endpoints.
+   * Throws BadRequestException if the pool is full.
+   */
+  acquireExecution(): void {
+    if (this.currentExecutions >= this.maxConcurrentExecutions) {
+      throw new BadRequestException(
+        'Maximum concurrent executions reached. Please try again later.',
+      );
+    }
+    this.currentExecutions++;
+  }
+
+  /**
+   * Release an execution slot back to the shared concurrency pool.
+   */
+  releaseExecution(): void {
+    this.currentExecutions = Math.max(0, this.currentExecutions - 1);
+  }
+
+  /**
    * Check if concurrent execution limit is reached
    */
   private checkConcurrentExecutions(): void {
