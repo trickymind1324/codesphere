@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { IoAdapter } from '@nestjs/platform-socket.io';
 import { AppModule } from './app.module';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
@@ -37,6 +38,9 @@ async function bootstrap() {
   // API prefix
   const apiPrefix = configService.get<string>('API_PREFIX') || '/api/v1';
   app.setGlobalPrefix(apiPrefix);
+
+  // WebSocket adapter for Socket.IO
+  app.useWebSocketAdapter(new IoAdapter(app));
 
   // Build Docker images if enabled
   if (configService.get<boolean>('ENABLE_DOCKER', true)) {

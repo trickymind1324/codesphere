@@ -7,6 +7,7 @@ import remarkGfm from 'remark-gfm';
 import {
   ArrowLeft,
   Play,
+  Square,
   Send,
   ChevronDown,
   ChevronUp,
@@ -17,6 +18,7 @@ import { executionApi, ExecuteProjectResponse } from '@/api/execution.api';
 import { FileTree } from '@/components/debugging/FileTree';
 import { FileTabs } from '@/components/debugging/FileTabs';
 import { Terminal } from '@/components/debugging/Terminal';
+import { useExecutionSocket } from '@/hooks/useExecutionSocket';
 import { cn } from '@/lib/utils';
 import toast from 'react-hot-toast';
 
@@ -69,6 +71,9 @@ export function DebuggingProblemPage() {
   // Terminal state
   const [terminalOutput, setTerminalOutput] = useState('');
   const [terminalError, setTerminalError] = useState('');
+
+  // WebSocket execution
+  const { executeProject: wsExecuteProject, killExecution, connected: wsConnected } = useExecutionSocket();
 
   // Fetch problem data
   const { data: problem, isLoading: problemLoading } = useQuery({
@@ -185,40 +190,82 @@ export function DebuggingProblemPage() {
     setTerminalOutput('');
     setTerminalError('');
 
-    try {
-      const projectFiles = Array.from(files.entries()).map(([filePath, data]) => ({
-        filePath,
-        content: data.content,
-      }));
+    const projectFiles = Array.from(files.entries()).map(([filePath, data]) => ({
+      filePath,
+      content: data.content,
+    }));
 
-      const response: ExecuteProjectResponse = await executionApi.executeProject({
-        files: projectFiles,
-        language: selectedLanguage,
-        entryCommand: problem.executionConfig.entryCommand,
-        problemId: problem.id,
-      });
+    // Use WebSocket streaming if connected, otherwise fall back to HTTP
+    if (wsConnected) {
+      wsExecuteProject(
+        {
+          files: projectFiles,
+          language: selectedLanguage,
+          entryCommand: problem.executionConfig.entryCommand,
+          problemId: problem.id,
+        },
+        {
+          onOutput: (stream, data) => {
+            if (stream === 'stdout') {
+              setTerminalOutput((prev) => prev + data);
+            } else {
+              setTerminalError((prev) => prev + data);
+            }
+          },
+          onCompleted: (result) => {
+            setIsRunning(false);
+            if (result.status === 'success') {
+              toast.success('Code executed successfully');
+            } else if (result.status === 'time_limit_exceeded') {
+              toast.error('Time limit exceeded');
+            } else if (result.status === 'runtime_error') {
+              toast.error('Runtime error');
+            } else if (result.status === 'compile_error') {
+              toast.error('Compilation error');
+            }
+            if (result.error) {
+              setTerminalError((prev) => prev ? prev + '\n' + result.error : result.error!);
+            }
+          },
+          onError: (message) => {
+            setIsRunning(false);
+            setTerminalError(message);
+            toast.error('Execution failed');
+          },
+        },
+      );
+    } else {
+      // HTTP fallback
+      try {
+        const response: ExecuteProjectResponse = await executionApi.executeProject({
+          files: projectFiles,
+          language: selectedLanguage,
+          entryCommand: problem.executionConfig.entryCommand,
+          problemId: problem.id,
+        });
 
-      if (response.stdout) {
-        setTerminalOutput(response.stdout);
-      }
-      if (response.stderr || response.error) {
-        setTerminalError(response.stderr || response.error || '');
-      }
+        if (response.stdout) {
+          setTerminalOutput(response.stdout);
+        }
+        if (response.stderr || response.error) {
+          setTerminalError(response.stderr || response.error || '');
+        }
 
-      if (response.status === 'success') {
-        toast.success('Code executed successfully');
-      } else if (response.status === 'compile_error') {
-        toast.error('Compilation error');
-      } else if (response.status === 'timeout') {
-        toast.error('Time limit exceeded');
-      } else if (response.status === 'runtime_error') {
-        toast.error('Runtime error');
+        if (response.status === 'success') {
+          toast.success('Code executed successfully');
+        } else if (response.status === 'compile_error') {
+          toast.error('Compilation error');
+        } else if (response.status === 'timeout') {
+          toast.error('Time limit exceeded');
+        } else if (response.status === 'runtime_error') {
+          toast.error('Runtime error');
+        }
+      } catch (error: any) {
+        setTerminalError(error.message || 'Failed to execute code');
+        toast.error('Failed to execute code');
+      } finally {
+        setIsRunning(false);
       }
-    } catch (error: any) {
-      setTerminalError(error.message || 'Failed to execute code');
-      toast.error('Failed to execute code');
-    } finally {
-      setIsRunning(false);
     }
   };
 
@@ -312,19 +359,25 @@ export function DebuggingProblemPage() {
             ))}
           </select>
 
-          {/* Run button */}
-          <button
-            onClick={handleRun}
-            disabled={isRunning || isSubmitting}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed rounded text-sm font-medium"
-          >
-            {isRunning ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
+          {/* Run / Stop buttons */}
+          {isRunning ? (
+            <button
+              onClick={killExecution}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 rounded text-sm font-medium"
+            >
+              <Square className="w-4 h-4" />
+              Stop
+            </button>
+          ) : (
+            <button
+              onClick={handleRun}
+              disabled={isSubmitting}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed rounded text-sm font-medium"
+            >
               <Play className="w-4 h-4" />
-            )}
-            Run
-          </button>
+              Run
+            </button>
+          )}
 
           {/* Submit button */}
           <button
@@ -422,6 +475,7 @@ export function DebuggingProblemPage() {
             output={terminalOutput}
             error={terminalError}
             isRunning={isRunning}
+            isConnected={wsConnected}
             onClear={handleClearTerminal}
             className="h-48"
           />

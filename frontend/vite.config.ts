@@ -94,6 +94,11 @@ export default defineConfig({
         target: 'ws://localhost:3001',
         ws: true,
       },
+      '/socket.io': {
+        target: 'http://localhost:8002',
+        changeOrigin: true,
+        ws: true,
+      },
     },
   },
   build: {

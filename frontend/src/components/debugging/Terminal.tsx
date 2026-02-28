@@ -6,11 +6,12 @@ interface TerminalProps {
   output: string;
   error?: string;
   isRunning?: boolean;
+  isConnected?: boolean;
   onClear: () => void;
   className?: string;
 }
 
-export function Terminal({ output, error, isRunning, onClear, className }: TerminalProps) {
+export function Terminal({ output, error, isRunning, isConnected, onClear, className }: TerminalProps) {
   const outputRef = useRef<HTMLPreElement>(null);
 
   // Auto-scroll to bottom when output changes
@@ -29,6 +30,15 @@ export function Terminal({ output, error, isRunning, onClear, className }: Termi
         <div className="flex items-center gap-2 text-gray-300">
           <TerminalIcon className="w-4 h-4" />
           <span className="text-sm font-medium">Terminal</span>
+          {isConnected !== undefined && (
+            <span
+              className={cn(
+                'w-2 h-2 rounded-full',
+                isConnected ? 'bg-green-500' : 'bg-red-500'
+              )}
+              title={isConnected ? 'WebSocket connected' : 'WebSocket disconnected'}
+            />
+          )}
           {isRunning && (
             <div className="flex items-center gap-1 text-blue-400 text-xs">
               <Loader2 className="w-3 h-3 animate-spin" />
