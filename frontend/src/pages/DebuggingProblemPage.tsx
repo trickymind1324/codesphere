@@ -179,23 +179,44 @@ export function DebuggingProblemPage() {
     setTerminalError('');
   };
 
-  // Run code
-  const handleRun = async () => {
+  // Shared run/submit core. Mode controls banner text and which toasts fire
+  // on completion. Backend has no multi-file "submit-with-test-validation"
+  // endpoint yet, so submit currently executes the project the same way Run
+  // does — the visible difference is the banner and the success message.
+  const executeProject = async (mode: 'run' | 'submit') => {
     if (!problem?.executionConfig?.entryCommand) {
       toast.error('No entry command configured for this problem');
       return;
     }
 
-    setIsRunning(true);
-    setTerminalOutput('');
+    const banner = mode === 'submit'
+      ? '═══ Submission started ═══\n'
+      : '═══ Run started ═══\n';
+    setTerminalOutput(banner);
     setTerminalError('');
+    if (mode === 'submit') setIsSubmitting(true);
+    setIsRunning(true);
 
     const projectFiles = Array.from(files.entries()).map(([filePath, data]) => ({
       filePath,
       content: data.content,
     }));
 
-    // Use WebSocket streaming if connected, otherwise fall back to HTTP
+    const finishToast = (status: string) => {
+      const label = mode === 'submit' ? 'Submission' : 'Run';
+      if (status === 'success') toast.success(`${label} succeeded`);
+      else if (status === 'time_limit_exceeded' || status === 'timeout')
+        toast.error(`${label} hit the time limit`);
+      else if (status === 'runtime_error') toast.error(`${label} had a runtime error`);
+      else if (status === 'compile_error') toast.error(`${label} failed to compile`);
+      else toast.error(`${label} failed: ${status}`);
+    };
+
+    const appendFooter = (status: string) => {
+      const label = mode === 'submit' ? 'Submission' : 'Run';
+      setTerminalOutput((prev) => `${prev}\n═══ ${label} completed: ${status} ═══\n`);
+    };
+
     if (wsConnected) {
       wsExecuteProject(
         {
@@ -206,79 +227,76 @@ export function DebuggingProblemPage() {
         },
         {
           onOutput: (stream, data) => {
-            if (stream === 'stdout') {
-              setTerminalOutput((prev) => prev + data);
-            } else {
-              setTerminalError((prev) => prev + data);
-            }
+            if (stream === 'stdout') setTerminalOutput((prev) => prev + data);
+            else setTerminalError((prev) => prev + data);
           },
           onCompleted: (result) => {
             setIsRunning(false);
-            if (result.status === 'success') {
-              toast.success('Code executed successfully');
-            } else if (result.status === 'time_limit_exceeded') {
-              toast.error('Time limit exceeded');
-            } else if (result.status === 'runtime_error') {
-              toast.error('Runtime error');
-            } else if (result.status === 'compile_error') {
-              toast.error('Compilation error');
-            }
+            if (mode === 'submit') setIsSubmitting(false);
             if (result.error) {
-              setTerminalError((prev) => prev ? prev + '\n' + result.error : result.error!);
+              setTerminalError((prev) =>
+                prev ? prev + '\n' + result.error : result.error!,
+              );
             }
+            appendFooter(result.status);
+            finishToast(result.status);
           },
           onError: (message) => {
             setIsRunning(false);
+            if (mode === 'submit') setIsSubmitting(false);
             setTerminalError(message);
-            toast.error('Execution failed');
+            appendFooter('error');
+            toast.error(`${mode === 'submit' ? 'Submission' : 'Run'} failed`);
           },
         },
       );
-    } else {
-      // HTTP fallback
-      try {
-        const response: ExecuteProjectResponse = await executionApi.executeProject({
-          files: projectFiles,
-          language: selectedLanguage,
-          entryCommand: problem.executionConfig.entryCommand,
-          problemId: problem.id,
-        });
-
-        if (response.stdout) {
-          setTerminalOutput(response.stdout);
-        }
-        if (response.stderr || response.error) {
-          setTerminalError(response.stderr || response.error || '');
-        }
-
-        if (response.status === 'success') {
-          toast.success('Code executed successfully');
-        } else if (response.status === 'compile_error') {
-          toast.error('Compilation error');
-        } else if (response.status === 'timeout') {
-          toast.error('Time limit exceeded');
-        } else if (response.status === 'runtime_error') {
-          toast.error('Runtime error');
-        }
-      } catch (error: any) {
-        setTerminalError(error.message || 'Failed to execute code');
-        toast.error('Failed to execute code');
-      } finally {
-        setIsRunning(false);
-      }
+      return;
     }
-  };
 
-  // Submit code (for now, just runs code - full submission would need test case validation)
-  const handleSubmit = async () => {
-    setIsSubmitting(true);
+    // HTTP fallback
     try {
-      await handleRun();
-      toast.success('Code submitted for evaluation');
+      const response: ExecuteProjectResponse = await executionApi.executeProject({
+        files: projectFiles,
+        language: selectedLanguage,
+        entryCommand: problem.executionConfig.entryCommand,
+        problemId: problem.id,
+      });
+      if (response.stdout) setTerminalOutput((prev) => prev + response.stdout);
+      if (response.stderr || response.error) {
+        setTerminalError(response.stderr || response.error || '');
+      }
+      appendFooter(response.status);
+      finishToast(response.status);
+    } catch (error: any) {
+      setTerminalError(error.message || 'Failed to execute code');
+      appendFooter('error');
+      toast.error(`${mode === 'submit' ? 'Submission' : 'Run'} failed`);
     } finally {
-      setIsSubmitting(false);
+      setIsRunning(false);
+      if (mode === 'submit') setIsSubmitting(false);
     }
   };
+
+  const handleRun = () => executeProject('run');
+  const handleSubmit = () => executeProject('submit');
+
+  // Cmd+S / Ctrl+S — edits live in React state and are sent to the runner
+  // on Run/Submit, so "save" is just a confirmation of the in-session model.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        const dirty = modifiedFiles.size;
+        toast.success(
+          dirty
+            ? `Saved to session (${dirty} file${dirty > 1 ? 's' : ''} modified)`
+            : 'Saved to session — no unsaved changes',
+        );
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [modifiedFiles.size]);
 
   // Clear terminal
   const handleClearTerminal = () => {
@@ -435,13 +453,25 @@ export function DebuggingProblemPage() {
         {/* Editor and terminal area */}
         <div className="flex-1 flex flex-col min-w-0">
           {/* File tabs */}
-          <FileTabs
-            openFiles={openFiles}
-            activeFile={activeFile}
-            modifiedFiles={modifiedFiles}
-            onSelectFile={handleFileSelect}
-            onCloseFile={handleCloseFile}
-          />
+          <div className="flex items-center justify-between bg-gray-800 border-b border-gray-700">
+            <div className="flex-1 min-w-0">
+              <FileTabs
+                openFiles={openFiles}
+                activeFile={activeFile}
+                modifiedFiles={modifiedFiles}
+                onSelectFile={handleFileSelect}
+                onCloseFile={handleCloseFile}
+              />
+            </div>
+            <div
+              className="px-3 text-xs text-gray-400 whitespace-nowrap"
+              title="Edits live in your session and are sent to the runner on Run/Submit. Cmd/Ctrl+S to confirm."
+            >
+              {modifiedFiles.size > 0
+                ? `● ${modifiedFiles.size} unsaved`
+                : 'Auto-saved'}
+            </div>
+          </div>
 
           {/* Monaco editor */}
           <div className="flex-1 min-h-0">
