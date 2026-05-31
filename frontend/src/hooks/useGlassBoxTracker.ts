@@ -19,7 +19,8 @@ interface TrackedEvent {
 }
 
 interface Options {
-  invitationId: string;
+  /** Invitation token from the assessment URL (e.g. /assessment/:token). */
+  invitationToken: string;
   flushIntervalMs?: number;
   enabled?: boolean;
 }
@@ -27,18 +28,20 @@ interface Options {
 /**
  * Captures candidate behavior signals during an assessment session:
  * paste/copy, tab visibility, and window focus. Batches to the
- * assessment-service /glass-box/events endpoint.
+ * assessment-service endpoint, which resolves the invitation token
+ * server-side and binds the events to that invitation.
  *
  * Exec/submit are tracked via mark() — call from the page that owns those
  * actions.
  */
 export function useGlassBoxTracker({
-  invitationId,
+  invitationToken,
   flushIntervalMs = 5_000,
   enabled = true,
 }: Options) {
   const buffer = useRef<TrackedEvent[]>([]);
   const startedAt = useRef<number>(Date.now());
+  const endpoint = `/api/v1/glass-box/invitations/${encodeURIComponent(invitationToken)}/events`;
 
   const now = () => Date.now() - startedAt.current;
 
@@ -55,11 +58,11 @@ export function useGlassBoxTracker({
     const events = buffer.current;
     buffer.current = [];
     try {
-      await api.post('/api/v1/glass-box/events', { invitationId, events });
+      await api.post(endpoint, { events });
     } catch {
       // best-effort telemetry — never block the candidate
     }
-  }, [invitationId, enabled]);
+  }, [endpoint, enabled]);
 
   const mark = useCallback(
     (eventType: EventType, metadata?: Record<string, unknown>, problemId?: string) => {
@@ -94,11 +97,10 @@ export function useGlassBoxTracker({
     const onUnload = () => {
       if (buffer.current.length === 0) return;
       navigator.sendBeacon?.(
-        '/api/v1/glass-box/events',
-        new Blob(
-          [JSON.stringify({ invitationId, events: buffer.current })],
-          { type: 'application/json' },
-        ),
+        endpoint,
+        new Blob([JSON.stringify({ events: buffer.current })], {
+          type: 'application/json',
+        }),
       );
       buffer.current = [];
     };
@@ -114,7 +116,7 @@ export function useGlassBoxTracker({
       window.clearInterval(intervalId);
       void flush();
     };
-  }, [enabled, flush, flushIntervalMs, invitationId, push]);
+  }, [enabled, flush, flushIntervalMs, endpoint, push]);
 
   return { mark, flush };
 }
