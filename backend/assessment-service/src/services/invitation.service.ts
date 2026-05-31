@@ -122,6 +122,16 @@ export class InvitationService {
     return invitation;
   }
 
+  async findStartedByToken(token: string): Promise<AssessmentInvitation> {
+    const invitation = await this.findByToken(token);
+    if (invitation.status !== InvitationStatus.STARTED) {
+      throw new BadRequestException(
+        'Assessment must be started before sending events',
+      );
+    }
+    return invitation;
+  }
+
   async startAssessment(token: string): Promise<AssessmentInvitation> {
     const invitation = await this.findByToken(token);
 

@@ -39,9 +39,6 @@ export class CandidateEventDto {
 }
 
 export class IngestCandidateEventsDto {
-  @IsUUID()
-  invitationId: string;
-
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => CandidateEventDto)

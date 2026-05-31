@@ -21,12 +21,15 @@ export class GlassBoxService {
     private readonly repo: Repository<CandidateEvent>,
   ) {}
 
-  async ingest(userId: string | null, batch: IngestCandidateEventsDto): Promise<number> {
+  async ingestForInvitation(
+    invitationId: string,
+    batch: IngestCandidateEventsDto,
+  ): Promise<number> {
     if (batch.events.length === 0) return 0;
     const rows = batch.events.map((e) =>
       this.repo.create({
-        invitationId: batch.invitationId,
-        userId,
+        invitationId,
+        userId: null,
         problemId: e.problemId ?? null,
         eventType: e.eventType,
         offsetMs: e.offsetMs,

@@ -7,32 +7,40 @@ import {
   Param,
   ParseUUIDPipe,
   Post,
-  Request,
   UseGuards,
 } from '@nestjs/common';
 
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
-import { OptionalAuthGuard } from '../guards/optional-auth.guard';
 import { RolesGuard, Roles } from '../guards/roles.guard';
 import { GlassBoxService } from '../services/glass-box.service';
+import { InvitationService } from '../services/invitation.service';
 import { IngestCandidateEventsDto } from '../dto/candidate-event.dto';
 
 @Controller('glass-box')
 export class GlassBoxController {
-  constructor(private readonly service: GlassBoxService) {}
+  constructor(
+    private readonly service: GlassBoxService,
+    private readonly invitations: InvitationService,
+  ) {}
 
   /**
-   * Candidate-side ingest. Auth is optional because anti-cheat events
-   * are valuable even when the candidate accesses the assessment via an
-   * invitation token rather than a full login. The invitation_id in the
-   * payload ties events to the assessment session regardless.
+   * Candidate-side ingest. The invitation token in the URL is the auth —
+   * possession of the token proves the caller is operating within the
+   * candidate's assessment session. The token resolves server-side to an
+   * invitation_id, which the events are bound to; the client never names
+   * the invitation_id directly.
+   *
+   * Rejects unless the invitation is in the STARTED state (i.e. between
+   * POST /invitations/:token/start and POST /invitations/:token/complete).
    */
-  @Post('events')
-  @UseGuards(OptionalAuthGuard)
+  @Post('invitations/:token/events')
   @HttpCode(HttpStatus.ACCEPTED)
-  async ingest(@Body() dto: IngestCandidateEventsDto, @Request() req) {
-    const userId = req.user?.sub ?? null;
-    const inserted = await this.service.ingest(userId, dto);
+  async ingest(
+    @Param('token') token: string,
+    @Body() dto: IngestCandidateEventsDto,
+  ) {
+    const invitation = await this.invitations.findStartedByToken(token);
+    const inserted = await this.service.ingestForInvitation(invitation.id, dto);
     return { inserted };
   }
 
