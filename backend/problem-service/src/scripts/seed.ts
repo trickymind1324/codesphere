@@ -4,6 +4,7 @@ import { Problem, ProblemDifficulty, ProblemStatus } from '../entities/problem.e
 import { TestCase } from '../entities/test-case.entity';
 import { Tag } from '../entities/tag.entity';
 import { StarterCode, ProgrammingLanguage } from '../entities/starter-code.entity';
+import { ProblemFile } from '../entities/problem-file.entity';
 
 dotenv.config();
 
@@ -14,7 +15,7 @@ const AppDataSource = new DataSource({
   username: process.env.DB_USERNAME || 'postgres',
   password: process.env.DB_PASSWORD || 'postgres',
   database: process.env.DB_NAME || 'codesphere_problems',
-  entities: [Problem, TestCase, Tag, StarterCode],
+  entities: [Problem, TestCase, Tag, StarterCode, ProblemFile],
   synchronize: false,
   logging: true,
 });
