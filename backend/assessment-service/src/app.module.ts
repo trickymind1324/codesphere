@@ -7,12 +7,14 @@ import { databaseConfig } from './config/database.config';
 import { Assessment } from './entities/assessment.entity';
 import { AssessmentProblem } from './entities/assessment-problem.entity';
 import { AssessmentInvitation } from './entities/assessment-invitation.entity';
+import { CandidateEvent } from './entities/candidate-event.entity';
 
 // Services
 import { AssessmentService } from './services/assessment.service';
 import { EmailService } from './services/email.service';
 import { InvitationService } from './services/invitation.service';
 import { ProblemService } from './services/problem.service';
+import { GlassBoxService } from './services/glass-box.service';
 
 // Controllers
 import { AssessmentController } from './controllers/assessment.controller';
@@ -20,6 +22,7 @@ import {
   InvitationController,
   PublicInvitationController,
 } from './controllers/invitation.controller';
+import { GlassBoxController } from './controllers/glass-box.controller';
 
 @Module({
   imports: [
@@ -31,13 +34,15 @@ import {
       Assessment,
       AssessmentProblem,
       AssessmentInvitation,
+      CandidateEvent,
     ]),
   ],
   controllers: [
     AssessmentController,
     InvitationController,
     PublicInvitationController,
+    GlassBoxController,
   ],
-  providers: [AssessmentService, EmailService, InvitationService, ProblemService],
+  providers: [AssessmentService, EmailService, InvitationService, ProblemService, GlassBoxService],
 })
 export class AppModule {}

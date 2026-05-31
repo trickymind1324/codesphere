@@ -2,6 +2,7 @@ import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { Assessment } from '../entities/assessment.entity';
 import { AssessmentProblem } from '../entities/assessment-problem.entity';
 import { AssessmentInvitation } from '../entities/assessment-invitation.entity';
+import { CandidateEvent } from '../entities/candidate-event.entity';
 
 export const databaseConfig = (): TypeOrmModuleOptions => ({
   type: 'postgres',
@@ -10,7 +11,7 @@ export const databaseConfig = (): TypeOrmModuleOptions => ({
   username: process.env.DB_USERNAME || 'postgres',
   password: process.env.DB_PASSWORD || 'postgres',
   database: process.env.DB_NAME || 'codesphere_assessments',
-  entities: [Assessment, AssessmentProblem, AssessmentInvitation],
+  entities: [Assessment, AssessmentProblem, AssessmentInvitation, CandidateEvent],
   synchronize: false,
   logging: process.env.NODE_ENV === 'development',
   migrations: ['dist/migrations/*.js'],
