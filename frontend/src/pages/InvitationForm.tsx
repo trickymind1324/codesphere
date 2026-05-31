@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { assessmentApi, CreateInvitationDto } from '@/api/assessment.api';
 import { useAuthStore } from '@/stores/auth.store';
 import toast from 'react-hot-toast';
@@ -14,6 +14,7 @@ export function InvitationForm() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const { user, logout } = useAuthStore();
+  const queryClient = useQueryClient();
 
   const [candidates, setCandidates] = useState<CandidateInput[]>([{ name: '', email: '' }]);
   const [bulkInput, setBulkInput] = useState('');
@@ -31,6 +32,9 @@ export function InvitationForm() {
   const sendInvitationsMutation = useMutation({
     mutationFn: (data: CreateInvitationDto) => assessmentApi.sendInvitations(id!, data),
     onSuccess: (invitations) => {
+      queryClient.invalidateQueries({ queryKey: ['invitations', id] });
+      queryClient.invalidateQueries({ queryKey: ['assessment', id] });
+      queryClient.invalidateQueries({ queryKey: ['statistics', id] });
       toast.success(`Successfully sent ${invitations.length} invitation(s)`);
       navigate(`/recruiter/assessments/${id}/results`);
     },

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useSearchParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import Editor from '@monaco-editor/react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -25,6 +25,7 @@ export function ProblemDetailPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const submissionId = searchParams.get('submissionId');
   const { logout } = useAuthStore();
+  const queryClient = useQueryClient();
   const [selectedLanguage, setSelectedLanguage] = useState('python');
   const [code, setCode] = useState('');
   const [activeTab, setActiveTab] = useState<'description' | 'submissions'>('description');
@@ -177,6 +178,12 @@ export function ProblemDetailPage() {
         totalTests: response.totalTests,
         results: response.results,
       });
+
+      // Invalidate cached submissions so the lists reflect the new row.
+      queryClient.invalidateQueries({ queryKey: ['submissions'] });
+      queryClient.invalidateQueries({ queryKey: ['problem-submissions', problem.id] });
+      queryClient.invalidateQueries({ queryKey: ['userStats'] });
+      queryClient.invalidateQueries({ queryKey: ['recentSubmissions'] });
 
       if (response.status === 'accepted') {
         toast.success('Submission accepted! All tests passed! 🎉');

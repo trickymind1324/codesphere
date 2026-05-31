@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { assessmentApi, CreateAssessmentDto, AssessmentStatus, AssessmentProblem } from '@/api/assessment.api';
 import { problemApi, Problem } from '@/api/problem.api';
 import { useAuthStore } from '@/stores/auth.store';
@@ -15,6 +15,7 @@ export function AssessmentForm() {
   const navigate = useNavigate();
   const { id } = useParams();
   const { user, logout } = useAuthStore();
+  const queryClient = useQueryClient();
   const isEditMode = !!id;
 
   const [formData, setFormData] = useState({
@@ -76,6 +77,7 @@ export function AssessmentForm() {
       });
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['assessments'] });
       toast.success('Assessment created successfully');
       navigate('/recruiter/dashboard');
     },
@@ -88,6 +90,8 @@ export function AssessmentForm() {
     mutationFn: (data: { title: string; description?: string; durationMinutes: number }) =>
       assessmentApi.updateAssessment(id!, data),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['assessments'] });
+      if (id) queryClient.invalidateQueries({ queryKey: ['assessment', id] });
       toast.success('Assessment updated successfully');
       navigate('/recruiter/dashboard');
     },
