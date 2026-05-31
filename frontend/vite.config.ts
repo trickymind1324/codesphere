@@ -62,12 +62,41 @@ export default defineConfig({
   server: {
     port: 3000,
     proxy: {
-      '/api': {
-        target: 'http://localhost:8000',
+      '/api/v1/auth': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/api/v1/problems': {
+        target: 'http://localhost:8001',
+        changeOrigin: true,
+      },
+      '/api/v1/tags': {
+        target: 'http://localhost:8001',
+        changeOrigin: true,
+      },
+      '/api/v1/submissions': {
+        target: 'http://localhost:8001',
+        changeOrigin: true,
+      },
+      '/api/v1/execute': {
+        target: 'http://localhost:8002',
+        changeOrigin: true,
+      },
+      '/api/v1/assessments': {
+        target: 'http://localhost:8003',
+        changeOrigin: true,
+      },
+      '/api/v1/invitations': {
+        target: 'http://localhost:8003',
         changeOrigin: true,
       },
       '/ws': {
-        target: 'ws://localhost:8000',
+        target: 'ws://localhost:3001',
+        ws: true,
+      },
+      '/socket.io': {
+        target: 'http://localhost:8002',
+        changeOrigin: true,
         ws: true,
       },
     },

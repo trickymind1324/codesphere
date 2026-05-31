@@ -1,0 +1,76 @@
+version: '3.8'
+
+services:
+  # PostgreSQL for Auth Service
+  postgres-auth:
+    image: postgres:16-alpine
+    container_name: codesphere-postgres-auth
+    environment:
+      POSTGRES_DB: codesphere_auth
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres-auth-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # PostgreSQL for Problem Service
+  postgres-problems:
+    image: postgres:16-alpine
+    container_name: codesphere-postgres-problems
+    environment:
+      POSTGRES_DB: codesphere_problems
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres-problems-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # PostgreSQL for Assessment Service
+  postgres-assessments:
+    image: postgres:16-alpine
+    container_name: codesphere-postgres-assessments
+    environment:
+      POSTGRES_DB: codesphere_assessments
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5435:5432"
+    volumes:
+      - postgres-assessments-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis for Auth Service
+  redis:
+    image: redis:7-alpine
+    container_name: codesphere-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres-auth-data:
+  postgres-problems-data:
+  postgres-assessments-data:
+  redis-data:
