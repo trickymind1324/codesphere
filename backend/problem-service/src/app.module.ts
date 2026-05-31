@@ -10,15 +10,18 @@ import { Tag } from './entities/tag.entity';
 import { StarterCode } from './entities/starter-code.entity';
 import { Submission } from './entities/submission.entity';
 import { ProblemFile } from './entities/problem-file.entity';
+import { PlaybackEvent } from './entities/playback-event.entity';
 
 // Controllers
 import { ProblemController } from './controllers/problem.controller';
 import { TagController } from './controllers/tag.controller';
 import { SubmissionController } from './controllers/submission.controller';
+import { PlaybackController } from './controllers/playback.controller';
 
 // Services
 import { ProblemService } from './services/problem.service';
 import { SubmissionService } from './services/submission.service';
+import { PlaybackService } from './services/playback.service';
 
 // Guards
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
@@ -36,9 +39,9 @@ import { OptionalAuthGuard } from './guards/optional-auth.guard';
       useFactory: getDatabaseConfig,
       inject: [ConfigService],
     }),
-    TypeOrmModule.forFeature([Problem, TestCase, Tag, StarterCode, Submission, ProblemFile]),
+    TypeOrmModule.forFeature([Problem, TestCase, Tag, StarterCode, Submission, ProblemFile, PlaybackEvent]),
   ],
-  controllers: [ProblemController, TagController, SubmissionController],
-  providers: [ProblemService, SubmissionService, JwtAuthGuard, RolesGuard, OptionalAuthGuard],
+  controllers: [ProblemController, TagController, SubmissionController, PlaybackController],
+  providers: [ProblemService, SubmissionService, PlaybackService, JwtAuthGuard, RolesGuard, OptionalAuthGuard],
 })
 export class AppModule {}
