@@ -124,7 +124,7 @@ Please make sure your changes pass linting and tests before submitting.
 
 ## License
 
-This project is currently unlicensed. See the [LICENSE](./LICENSE) file for details once available.
+This project is licensed under the MIT License — see the [LICENSE](./LICENSE) file for details.
 
 ---
 
