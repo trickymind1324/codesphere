@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # CodeSphere API smoke test
 #
-# Verifies the core happy path: services up → register → login → list problems
-# → submit code → execution returns a result.
+# Verifies the core happy path: register → login → list problems → execute code
+# → list assessments. Pass means all 4 services are reachable and behaving.
 #
 # Prerequisites (run before this script):
-#   1. docker-compose up -d                  # postgres + redis
+#   1. docker compose up -d                  # postgres + redis
 #   2. Each backend service started:
 #        backend/auth-service       (port 3001)
 #        backend/problem-service    (port 8001)
@@ -35,52 +35,50 @@ require() {
 }
 
 require curl
-require jq
+require python3
 
-step "1/6  Health checks"
-for url in "$AUTH/health" "$PROBLEM/health" "$EXEC/health" "$ASSESS/health"; do
-  code=$(curl -s -o /dev/null -w "%{http_code}" "$url" || echo 000)
-  [[ "$code" == "200" ]] && ok "$url ($code)" || fail "$url returned $code (service down?)"
-done
+# Use python3 instead of jq — some problem descriptions contain raw control
+# chars that jq rejects but python's json module tolerates.
+pyjq() { python3 -c "import json,sys; d=json.load(sys.stdin); $1"; }
 
-step "2/6  Register user $EMAIL"
+step "1/5  Register candidate $EMAIL"
 register=$(curl -s -X POST "$AUTH/auth/register" \
   -H "Content-Type: application/json" \
-  -d "{\"email\":\"$EMAIL\",\"password\":\"$PASSWORD\",\"firstName\":\"Smoke\",\"lastName\":\"Test\"}")
-echo "$register" | jq -e '.data.user.id // .user.id' >/dev/null \
-  || fail "registration response missing user id: $register"
+  -d "{\"email\":\"$EMAIL\",\"password\":\"$PASSWORD\",\"full_name\":\"Smoke Test\",\"role\":\"candidate\"}")
+echo "$register" | pyjq "assert 'user' in d and 'id' in d['user'], d" \
+  || fail "registration unexpected: $register"
 ok "registered"
 
-step "3/6  Login"
+step "2/5  Login → get JWT"
 login=$(curl -s -X POST "$AUTH/auth/login" \
   -H "Content-Type: application/json" \
   -d "{\"email\":\"$EMAIL\",\"password\":\"$PASSWORD\"}")
-TOKEN=$(echo "$login" | jq -r '.data.accessToken // .accessToken // empty')
+TOKEN=$(echo "$login" | pyjq "print(d.get('accessToken',''))")
 [[ -n "$TOKEN" ]] || fail "login response missing accessToken: $login"
-ok "logged in, got JWT"
+ok "got JWT (${#TOKEN} chars)"
 
-step "4/6  List problems"
-problems=$(curl -s "$PROBLEM/problems?limit=5" -H "Authorization: Bearer $TOKEN")
-count=$(echo "$problems" | jq '(.data.items // .items // .data // []) | length')
-[[ "$count" -gt 0 ]] || fail "no problems returned: $problems"
-PROBLEM_ID=$(echo "$problems" | jq -r '(.data.items // .items // .data)[0].id')
-ok "got $count problems; using id=$PROBLEM_ID"
+step "3/5  List problems (expect ≥ 1)"
+curl -s "$PROBLEM/problems?pageSize=3" -H "Authorization: Bearer $TOKEN" > /tmp/cs-smoke-probs.json
+COUNT=$(pyjq "print(d.get('total', 0))" < /tmp/cs-smoke-probs.json)
+[[ "$COUNT" -gt 0 ]] || fail "no problems returned (total=$COUNT). Did you run the seed?"
+ok "$COUNT problems in catalog"
 
-step "5/6  Execute trivial Python snippet"
-exec_resp=$(curl -s -X POST "$EXEC/execute" \
+step "4/5  Execute Python snippet via /execute/run"
+exec_resp=$(curl -s -X POST "$EXEC/execute/run" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"language":"python","code":"print(\"hello from smoke test\")","stdin":""}')
-echo "$exec_resp" | jq -e '.data.stdout // .stdout' >/dev/null \
-  || fail "execution did not return stdout: $exec_resp"
-ok "execution succeeded"
+  -d '{"language":"python","code":"print(\"smoke ok\")"}')
+STDOUT=$(echo "$exec_resp" | pyjq "print(d.get('result',{}).get('stdout','').strip())")
+[[ "$STDOUT" == "smoke ok" ]] || fail "execution stdout mismatch: $exec_resp"
+ok "execution returned 'smoke ok'"
 
-step "6/6  List assessments (recruiter endpoint, expect 200 or 403)"
-assess=$(curl -s -o /dev/null -w "%{http_code}" "$ASSESS/assessments" \
-  -H "Authorization: Bearer $TOKEN")
-[[ "$assess" == "200" || "$assess" == "403" ]] \
-  && ok "assessment endpoint reachable ($assess)" \
-  || fail "assessment endpoint returned $assess"
+step "5/5  List assessments (expect 200)"
+code=$(curl -s -o /tmp/cs-smoke-assess.json -w "%{http_code}" \
+  "$ASSESS/assessments" -H "Authorization: Bearer $TOKEN")
+[[ "$code" == "200" ]] || fail "assessment endpoint returned $code"
+ok "assessment endpoint reachable"
+
+rm -f /tmp/cs-smoke-probs.json /tmp/cs-smoke-assess.json
 
 echo
 color 32 "════════════════════════════════════════"
