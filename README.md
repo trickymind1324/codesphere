@@ -6,193 +6,128 @@ A unified technical skill platform that bridges algorithmic challenges with real
 
 ---
 
-## 🎯 What is CodeSphere?
+## Overview
 
-CodeSphere is a **two-sided marketplace** that revolutionizes technical skill assessment and development:
+CodeSphere is an open coding platform that combines a modern cloud IDE, real-world debugging scenarios, and AI-assisted learning. It serves two audiences:
 
-### For Developers (B2C)
-- **Modern Cloud IDE** - VS Code-like experience with Monaco Editor, multi-file support, and integrated terminal
-- **Real-World Scenarios** - Fix memory leaks, debug race conditions, optimize slow queries (not just "Reverse a Linked List")
-- **AI Socratic Tutor** - Get hints and guidance without spoiling the solution
-- **Code Playback** - Watch your coding session replay to analyze your approach
-- **Progress Analytics** - Heatmaps, skill tracking, personalized recommendations
-
-### For Companies (B2B)
-- **Glass Box Analytics** - Track *how* candidates solve problems (keystrokes, debugging approach, code quality)
-- **Advanced Anti-Cheating** - Tab switch detection, paste analysis, code style consistency checks
-- **Customizable Assessments** - Mix algorithms + real-world debugging + system design
-- **Better Candidate Experience** - Modern IDE, less stressful, immediate feedback (optional)
+- **Developers** practicing technical skills beyond abstract algorithm puzzles
+- **Companies** evaluating candidates on how they think, not just whether tests pass
 
 ---
 
-## 📁 Documentation
+## Features
 
-All comprehensive documentation is in the [`docs/`](./docs/) directory:
+### For Developers
 
-### Strategy & Planning
-- **[Product Strategy](./docs/Product_Strategy.md)** - Vision, USPs, roadmap
-- **[Development Roadmap](./docs/DEVELOPMENT-ROADMAP.md)** - 52-week implementation plan (0% → 100%)
+- **Modern Cloud IDE** — Monaco Editor with multi-file support and integrated terminal
+- **Real-World Scenarios** — Debug memory leaks, race conditions, slow queries, and broken services
+- **AI Socratic Tutor** — Guided hints that nudge without spoiling the solution
+- **Code Playback** — Replay your coding sessions to review your approach
+- **Progress Analytics** — Heatmaps, skill tracking, and personalized recommendations
 
-### Technical Specifications (FRDs/)
-1. **[Frontend Architecture](./docs/FRDs/01-Frontend-Architecture.md)** - React/TypeScript, Monaco Editor, state management
-2. **[Backend Services](./docs/FRDs/02-Backend-Services-Architecture.md)** - Microservices, API specs, scaling
-3. **[Database & Data](./docs/FRDs/03-Database-Schema-Data-Architecture.md)** - PostgreSQL schemas, Redis caching, retention
-4. **[Infrastructure & DevOps](./docs/FRDs/04-Infrastructure-DevOps.md)** - AWS/Kubernetes, CI/CD, monitoring
-5. **[Security & Compliance](./docs/FRDs/05-Security-Compliance.md)** - Auth, sandboxing, GDPR, pentesting
-6. **[AI/ML Services](./docs/FRDs/06-AI-ML-Services-Architecture.md)** - Socratic tutor, Glass Box analytics, recommendations
+### For Companies
 
-### Product Requirements (PRDs/)
-1. **[Authentication & Authorization](./docs/PRDs/01-Authentication-Authorization.md)** - OAuth, MFA, RBAC, SSO
-2. **[Problem Solving IDE](./docs/PRDs/02-Problem-Solving-IDE.md)** - Code editor, execution, AI tutor
-3. **[Assessment Platform](./docs/PRDs/03-Assessment-Hiring-Platform.md)** - Creation, monitoring, Glass Box reports
-4. **[Monetization & Pricing](./docs/PRDs/04-Monetization-Pricing-Strategy.md)** - Pricing tiers, Stripe, revenue projections
-
-See **[docs/README.md](./docs/README.md)** for full documentation index.
+- **Glass Box Analytics** — Insight into *how* candidates solve problems (keystrokes, debugging flow, code quality)
+- **Anti-Cheating Tools** — Tab switch detection, paste analysis, and code style consistency checks
+- **Customizable Assessments** — Mix algorithms, real-world debugging, and system design
+- **Candidate-Friendly Experience** — Modern IDE with optional immediate feedback
 
 ---
 
-## 🎨 Product
+## Tech Stack
 
-**Name:** CodeSphere
-**Tagline:** "Where Code Meets Reality"
-**Domain:** codesphere.io or codesphere.dev
-**Colors:** TBD
-**Logo:** TBD
-
-**Why CodeSphere?**
-- **"Code"** - Technical focus
-- **"Sphere"** - Complete ecosystem, 360° view, global scale
-- **Available** - No existing coding assessment platform using this name
+- **Frontend:** React 18, TypeScript, Vite, Monaco Editor, Tailwind CSS
+- **Backend:** Node.js (API Gateway, Auth), Go (Problems, Assessments), Rust (Code Execution), Python (AI/ML)
+- **Databases:** PostgreSQL, Redis, Elasticsearch, ClickHouse
+- **Infrastructure:** Docker, Kubernetes, AWS
+- **Realtime:** WebSockets for code execution streaming and collaborative editing
 
 ---
 
-## 💰 Business Model
+## Getting Started
 
-### B2C (Candidates)
-- **Free:** 100 problems, 10 AI hints/day
-- **Pro ($29/mo):** All problems, unlimited hints, code playback, ad-free
+### Prerequisites
 
-### B2B (Enterprise)
-- **Starter ($499/mo):** 50 assessments/month, 5 team members
-- **Growth ($999/mo):** 200 assessments/month, 20 team members, ATS integrations
-- **Enterprise (Custom):** Unlimited, SSO, dedicated support
+- Node.js 20+
+- Docker and Docker Compose
+- Git
 
+### Quick Start
 
----
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/codesphere.git
+cd codesphere
 
-## 📊 Key Differentiators
+# Start database services (PostgreSQL, Redis)
+docker-compose up -d
 
-| Feature | LeetCode/HackerRank | CodeSphere |
-|---------|---------------------|------------|
-| Problems | Abstract algorithms | **Real-world debugging scenarios** |
-| Assessment | Pass/fail test cases | **Glass Box analytics (how you solve)** |
-| Learning | Static solutions | **AI Socratic tutor (guided learning)** |
-| IDE | Basic text editor | **Modern cloud IDE (multi-file, terminal)** |
-| Cheating Detection | Basic proctoring | **Advanced (tab switches, paste analysis, code style)** |
+# Install dependencies
+npm install
 
----
+# Start the development servers (frontend + backend)
+npm run dev
+```
 
-## 🏗️ Technical Stack
+For full setup instructions including each backend service, see [SETUP.md](./SETUP.md).
 
-**Frontend:** React 18 + TypeScript + Vite + Monaco Editor + Tailwind CSS
-**Backend:** Node.js (API Gateway, Auth) + Go (Problems, Assessments) + Rust (Code Execution) + Python (AI/ML)
-**Databases:** PostgreSQL, Redis, Elasticsearch, ClickHouse (analytics)
-**Infrastructure:** AWS EKS (Kubernetes), RDS, ElastiCache, S3
-**AI:** OpenAI GPT-4 / Claude for tutoring and analytics
-**Payments:** Stripe
+### Common Scripts
 
----
-
-## 📈 Development Phases
-
-### Phase 0: Foundation (Weeks 1-2)
-✅ Team setup, infrastructure, CI/CD
-
-### Phase 1: Authentication (Weeks 3-6)
-✅ Email/password, OAuth, RBAC, database schema
-
-### Phase 2: Problem Solving IDE (Weeks 7-12)
-✅ Monaco Editor, problem service, basic code execution, submissions
-
-### Phase 3: Code Execution Engine (Weeks 13-16)
-✅ Docker sandbox, gVisor, WebSocket streaming, job queue
-
-### Phase 4: Assessment Platform (Weeks 17-22)
-✅ Assessment creation, invitations, anti-cheating, recruiter dashboard
-
-### Phase 5: AI/ML Integration (Weeks 23-28)
-✅ Socratic tutor, Glass Box analytics, keystroke tracking, recommendations
-
-### Phase 6: Analytics & Monetization (Weeks 29-34)
-✅ User dashboard, Stripe payments, feature gating, referral program
-
-### Phase 7: Polish & Launch (Weeks 35-40)
-✅ Testing, performance optimization, security audit, beta launch
-
-### Phase 8: Post-Launch Growth (Weeks 41-52)
-✅ Public launch, code playback, system design whiteboard, marketplace
-
-**Full details:** [docs/DEVELOPMENT-ROADMAP.md](./docs/DEVELOPMENT-ROADMAP.md)
+```bash
+npm run dev            # Start frontend and backend in dev mode
+npm run build          # Build all workspaces
+npm test               # Run tests across workspaces
+npm run lint           # Lint all workspaces
+npm run format         # Format code with Prettier
+```
 
 ---
 
-## 📞 Team & Roles
+## Project Structure
 
-### Core Team (Months 1-6)
-- 2 Frontend Engineers (React/TypeScript)
-- 2 Backend Engineers (Node.js, Go, Rust)
-- 1 DevOps Engineer
-- 1 Product Manager
-- 1 UI/UX Designer
-
-### Expanded Team (Months 7-12)
-- +3 Backend Engineers
-- +1 Frontend Engineer
-- +1 QA Engineer
-- +1 Customer Success Manager
-- +1 Sales Representative
+```text
+.
+├── frontend/          # React + TypeScript client (Monaco-based IDE)
+├── backend/           # Microservices (API Gateway, Auth, Problems, Execution, AI)
+├── database/          # Schema files and migrations
+├── infrastructure/    # Docker, Kubernetes, and deployment configs
+├── docs/              # Product, technical, and API documentation
+└── scripts/           # Utility and tooling scripts
+```
 
 ---
 
-## 🎯 Success Metrics (Year 1)
+## Documentation
 
-**Candidate Side:**
-- 100,000 total users
-- 10,000 Pro subscribers (10% conversion)
-- >40% problem completion rate
-- >4.5/5 user satisfaction
+Comprehensive documentation lives in the [`docs/`](./docs/) directory:
 
-**Enterprise Side:**
-- 100 enterprise customers
-- >70% assessment completion rate
-- >60% interview conversion (pass assessment → pass interview)
-- 20% reduction in time-to-hire
+- **[Product Strategy](./docs/Product_Strategy.md)** — Vision, differentiators, roadmap
+- **Technical Specifications (FRDs)** — Frontend, backend, database, infrastructure, security, AI/ML
+- **Product Requirements (PRDs)** — Authentication, IDE, assessments, monetization
 
-**Revenue:**
-- **B2C ARR:** $3.48M (10,000 × $29/mo × 12)
-- **B2B ARR:** $839K (50 Starter + 20 Growth + 5 Enterprise)
-- **Total ARR:** ~$4.3M
+See [docs/README.md](./docs/README.md) for the full index.
 
 ---
 
-## 📝 License
+## Contributing
 
-TBD (Proprietary for MVP, consider open-source components later)
+Contributions are welcome! Whether you want to fix bugs, add features, improve documentation, or propose new ideas:
 
----
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/your-feature`)
+3. Commit your changes with clear messages
+4. Push to your fork and open a Pull Request
 
-## 🤝 Contributing
-
-This is currently a planning/documentation phase. Development will begin in Phase 0.
-
-For questions or suggestions, see the team structure in the Development Roadmap.
-
----
-
-**Last Updated:** December 2025
-**Version:** 1.0 (Planning Phase)
-**Status:** Pre-Development
+Please make sure your changes pass linting and tests before submitting.
 
 ---
 
-**Built with ❤️ to revolutionize technical hiring and skill development**
+## License
+
+This project is currently unlicensed. See the [LICENSE](./LICENSE) file for details once available.
+
+---
+
+## Acknowledgements
+
+Built to make technical skill assessment more meaningful — for the people learning, and the teams hiring.
