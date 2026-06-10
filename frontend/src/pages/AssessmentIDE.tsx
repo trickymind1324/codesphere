@@ -8,6 +8,7 @@ import { assessmentApi, InvitationStatus } from '@/api/assessment.api';
 import { problemApi } from '@/api/problem.api';
 import { executionApi, TestResult } from '@/api/execution.api';
 import { AssessmentTimer } from '@/components/features/assessment/AssessmentTimer';
+import { useGlassBoxTracker } from '@/hooks/useGlassBoxTracker';
 import toast from 'react-hot-toast';
 
 const LANGUAGE_OPTIONS = [
@@ -57,6 +58,13 @@ export function AssessmentIDE() {
   const invitation = validationData?.invitation;
   const currentProblemData = assessment?.assessmentProblems?.[problemIndex];
   const currentProblemId = currentProblemData?.problemId;
+
+  // Glass Box analytics: capture paste/copy/tab-focus signals plus run and
+  // submit markers while the assessment session is active.
+  const glassBox = useGlassBoxTracker({
+    invitationToken: token ?? '',
+    enabled: !!token && invitation?.status === InvitationStatus.STARTED,
+  });
 
   // Fetch current problem details
   const { data: problem } = useQuery({
@@ -174,6 +182,7 @@ export function AssessmentIDE() {
 
     setIsRunning(true);
     setTestResults(null);
+    glassBox.mark('execution', { language: selectedLanguage }, problem.id);
 
     try {
       const response = await executionApi.testCode({
@@ -210,6 +219,7 @@ export function AssessmentIDE() {
     if (!problem || !currentProblemId) return;
 
     setIsRunning(true);
+    glassBox.mark('submission', { language: selectedLanguage }, currentProblemId);
 
     try {
       const response = await executionApi.submitCode({

@@ -90,6 +90,18 @@ export default defineConfig({
         target: 'http://localhost:8003',
         changeOrigin: true,
       },
+      '/api/v1/glass-box': {
+        target: 'http://localhost:8003',
+        changeOrigin: true,
+      },
+      '/api/v1/playback': {
+        target: 'http://localhost:8001',
+        changeOrigin: true,
+      },
+      '/api/v1/ai': {
+        target: 'http://localhost:8004',
+        changeOrigin: true,
+      },
       '/ws': {
         target: 'ws://localhost:3001',
         ws: true,

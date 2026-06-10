@@ -8,6 +8,8 @@ import { problemApi } from '@/api/problem.api';
 import { executionApi, TestResult } from '@/api/execution.api';
 import { submissionApi } from '@/api/submission.api';
 import { useAuthStore } from '@/stores/auth.store';
+import { usePlaybackRecorder } from '@/hooks/usePlaybackRecorder';
+import { SocraticTutorPanel } from '@/components/features/problems/SocraticTutorPanel';
 import toast from 'react-hot-toast';
 
 const LANGUAGE_OPTIONS = [
@@ -28,8 +30,9 @@ export function ProblemDetailPage() {
   const queryClient = useQueryClient();
   const [selectedLanguage, setSelectedLanguage] = useState('python');
   const [code, setCode] = useState('');
-  const [activeTab, setActiveTab] = useState<'description' | 'submissions'>('description');
+  const [activeTab, setActiveTab] = useState<'description' | 'submissions' | 'tutor'>('description');
   const [isRunning, setIsRunning] = useState(false);
+  const [playbackSessionId] = useState(() => crypto.randomUUID());
   const [testResults, setTestResults] = useState<{
     status: string;
     passedTests: number;
@@ -56,6 +59,19 @@ export function ProblemDetailPage() {
     queryFn: () => submissionApi.getSubmission(submissionId!),
     enabled: !!submissionId,
   });
+
+  // Record the coding session for Code Playback (best-effort telemetry).
+  const recorder = usePlaybackRecorder({
+    sessionId: playbackSessionId,
+    problemId: problem?.id,
+    language: selectedLanguage,
+    enabled: !loadedSubmission,
+  });
+
+  const handleWatchReplay = async () => {
+    await recorder.flush();
+    window.open(`/playback/${playbackSessionId}`, '_blank');
+  };
 
   // Load code when problem/submission data is available
   useEffect(() => {
@@ -106,6 +122,7 @@ export function ProblemDetailPage() {
 
     setIsRunning(true);
     setTestResults(null);
+    recorder.mark('run');
 
     try {
       const response = await executionApi.testCode({
@@ -114,22 +131,12 @@ export function ProblemDetailPage() {
         problemId: problem.id,
       });
 
-      console.log('Test response:', response);
-
-      const newTestResults = {
+      setTestResults({
         status: response.status,
         passedTests: response.passedTests,
         totalTests: response.totalTests,
         results: response.results,
-      };
-
-      console.log('Setting testResults state to:', newTestResults);
-      setTestResults(newTestResults);
-
-      // Force re-render check
-      setTimeout(() => {
-        console.log('testResults state after set:', newTestResults);
-      }, 100);
+      });
 
       if (response.status === 'success') {
         toast.success(`All ${response.totalTests} tests passed!`);
@@ -164,6 +171,7 @@ export function ProblemDetailPage() {
     if (!problem) return;
 
     setIsRunning(true);
+    recorder.mark('submit');
 
     try {
       const response = await executionApi.submitCode({
@@ -285,9 +293,27 @@ export function ProblemDetailPage() {
               >
                 Submissions
               </button>
+              <button
+                onClick={() => setActiveTab('tutor')}
+                className={`pb-2 text-sm font-medium ${activeTab === 'tutor'
+                    ? 'border-b-2 border-primary text-foreground'
+                    : 'text-muted-foreground hover:text-foreground'
+                  }`}
+              >
+                AI Tutor
+              </button>
             </div>
 
-            {activeTab === 'description' ? (
+            {activeTab === 'tutor' ? (
+              <div className="h-[calc(100vh-180px)]">
+                <SocraticTutorPanel
+                  problemTitle={problem.title}
+                  problemDescription={problem.description}
+                  getCode={() => code}
+                  language={selectedLanguage}
+                />
+              </div>
+            ) : activeTab === 'description' ? (
               <>
                 {/* Description */}
                 <div className="prose prose-sm dark:prose-invert max-w-none markdown-content">
@@ -520,6 +546,15 @@ export function ProblemDetailPage() {
               ))}
             </select>
             <div className="flex gap-2">
+              {!loadedSubmission && (
+                <button
+                  onClick={handleWatchReplay}
+                  title="Watch a replay of this coding session"
+                  className="rounded-md border border-border px-4 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground"
+                >
+                  Replay
+                </button>
+              )}
               <button
                 onClick={handleRunCode}
                 disabled={isRunning}
@@ -544,6 +579,7 @@ export function ProblemDetailPage() {
               language={selectedLanguage === 'cpp' ? 'cpp' : selectedLanguage}
               value={code}
               onChange={(value) => setCode(value || '')}
+              onMount={(editorInstance) => recorder.attach(editorInstance)}
               theme="vs-dark"
               options={{
                 minimap: { enabled: false },
