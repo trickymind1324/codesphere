@@ -590,15 +590,37 @@ export class DockerExecutor {
   }
 
   async buildImages(): Promise<void> {
-    this.logger.log('Building Docker images for code execution...');
+    this.logger.log('Ensuring Docker images for code execution...');
 
     for (const [lang, config] of Object.entries(this.languageConfig)) {
       try {
+        // Skip languages whose image already exists (prebuilt via
+        // scripts/build-runtime-images.sh — the normal path in production).
+        try {
+          await this.docker.getImage(config.image).inspect();
+          this.logger.log(`Image already present: ${config.image}`);
+          continue;
+        } catch {
+          // not present — fall through to build
+        }
+
         const dockerfilePath = path.join(
           __dirname,
           '../../docker/runtimes',
           `Dockerfile.${lang}`,
         );
+
+        // tar-fs emits an uncatchable async error if the context is missing,
+        // so verify the Dockerfile exists before handing it to dockerode.
+        try {
+          await fs.access(dockerfilePath);
+        } catch {
+          this.logger.warn(
+            `Dockerfile for ${lang} not found at ${dockerfilePath}; ` +
+              `build ${config.image} with scripts/build-runtime-images.sh`,
+          );
+          continue;
+        }
 
         this.logger.log(`Building image: ${config.image}`);
 

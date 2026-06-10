@@ -14,5 +14,7 @@ export const getDatabaseConfig = (
   migrations: [__dirname + '/../migrations/*{.ts,.js}'],
   synchronize: false,
   logging: configService.get<string>('NODE_ENV') === 'development',
-  ssl: configService.get<string>('NODE_ENV') === 'production',
+  // Opt-in: managed Postgres (RDS etc.) wants SSL; the dockerized Postgres
+  // does not support it, so don't couple this to NODE_ENV.
+  ssl: configService.get<string>('DB_SSL') === 'true',
 });

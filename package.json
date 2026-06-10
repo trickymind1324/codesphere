@@ -9,12 +9,12 @@
   ],
   "scripts": {
     "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\"",
-    "dev:frontend": "npm run dev --workspace=frontend",
-    "dev:backend": "npm run dev --workspace=api-gateway",
-    "build": "npm run build --workspaces",
-    "build:frontend": "npm run build --workspace=frontend",
-    "test": "npm run test --workspaces",
-    "lint": "npm run lint --workspaces",
+    "dev:frontend": "npm run dev --workspace=@codesphere/frontend",
+    "dev:backend": "concurrently \"npm run dev --workspace=@codesphere/auth-service\" \"npm run dev --workspace=@codesphere/problem-service\" \"npm run dev --workspace=@codesphere/execution-service\" \"npm run dev --workspace=@codesphere/assessment-service\"",
+    "build": "npm run build --workspaces --if-present",
+    "build:frontend": "npm run build --workspace=@codesphere/frontend",
+    "test": "npm run test --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md}\"",
     "prepare": "husky install"
   },
