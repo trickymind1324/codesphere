@@ -55,6 +55,14 @@ services:
       timeout: 5s
       retries: 5
 
+  # Local SMTP relay — invitation emails land in the web UI at :8025
+  mailhog:
+    image: mailhog/mailhog:v1.0.1
+    container_name: codesphere-mailhog-dev
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
   # Redis for Auth Service
   redis:
     image: redis:7-alpine

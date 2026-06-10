@@ -7,14 +7,18 @@ export class EmailService {
   private transporter: nodemailer.Transporter;
 
   constructor() {
+    // Only authenticate when credentials are provided — auth-less relays
+    // (MailHog in dev/staging, IP-allowlisted relays in prod) reject AUTH.
+    const auth =
+      process.env.SMTP_USER && process.env.SMTP_PASSWORD
+        ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASSWORD }
+        : undefined;
+
     this.transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST || 'smtp.gmail.com',
       port: parseInt(process.env.SMTP_PORT || '587'),
       secure: process.env.SMTP_SECURE === 'true',
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASSWORD,
-      },
+      auth,
     });
   }
 

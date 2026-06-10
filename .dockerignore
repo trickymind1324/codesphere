@@ -1,0 +1,12 @@
+**/node_modules
+**/dist
+**/.env
+**/.env.*
+!**/.env.example
+**/__pycache__
+.git
+docs
+infrastructure
+*.md
+backend/auth-service/keys
+backend/problem-service/keys
