@@ -7,12 +7,12 @@ import { submissionApi } from '@/api/submission.api';
 export function DashboardPage() {
   const { user } = useAuthStore();
 
-  const { data: userStats, isLoading: statsLoading } = useQuery({
+  const { data: userStats } = useQuery({
     queryKey: ['userStats'],
     queryFn: () => submissionApi.getUserStats(),
   });
 
-  const { data: recentSubmissions, isLoading: submissionsLoading } = useQuery({
+  const { data: recentSubmissions } = useQuery({
     queryKey: ['recentSubmissions'],
     queryFn: () => submissionApi.getSubmissions({ page: 1, pageSize: 5 }),
   });

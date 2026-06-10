@@ -77,7 +77,8 @@ export function ResetPasswordForm() {
       setIsLoading(true);
       await authApi.resetPassword({
         token,
-        new_password: data.password,
+        password: data.password,
+        confirm_password: data.confirm_password,
       });
 
       toast.success('Password reset successfully! You can now sign in with your new password.');

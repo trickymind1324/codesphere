@@ -29,13 +29,13 @@ export class User {
   email: string;
 
   @Column({ type: 'varchar', length: 255, nullable: true })
-  password_hash: string;
+  password_hash: string | null;
 
   @Column({ type: 'varchar', length: 255 })
   full_name: string;
 
   @Column({ type: 'varchar', length: 500, nullable: true })
-  avatar_url: string;
+  avatar_url: string | null;
 
   @Column({
     type: 'enum',
@@ -55,46 +55,46 @@ export class User {
   email_verified: boolean;
 
   @Column({ type: 'varchar', length: 500, nullable: true })
-  email_verification_token: string;
+  email_verification_token: string | null;
 
   @Column({ type: 'timestamp', nullable: true })
-  email_verification_expires: Date;
+  email_verification_expires: Date | null;
 
   @Column({ type: 'varchar', length: 500, nullable: true })
-  password_reset_token: string;
+  password_reset_token: string | null;
 
   @Column({ type: 'timestamp', nullable: true })
-  password_reset_expires: Date;
+  password_reset_expires: Date | null;
 
   @Column({ type: 'boolean', default: false })
   mfa_enabled: boolean;
 
   @Column({ type: 'varchar', length: 500, nullable: true })
-  mfa_secret: string;
+  mfa_secret: string | null;
 
   @Column({ type: 'jsonb', nullable: true })
-  mfa_backup_codes: string[];
+  mfa_backup_codes: string[] | null;
 
   @Column({ type: 'varchar', length: 100, nullable: true })
-  oauth_provider: string;
+  oauth_provider: string | null;
 
   @Column({ type: 'varchar', length: 500, nullable: true })
-  oauth_id: string;
+  oauth_id: string | null;
 
   @Column({ type: 'uuid', nullable: true })
-  company_id: string;
+  company_id: string | null;
 
   @Column({ type: 'int', default: 0 })
   failed_login_attempts: number;
 
   @Column({ type: 'timestamp', nullable: true })
-  account_locked_until: Date;
+  account_locked_until: Date | null;
 
   @Column({ type: 'timestamp', nullable: true })
-  last_login_at: Date;
+  last_login_at: Date | null;
 
   @Column({ type: 'varchar', length: 45, nullable: true })
-  last_login_ip: string;
+  last_login_ip: string | null;
 
   @CreateDateColumn()
   created_at: Date;
@@ -103,5 +103,5 @@ export class User {
   updated_at: Date;
 
   @Column({ type: 'timestamp', nullable: true })
-  deleted_at: Date;
+  deleted_at: Date | null;
 }

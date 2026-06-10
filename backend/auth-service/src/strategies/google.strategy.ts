@@ -31,6 +31,8 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
       provider: 'google',
     };
 
-    done(null, user);
+    // OAuth profile is a transient shape consumed by the oauth callback route,
+    // not the JWT user that Express.User describes.
+    done(null, user as unknown as Express.User);
   }
 }
