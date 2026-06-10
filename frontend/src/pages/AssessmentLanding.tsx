@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { assessmentApi, AssessmentStatus, InvitationStatus } from '@/api/assessment.api';
+import { assessmentApi, InvitationStatus } from '@/api/assessment.api';
 import toast from 'react-hot-toast';
 
 export function AssessmentLanding() {

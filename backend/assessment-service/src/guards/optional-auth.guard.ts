@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as jwt from 'jsonwebtoken';
+import { resolveJwtPublicKey } from './jwt-auth.guard';
 
 /**
  * Guard that allows both authenticated users and internal service-to-service calls
@@ -29,8 +30,12 @@ export class OptionalAuthGuard implements CanActivate {
 
     if (token) {
       try {
-        const secret = this.configService.get<string>('JWT_ACCESS_SECRET');
-        const payload = jwt.verify(token, secret);
+        // Tokens are RS256-signed by auth-service; verify with its public key.
+        const publicKey = resolveJwtPublicKey(this.configService);
+        if (!publicKey) {
+          throw new Error('JWT public key not configured');
+        }
+        const payload = jwt.verify(token, publicKey, { algorithms: ['RS256'] });
 
         // Attach user info to request
         request.user = payload;

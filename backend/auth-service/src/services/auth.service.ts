@@ -1,7 +1,7 @@
 import { Injectable, UnauthorizedException, BadRequestException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User } from '../entities/user.entity';
+import { User, UserRole } from '../entities/user.entity';
 import { RegisterDto } from '../dto/register.dto';
 import { LoginDto } from '../dto/login.dto';
 import { hashPassword, verifyPassword, generateEmailVerificationToken, generatePasswordResetToken, isAccountLocked, calculateLockTime } from '../utils/crypto.util';
@@ -9,6 +9,20 @@ import { JwtService, TokenPair } from '../utils/jwt.util';
 import { generateMfaSecret, generateMfaQrCode, verifyMfaCode, generateBackupCodes, hashBackupCodes, verifyBackupCode } from '../utils/mfa.util';
 import { RedisService } from './redis.service';
 import { EmailService } from './email.service';
+
+/** Serialized user shape returned to clients — no sensitive fields, dates as ISO strings. */
+export interface SafeUser {
+  id: string;
+  email: string;
+  full_name: string;
+  avatar_url: string | null;
+  role: string;
+  tier: string;
+  email_verified: boolean;
+  mfa_enabled: boolean;
+  created_at: string;
+  updated_at: string;
+}
 
 @Injectable()
 export class AuthService {
@@ -26,7 +40,7 @@ export class AuthService {
   /**
    * Register a new user
    */
-  async register(registerDto: RegisterDto): Promise<{ user: Partial<User>; message: string }> {
+  async register(registerDto: RegisterDto): Promise<{ user: SafeUser; message: string }> {
     const { email, password, full_name, role } = registerDto;
 
     // Check if user already exists
@@ -83,7 +97,7 @@ export class AuthService {
   /**
    * Login user with email and password
    */
-  async login(loginDto: LoginDto, ipAddress: string): Promise<{ user: Partial<User>; tokens: TokenPair }> {
+  async login(loginDto: LoginDto, ipAddress: string): Promise<{ user: SafeUser; tokens: TokenPair }> {
     const { email, password, remember_me, mfa_code } = loginDto;
 
     // Find user by email
@@ -99,8 +113,10 @@ export class AuthService {
       );
     }
 
-    // Verify password
-    const isPasswordValid = await verifyPassword(user.password_hash, password);
+    // Verify password (OAuth-only accounts have no password hash)
+    const isPasswordValid = user.password_hash
+      ? await verifyPassword(user.password_hash, password)
+      : false;
     if (!isPasswordValid) {
       // Increment failed attempts
       user.failed_login_attempts += 1;
@@ -256,7 +272,7 @@ export class AuthService {
     }
 
     // Check if token has expired
-    if (user.email_verification_expires < new Date()) {
+    if (!user.email_verification_expires || user.email_verification_expires < new Date()) {
       throw new BadRequestException('Verification token has expired. Please request a new one.');
     }
 
@@ -340,7 +356,7 @@ export class AuthService {
     }
 
     // Check if token has expired
-    if (user.password_reset_expires < new Date()) {
+    if (!user.password_reset_expires || user.password_reset_expires < new Date()) {
       throw new BadRequestException('Reset token has expired. Please request a new one.');
     }
 
@@ -387,6 +403,10 @@ export class AuthService {
 
     if (!user) {
       throw new UnauthorizedException('User not found');
+    }
+
+    if (!user.password_hash) {
+      throw new BadRequestException('This account uses OAuth login and has no password to change');
     }
 
     // Verify current password
@@ -456,7 +476,7 @@ export class AuthService {
           oauth_provider: provider,
           oauth_id: oauthId,
           email_verified: true, // OAuth emails are pre-verified
-          role: 'candidate', // Default role
+          role: UserRole.CANDIDATE, // Default role
         });
         await this.userRepository.save(user);
       }
@@ -574,8 +594,10 @@ export class AuthService {
       throw new BadRequestException('MFA is not enabled for this account');
     }
 
-    // Verify password
-    const isPasswordValid = await verifyPassword(user.password_hash, password);
+    // Verify password (OAuth-only accounts have no password hash)
+    const isPasswordValid = user.password_hash
+      ? await verifyPassword(user.password_hash, password)
+      : false;
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid password');
     }

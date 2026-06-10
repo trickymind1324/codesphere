@@ -39,7 +39,7 @@ export class CandidateEvent {
   offsetMs: number;
 
   @Column({ type: 'jsonb', default: () => "'{}'::jsonb" })
-  metadata: Record<string, unknown>;
+  metadata: Record<string, any>;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

@@ -104,13 +104,11 @@ export const executionApi = {
   // Test code against problem test cases
   testCode: async (request: TestCodeRequest): Promise<TestCodeResponse> => {
     const response = await api.post('/api/v1/execute/test', request);
-    console.log('Raw API response:', response.data);
 
     const { result } = response.data;
-    console.log('Extracted result:', result);
 
     // Map backend field names to frontend interface
-    const mapped = {
+    const mapped: TestCodeResponse = {
       status: result.overallStatus === 'accepted' ? 'success' :
               result.overallStatus === 'wrong_answer' ? 'partial' : 'failed',
       totalTests: result.totalTestCases,
@@ -127,7 +125,6 @@ export const executionApi = {
       })),
     };
 
-    console.log('Mapped response:', mapped);
     return mapped;
   },
 

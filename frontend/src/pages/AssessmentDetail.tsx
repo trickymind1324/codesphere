@@ -1,8 +1,6 @@
-import { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { assessmentApi, AssessmentStatus } from '@/api/assessment.api';
-import toast from 'react-hot-toast';
 import { formatDistanceToNow } from 'date-fns';
 
 export function AssessmentDetail() {

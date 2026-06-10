@@ -33,7 +33,7 @@ export class PlaybackEvent {
   offsetMs: number;
 
   @Column({ type: 'jsonb' })
-  payload: Record<string, unknown>;
+  payload: Record<string, any>;
 
   @CreateDateColumn({ name: 'recorded_at' })
   recordedAt: Date;

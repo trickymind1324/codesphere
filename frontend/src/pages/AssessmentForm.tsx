@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { assessmentApi, CreateAssessmentDto, AssessmentStatus, AssessmentProblem } from '@/api/assessment.api';
+import { assessmentApi, CreateAssessmentDto, AssessmentStatus } from '@/api/assessment.api';
 import { problemApi, Problem } from '@/api/problem.api';
 import { useAuthStore } from '@/stores/auth.store';
 import toast from 'react-hot-toast';
