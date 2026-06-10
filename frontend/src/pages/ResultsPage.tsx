@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { assessmentApi, InvitationStatus } from '@/api/assessment.api';
 import { useAuthStore } from '@/stores/auth.store';
+import { GlassBoxReport } from '@/components/features/analytics/GlassBoxReport';
 import toast from 'react-hot-toast';
 
 export function ResultsPage() {
@@ -10,6 +11,7 @@ export function ResultsPage() {
   const { id } = useParams<{ id: string }>();
   const { user, logout } = useAuthStore();
   const [statusFilter, setStatusFilter] = useState<InvitationStatus | 'all'>('all');
+  const [glassBoxInvitationId, setGlassBoxInvitationId] = useState<string | null>(null);
 
   // Fetch assessment details
   const { data: assessment, isLoading: isLoadingAssessment } = useQuery({
@@ -373,7 +375,8 @@ export function ResultsPage() {
                 </thead>
                 <tbody className="divide-y divide-border">
                   {filteredInvitations?.map((invitation) => (
-                    <tr key={invitation.id} className="hover:bg-muted/50">
+                    <Fragment key={invitation.id}>
+                    <tr className="hover:bg-muted/50">
                       <td className="px-6 py-4">
                         <div>
                           <div className="font-medium text-foreground">{invitation.candidateName}</div>
@@ -416,6 +419,19 @@ export function ResultsPage() {
                         {formatDate(invitation.completedAt)}
                       </td>
                       <td className="px-6 py-4 text-right">
+                        {(invitation.status === InvitationStatus.STARTED ||
+                          invitation.status === InvitationStatus.COMPLETED) && (
+                          <button
+                            onClick={() =>
+                              setGlassBoxInvitationId(
+                                glassBoxInvitationId === invitation.id ? null : invitation.id
+                              )
+                            }
+                            className="rounded px-3 py-1 text-xs font-medium text-purple-600 hover:bg-purple-100 dark:hover:bg-purple-900"
+                          >
+                            {glassBoxInvitationId === invitation.id ? 'Hide Glass Box' : 'Glass Box'}
+                          </button>
+                        )}
                         {(invitation.status === InvitationStatus.PENDING ||
                           invitation.status === InvitationStatus.EXPIRED) && (
                           <button
@@ -428,6 +444,28 @@ export function ResultsPage() {
                         )}
                       </td>
                     </tr>
+                    {glassBoxInvitationId === invitation.id && (
+                      <tr className="bg-muted/30">
+                        <td colSpan={8}>
+                          <GlassBoxReport
+                            invitationId={invitation.id}
+                            scorePercent={invitation.percentage}
+                            problemsSolved={invitation.problemsSolved}
+                            totalProblems={invitation.totalProblems}
+                            durationMinutes={
+                              invitation.startedAt && invitation.completedAt
+                                ? Math.round(
+                                    (new Date(invitation.completedAt).getTime() -
+                                      new Date(invitation.startedAt).getTime()) /
+                                      60000
+                                  )
+                                : null
+                            }
+                          />
+                        </td>
+                      </tr>
+                    )}
+                    </Fragment>
                   ))}
                 </tbody>
               </table>

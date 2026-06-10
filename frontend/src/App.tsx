@@ -8,6 +8,7 @@ import { DashboardPage } from '@/pages/DashboardPage';
 import { ProblemsPage } from '@/pages/ProblemsPage';
 import { ProblemRouter } from '@/pages/ProblemRouter';
 import { SubmissionsPage } from '@/pages/SubmissionsPage';
+import { PlaybackPage } from '@/pages/PlaybackPage';
 import { RecruiterDashboard } from '@/pages/RecruiterDashboard';
 import { AssessmentForm } from '@/pages/AssessmentForm';
 import { AssessmentDetail } from '@/pages/AssessmentDetail';
@@ -104,6 +105,14 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={['candidate']}>
                 <SubmissionsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/playback/:sessionId"
+            element={
+              <ProtectedRoute allowedRoles={['candidate']}>
+                <PlaybackPage />
               </ProtectedRoute>
             }
           />

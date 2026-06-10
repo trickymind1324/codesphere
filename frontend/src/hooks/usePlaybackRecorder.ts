@@ -58,6 +58,13 @@ export function usePlaybackRecorder({
   const attach = useCallback(
     (instance: editor.IStandaloneCodeEditor) => {
       if (!enabled) return;
+      // Record the initial buffer so the viewer can reconstruct the session
+      // from a known starting state before applying deltas.
+      buffer.current.push({
+        offsetMs: now(),
+        eventType: 'edit',
+        payload: { snapshot: true, text: instance.getValue() },
+      });
       const sub = instance.onDidChangeModelContent((e) => {
         for (const change of e.changes) {
           buffer.current.push({
