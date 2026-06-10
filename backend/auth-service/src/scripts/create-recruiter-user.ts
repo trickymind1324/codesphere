@@ -1,6 +1,6 @@
 import { DataSource } from 'typeorm';
-import * as bcrypt from 'bcrypt';
 import { User, UserRole, UserTier } from '../entities/user.entity';
+import { hashPassword } from '../utils/crypto.util';
 
 async function createRecruiterUser() {
   const dataSource = new DataSource({
@@ -20,35 +20,35 @@ async function createRecruiterUser() {
 
     const userRepository = dataSource.getRepository(User);
 
-    // Check if recruiter user already exists
+    // Hash with argon2 via the same helper the login path verifies with.
+    // (An earlier version used bcrypt, which login could never verify.)
+    const passwordHash = await hashPassword('Recruiter123!');
+
     const existingUser = await userRepository.findOne({
       where: { email: 'recruiter@codesphere.com' },
     });
 
     if (existingUser) {
-      console.log('Recruiter user already exists!');
-      console.log('Email: recruiter@codesphere.com');
-      console.log('You can use the existing user or delete it first.');
-      await dataSource.destroy();
-      return;
+      existingUser.password_hash = passwordHash;
+      existingUser.email_verified = true;
+      existingUser.failed_login_attempts = 0;
+      existingUser.account_locked_until = null;
+      await userRepository.save(existingUser);
+      console.log('Recruiter user already existed — password reset.');
+    } else {
+      const recruiterUser = userRepository.create({
+        email: 'recruiter@codesphere.com',
+        password_hash: passwordHash,
+        full_name: 'Demo Recruiter',
+        role: UserRole.RECRUITER,
+        tier: UserTier.PRO,
+        email_verified: true, // Auto-verify for demo
+        failed_login_attempts: 0,
+      });
+      await userRepository.save(recruiterUser);
+      console.log('✅ Demo recruiter user created successfully!');
     }
 
-    // Create recruiter user
-    const passwordHash = await bcrypt.hash('Recruiter123!', 10);
-
-    const recruiterUser = userRepository.create({
-      email: 'recruiter@codesphere.com',
-      password_hash: passwordHash,
-      full_name: 'Demo Recruiter',
-      role: UserRole.RECRUITER,
-      tier: UserTier.PRO,
-      email_verified: true, // Auto-verify for demo
-      failed_login_attempts: 0,
-    });
-
-    await userRepository.save(recruiterUser);
-
-    console.log('✅ Demo recruiter user created successfully!');
     console.log('');
     console.log('Login credentials:');
     console.log('==================');

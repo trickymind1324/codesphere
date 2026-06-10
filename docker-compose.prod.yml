@@ -235,7 +235,9 @@ services:
       API_PREFIX: /api/v1
       LLM_PROVIDER: ${LLM_PROVIDER:-ollama}
       OLLAMA_HOST: ${OLLAMA_HOST:-http://host.docker.internal:11434}
-      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2:3b}
+      # gemma3:4b: best instruction-following/summarization quality that fits
+      # an 8GB machine; llama3.2:3b is a lighter fallback.
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-gemma3:4b}
       CORS_ORIGIN: ${FRONTEND_URL:-http://localhost:3000}
     extra_hosts:
       - "host.docker.internal:host-gateway"
