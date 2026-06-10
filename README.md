@@ -71,6 +71,21 @@ npm run dev
 
 For full setup instructions including each backend service, see [SETUP.md](./SETUP.md).
 
+### Production Deployment
+
+The entire stack (frontend, 5 backend services, databases, Redis, mail relay)
+runs with one command:
+
+```bash
+cd backend/auth-service && ./generate-keys.sh && cd ../..   # once
+./scripts/build-runtime-images.sh                            # once
+docker compose -f docker-compose.prod.yml up -d --build
+bash scripts/smoke-test.sh                                   # verify
+```
+
+See [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md) for migrations, SMTP, AI
+provider setup, and the hardening checklist.
+
 ### Common Scripts
 
 ```bash
@@ -101,6 +116,8 @@ npm run format         # Format code with Prettier
 
 Comprehensive documentation lives in the [`docs/`](./docs/) directory:
 
+- **[Implementation Status](./docs/IMPLEMENTATION_STATUS.md)** — What's built, current phase, known limitations
+- **[Deployment Guide](./docs/DEPLOYMENT.md)** — Production runbook (Docker Compose, SMTP, AI provider)
 - **[Product Strategy](./docs/Product_Strategy.md)** — Vision, differentiators, roadmap
 - **Technical Specifications (FRDs)** — Frontend, backend, database, infrastructure, security, AI/ML
 - **Product Requirements (PRDs)** — Authentication, IDE, assessments, monetization

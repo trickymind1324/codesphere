@@ -1,3 +1,7 @@
+> **SUPERSEDED (June 10, 2026):** This document describes the January 2026 state
+> and is kept for history. Current status lives in [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md);
+> the deployment runbook is [DEPLOYMENT.md](DEPLOYMENT.md).
+
 # Next Activities Plan - Final Testing & Polish
 
 **Document Version:** 2.0
