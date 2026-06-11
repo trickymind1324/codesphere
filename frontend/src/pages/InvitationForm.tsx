@@ -110,7 +110,7 @@ export function InvitationForm() {
     sendInvitationsMutation.mutate({
       candidates: validCandidates,
       customMessage: customMessage.trim() || undefined,
-      expiresInDays,
+      expiryDays: expiresInDays,
     });
   };
 
