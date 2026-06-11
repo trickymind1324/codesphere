@@ -237,7 +237,7 @@ export class ExecutionService {
    */
   async submitSolution(
     dto: SubmitSolutionDto,
-    userId: string,
+    userId: string | null,
   ): Promise<SubmissionResult> {
     this.checkConcurrentExecutions();
 
@@ -317,28 +317,31 @@ export class ExecutionService {
         executionResult.results.reduce((sum, r) => sum + (r.memoryUsageKb || 0), 0) /
         executionResult.results.length;
 
-      // Save submission to Problem Service
-      await this.saveSubmission({
-        userId,
-        problemId: dto.problemId,
-        code: dto.code,
-        language: dto.language,
-        status,
-        totalTestCases: executionResult.totalTestCases,
-        passedTestCases: executionResult.passedTestCases,
-        failedTestCases: executionResult.failedTestCases,
-        executionTimeMs: Math.round(avgExecutionTime),
-        memoryUsageKb: Math.round(avgMemoryUsage),
-        testResults: executionResult.results.map((r) => ({
-          testCaseId: '',
-          input: r.input,
-          expectedOutput: r.expectedOutput,
-          actualOutput: r.actualOutput,
-          passed: r.passed || false,
-          executionTimeMs: r.executionTimeMs || 0,
-          error: r.error,
-        })),
-      });
+      // Save submission to Problem Service (skipped for anonymous
+      // assessment candidates — they have no user record)
+      if (userId) {
+        await this.saveSubmission({
+          userId,
+          problemId: dto.problemId,
+          code: dto.code,
+          language: dto.language,
+          status,
+          totalTestCases: executionResult.totalTestCases,
+          passedTestCases: executionResult.passedTestCases,
+          failedTestCases: executionResult.failedTestCases,
+          executionTimeMs: Math.round(avgExecutionTime),
+          memoryUsageKb: Math.round(avgMemoryUsage),
+          testResults: executionResult.results.map((r) => ({
+            testCaseId: '',
+            input: r.input,
+            expectedOutput: r.expectedOutput,
+            actualOutput: r.actualOutput,
+            passed: r.passed || false,
+            executionTimeMs: r.executionTimeMs || 0,
+            error: r.error,
+          })),
+        });
+      }
 
       return {
         submissionId,

@@ -16,6 +16,7 @@ import {
   ExecuteProjectDto,
 } from '../dto/execute-code.dto';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
+import { AssessmentOrJwtGuard } from '../guards/assessment-or-jwt.guard';
 
 @Controller('execute')
 export class ExecutionController {
@@ -25,7 +26,7 @@ export class ExecutionController {
    * Execute code with optional stdin (for testing)
    */
   @Post('run')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(AssessmentOrJwtGuard)
   @HttpCode(HttpStatus.OK)
   async executeCode(@Body() dto: ExecuteCodeDto) {
     const result = await this.executionService.executeCode(dto);
@@ -39,7 +40,7 @@ export class ExecutionController {
    * Execute code against problem's example test cases
    */
   @Post('test')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(AssessmentOrJwtGuard)
   @HttpCode(HttpStatus.OK)
   async testProblem(@Body() dto: TestProblemDto) {
     const result = await this.executionService.testProblem(dto);
@@ -53,10 +54,17 @@ export class ExecutionController {
    * Submit solution to a problem
    */
   @Post('submit')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(AssessmentOrJwtGuard)
   @HttpCode(HttpStatus.OK)
   async submitSolution(@Body() dto: SubmitSolutionDto, @Request() req) {
-    const result = await this.executionService.submitSolution(dto, req.user.sub);
+    // Anonymous assessment candidates have no user record; the solution is
+    // evaluated against the full test set but not persisted as a submission
+    // (the assessment IDE tracks per-problem results and reports the score
+    // to assessment-service on completion).
+    const result = await this.executionService.submitSolution(
+      dto,
+      req.user?.sub ?? null,
+    );
     return {
       message: 'Solution submitted successfully',
       result,

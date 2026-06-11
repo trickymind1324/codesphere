@@ -185,11 +185,14 @@ export function AssessmentIDE() {
     glassBox.mark('execution', { language: selectedLanguage }, problem.id);
 
     try {
-      const response = await executionApi.testCode({
-        language: selectedLanguage,
-        code: code,
-        problemId: problem.id,
-      });
+      const response = await executionApi.testCode(
+        {
+          language: selectedLanguage,
+          code: code,
+          problemId: problem.id,
+        },
+        token,
+      );
 
       setTestResults({
         status: response.status,
@@ -222,11 +225,14 @@ export function AssessmentIDE() {
     glassBox.mark('submission', { language: selectedLanguage }, currentProblemId);
 
     try {
-      const response = await executionApi.submitCode({
-        language: selectedLanguage,
-        code: code,
-        problemId: problem.id,
-      });
+      const response = await executionApi.submitCode(
+        {
+          language: selectedLanguage,
+          code: code,
+          problemId: problem.id,
+        },
+        token,
+      );
 
       setTestResults({
         status: response.status,
