@@ -75,13 +75,12 @@ if __name__ == "__main__":
     # Call function
     result = ${functionName}(*args)
 
-    # Print result (convert boolean to lowercase string for consistency)
+    # Print result as compact JSON to match the test-case convention
+    # (strings quoted, arrays without spaces, booleans lowercase)
     if isinstance(result, bool):
         print(str(result).lower())
-    elif isinstance(result, list):
-        print(json.dumps(result))
-    elif isinstance(result, dict):
-        print(json.dumps(result))
+    elif isinstance(result, (list, dict, str)):
+        print(json.dumps(result, separators=(',', ':')))
     else:
         print(result)
 `;
@@ -150,7 +149,8 @@ function processInput() {
 
     if (typeof result === 'boolean') {
         console.log(result.toString());
-    } else if (typeof result === 'object') {
+    } else if (typeof result === 'object' || typeof result === 'string') {
+        // JSON to match the test-case convention (strings are quoted)
         console.log(JSON.stringify(result));
     } else {
         console.log(result);
@@ -456,7 +456,7 @@ func main() {
 
     // Read from file if it exists, otherwise from stdin
     if file, err := os.Open("/app/input.txt"); err == nil {
-        defer file.close()
+        defer file.Close()
         scanner := bufio.NewScanner(file)
         for scanner.Scan() {
             line := strings.TrimSpace(scanner.Text())
@@ -490,7 +490,10 @@ ${paramList.map((param, idx) => {
 
     result := ${functionName}(${paramList.map(p => p.name).join(', ')})
 
-    fmt.Println(result)
+    // Print as compact JSON to match the test-case convention
+    // (strings quoted, arrays without spaces, booleans lowercase).
+    out, _ := json.Marshal(result)
+    fmt.Println(string(out))
 }
 `;
 
