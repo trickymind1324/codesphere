@@ -101,9 +101,15 @@ export const executionApi = {
     };
   },
 
-  // Test code against problem test cases
-  testCode: async (request: TestCodeRequest): Promise<TestCodeResponse> => {
-    const response = await api.post('/api/v1/execute/test', request);
+  // Test code against problem test cases. assessmentToken authenticates
+  // anonymous candidates inside a started assessment session.
+  testCode: async (
+    request: TestCodeRequest,
+    assessmentToken?: string,
+  ): Promise<TestCodeResponse> => {
+    const response = await api.post('/api/v1/execute/test', request, {
+      headers: assessmentToken ? { 'X-Assessment-Token': assessmentToken } : undefined,
+    });
 
     const { result } = response.data;
 
@@ -129,8 +135,13 @@ export const executionApi = {
   },
 
   // Submit code for final evaluation
-  submitCode: async (request: SubmitCodeRequest): Promise<SubmitCodeResponse> => {
-    const response = await api.post('/api/v1/execute/submit', request);
+  submitCode: async (
+    request: SubmitCodeRequest,
+    assessmentToken?: string,
+  ): Promise<SubmitCodeResponse> => {
+    const response = await api.post('/api/v1/execute/submit', request, {
+      headers: assessmentToken ? { 'X-Assessment-Token': assessmentToken } : undefined,
+    });
     const { result } = response.data;
 
     // Map backend field names to frontend interface

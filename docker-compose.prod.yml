@@ -176,6 +176,7 @@ services:
       CLEANUP_TEMP_FILES: "true"
       SANDBOX_NETWORK_ENABLED: "false"
       PROBLEM_SERVICE_URL: http://problem-service:8001
+      ASSESSMENT_SERVICE_URL: http://assessment-service:8003
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /tmp/codesphere-sandbox:/tmp/codesphere-sandbox
