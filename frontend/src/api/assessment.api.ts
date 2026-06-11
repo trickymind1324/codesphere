@@ -90,7 +90,7 @@ export interface CreateInvitationDto {
     name: string;
   }[];
   customMessage?: string;
-  expiresInDays?: number;
+  expiryDays?: number;
 }
 
 export interface AssessmentStatistics {
