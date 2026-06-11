@@ -127,12 +127,17 @@ export class DockerExecutor {
       // Build/compile code if required (for C, C++, Java, Go)
       if (langConfig.buildRequired && langConfig.buildCmd) {
         this.logger.debug(`Building ${language} code with: ${langConfig.buildCmd.join(' ')}`);
+        // Compilers need far more memory/processes than the compiled program:
+        // the Go toolchain alone gets OOM-killed at typical problem limits
+        // (256MB / 50 pids). The compiler never runs user code, so relaxed
+        // limits here don't weaken the sandbox.
         const buildResult = await this.runInContainer(
           { ...langConfig, runCmd: langConfig.buildCmd },
           workDir,
           undefined,
           30000, // 30s build timeout
-          memoryLimitMb,
+          Math.max(memoryLimitMb, 1024),
+          256,
         );
 
         if (buildResult.status !== ExecutionStatus.SUCCESS) {
@@ -433,6 +438,7 @@ export class DockerExecutor {
     stdinFilePath: string | undefined,
     timeLimitMs: number,
     memoryLimitMb: number,
+    pidsLimit: number = 50,
   ): Promise<ExecutionResult> {
     const containerName = `codesphere-exec-${uuidv4()}`;
     const startTime = Date.now();
@@ -458,7 +464,7 @@ export class DockerExecutor {
           NetworkMode: this.configService.get<boolean>('SANDBOX_NETWORK_ENABLED', false)
             ? 'bridge'
             : 'none',
-          PidsLimit: 50,
+          PidsLimit: pidsLimit,
           Binds: [`${workDir}:/app`], // Remove :ro to allow compilation
           ReadonlyRootfs: false,
           AutoRemove: false, // Manual cleanup to avoid race conditions
