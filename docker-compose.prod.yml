@@ -206,6 +206,7 @@ services:
       REDIS_DB: 3
       CORS_ORIGIN: ${FRONTEND_URL:-http://localhost:3000}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      PROBLEM_SERVICE_URL: http://problem-service:8001
       JWT_PUBLIC_KEY_FILE: /keys/public.pem
       SMTP_HOST: ${SMTP_HOST:-mailhog}
       SMTP_PORT: ${SMTP_PORT:-1025}

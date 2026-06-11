@@ -9,6 +9,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { InvitationService } from '../services/invitation.service';
+import { ProblemService } from '../services/problem.service';
 import { CreateInvitationDto } from '../dto/create-invitation.dto';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { RolesGuard } from '../guards/roles.guard';
@@ -56,11 +57,25 @@ export class InvitationController {
 // Public routes for candidates (token-based)
 @Controller('invitations')
 export class PublicInvitationController {
-  constructor(private readonly invitationService: InvitationService) {}
+  constructor(
+    private readonly invitationService: InvitationService,
+    private readonly problemService: ProblemService,
+  ) {}
 
   @Get(':token')
   async validateToken(@Param('token') token: string) {
     const invitation = await this.invitationService.findByToken(token);
+
+    // The landing page and assessment IDE need the full problem list
+    // (order, points, title, difficulty), not just a count. Titles come
+    // from problem-service; if it's unreachable, problem stays undefined
+    // and the UI degrades to numbered problems.
+    const assessmentProblems = [...(invitation.assessment.assessmentProblems ?? [])]
+      .sort((a, b) => a.order - b.order);
+    const problemDetails = await this.problemService.getMultipleProblems(
+      assessmentProblems.map((ap) => ap.problemId),
+    );
+
     return {
       valid: true,
       assessment: {
@@ -68,7 +83,14 @@ export class PublicInvitationController {
         title: invitation.assessment.title,
         description: invitation.assessment.description,
         durationMinutes: invitation.assessment.durationMinutes,
-        problemCount: invitation.assessment.assessmentProblems?.length || 0,
+        problemCount: assessmentProblems.length,
+        assessmentProblems: assessmentProblems.map((ap) => ({
+          id: ap.id,
+          problemId: ap.problemId,
+          order: ap.order,
+          points: ap.points,
+          problem: problemDetails.get(ap.problemId),
+        })),
       },
       invitation: {
         candidateEmail: invitation.candidateEmail,
