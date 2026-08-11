@@ -177,3 +177,6 @@ keys/
 # PWA service worker
 sw.js
 workbox-*.js
+
+# Internal team docs (deployment, ops, planning) — never tracked
+docs-internal/

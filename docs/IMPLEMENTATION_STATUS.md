@@ -1,8 +1,7 @@
 # CodeSphere — Implementation Status (Authoritative)
 
 **Last Updated:** June 10, 2026
-**Supersedes:** the January 2026 status/plan documents (removed from the repo 2026-08-11; available in git history)
-**See also:** [GO_LIVE_READINESS.md](GO_LIVE_READINESS.md) (August 2026 audit) and [TRACKER.md](TRACKER.md) (living tracker)
+**Supersedes:** the January 2026 status/plan documents (removed from the repo 2026-08-11)
 
 ---
 
@@ -53,12 +52,12 @@ Phase 3 (ecosystem) is not started.
 - `docker-compose.prod.yml`: full stack — 3× Postgres, Redis, MailHog, 5 backend
   services, frontend
 - **Email blocker resolved**: MailHog relay works out of the box (UI on :8025);
-  real SMTP is a 3-env-var override (see docs/DEPLOYMENT.md)
+  real SMTP is a 3-env-var override
 - `scripts/build-runtime-images.sh` builds the 5 sandbox runtime images
 - `scripts/smoke-test.sh` validates register → login → problems → execute →
   assessments against a running stack
 
-See **docs/DEPLOYMENT.md** for the runbook.
+The deployment runbook is maintained privately by the team.
 
 ## Phase 3 — Ecosystem ❌ Not Started
 

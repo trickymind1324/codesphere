@@ -69,7 +69,17 @@ npm install
 npm run dev
 ```
 
-For full setup instructions including each backend service, see [SETUP.md](./SETUP.md).
+### Local Login (seed accounts)
+
+For a local setup, a recruiter account is created by the seed script
+(`backend/auth-service/src/scripts/create-recruiter-user.ts`):
+
+| Role | Email | Password |
+|---|---|---|
+| Recruiter | `recruiter@codesphere.com` | `Recruiter123!` |
+
+Candidate accounts can be registered normally through the UI; candidates
+taking an assessment access it via the invitation link (no account needed).
 
 ### Production Deployment
 
@@ -77,14 +87,12 @@ The entire stack (frontend, 5 backend services, databases, Redis, mail relay)
 runs with one command:
 
 ```bash
-cd backend/auth-service && ./generate-keys.sh && cd ../..   # once
 ./scripts/build-runtime-images.sh                            # once
 docker compose -f docker-compose.prod.yml up -d --build
 bash scripts/smoke-test.sh                                   # verify
 ```
 
-See [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md) for migrations, SMTP, AI
-provider setup, and the hardening checklist.
+Detailed setup and deployment guides are maintained privately by the team.
 
 ### Common Scripts
 
@@ -116,11 +124,7 @@ npm run format         # Format code with Prettier
 
 Comprehensive documentation lives in the [`docs/`](./docs/) directory:
 
-- **[Development Tracker](./docs/TRACKER.md)** — Living tracker of all workstreams and the launch checklist
-- **[Decision Log](./docs/DECISIONS.md)** — Architecture decisions (Keycloak, Kong, open-source constraint)
-- **[Go-Live Readiness](./docs/GO_LIVE_READINESS.md)** — Pre-launch audit: status, security, open-source compliance
 - **[Implementation Status](./docs/IMPLEMENTATION_STATUS.md)** — What's built, current phase, known limitations
-- **[Deployment Guide](./docs/DEPLOYMENT.md)** — Production runbook (Docker Compose, SMTP, AI provider)
 - **[Product Strategy](./docs/PRODUCT_STRATEGY.md)** — Vision, differentiators, roadmap
 - **Technical Specifications (FRDs)** — Frontend, backend, database, infrastructure, security, AI/ML
 - **Product Requirements (PRDs)** — Authentication, IDE, assessments
