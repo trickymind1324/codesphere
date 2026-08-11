@@ -1,7 +1,8 @@
 # CodeSphere — Implementation Status (Authoritative)
 
 **Last Updated:** June 10, 2026
-**Supersedes:** PRD_IMPLEMENTATION_STATUS.md, NEXT_ACTIVITIES_PLAN.md, MVP_PROGRESS_AND_ROADMAP.md (all January 2026)
+**Supersedes:** the January 2026 status/plan documents (removed from the repo 2026-08-11; available in git history)
+**See also:** [GO_LIVE_READINESS.md](GO_LIVE_READINESS.md) (August 2026 audit) and [TRACKER.md](TRACKER.md) (living tracker)
 
 ---
 

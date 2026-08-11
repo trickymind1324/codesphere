@@ -116,9 +116,12 @@ npm run format         # Format code with Prettier
 
 Comprehensive documentation lives in the [`docs/`](./docs/) directory:
 
+- **[Development Tracker](./docs/TRACKER.md)** — Living tracker of all workstreams and the launch checklist
+- **[Decision Log](./docs/DECISIONS.md)** — Architecture decisions (Keycloak, Kong, open-source constraint)
+- **[Go-Live Readiness](./docs/GO_LIVE_READINESS.md)** — Pre-launch audit: status, security, open-source compliance
 - **[Implementation Status](./docs/IMPLEMENTATION_STATUS.md)** — What's built, current phase, known limitations
 - **[Deployment Guide](./docs/DEPLOYMENT.md)** — Production runbook (Docker Compose, SMTP, AI provider)
-- **[Product Strategy](./docs/Product_Strategy.md)** — Vision, differentiators, roadmap
+- **[Product Strategy](./docs/PRODUCT_STRATEGY.md)** — Vision, differentiators, roadmap
 - **Technical Specifications (FRDs)** — Frontend, backend, database, infrastructure, security, AI/ML
 - **Product Requirements (PRDs)** — Authentication, IDE, assessments, monetization
 

@@ -1,10 +1,11 @@
 # Dependencies
 node_modules/
 **/node_modules/
-package-lock.json
-**/package-lock.json
 .pnp
 .pnp.js
+
+# Local AI-assistant instructions (not part of the public repo)
+CLAUDE.md
 
 # Testing
 coverage/
