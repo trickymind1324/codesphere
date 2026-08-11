@@ -179,4 +179,5 @@ sw.js
 workbox-*.js
 
 # Internal team docs (deployment, ops, planning) — never tracked
-docs-internal/
+# No trailing slash: must also match when docs-internal is a symlink
+docs-internal
