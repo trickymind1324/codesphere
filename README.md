@@ -123,7 +123,7 @@ Comprehensive documentation lives in the [`docs/`](./docs/) directory:
 - **[Deployment Guide](./docs/DEPLOYMENT.md)** — Production runbook (Docker Compose, SMTP, AI provider)
 - **[Product Strategy](./docs/PRODUCT_STRATEGY.md)** — Vision, differentiators, roadmap
 - **Technical Specifications (FRDs)** — Frontend, backend, database, infrastructure, security, AI/ML
-- **Product Requirements (PRDs)** — Authentication, IDE, assessments, monetization
+- **Product Requirements (PRDs)** — Authentication, IDE, assessments
 
 See [docs/README.md](./docs/README.md) for the full index.
 
