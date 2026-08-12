@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { User } from '@/types';
 import { authApi, type LoginData, type RegisterData } from '@/api/auth.api';
-import { AUTH_MODE, getUserManager, mapOidcUser, syncAccessToken } from '@/lib/oidc';
+import { AUTH_MODE, passwordLogin, kcLogout, restoreSession } from '@/lib/oidc';
 
 interface AuthState {
   user: User | null;
@@ -12,7 +12,6 @@ interface AuthState {
 
   // Actions
   login: (data: LoginData) => Promise<void>;
-  loginWithSSO: () => Promise<void>;
   register: (data: RegisterData) => Promise<void>;
   logout: () => Promise<void>;
   setUser: (user: User | null) => void;
@@ -30,13 +29,25 @@ export const useAuthStore = create<AuthState>()(
       isLoading: false,
       error: null,
 
-      // Keycloak OIDC: redirect to the identity provider. The callback page
-      // finishes the exchange and populates the store.
-      loginWithSSO: async () => {
-        await getUserManager().signinRedirect();
-      },
-
       login: async (data: LoginData) => {
+        // Keycloak: our own form calls the token endpoint directly.
+        if (AUTH_MODE === 'oidc') {
+          try {
+            set({ isLoading: true, error: null });
+            const user = await passwordLogin(data.email, data.password);
+            set({ user, isAuthenticated: true, isLoading: false, error: null });
+          } catch (error: any) {
+            set({
+              user: null,
+              isAuthenticated: false,
+              isLoading: false,
+              error: 'Invalid email or password.',
+            });
+            throw error;
+          }
+          return;
+        }
+
         try {
           set({ isLoading: true, error: null });
 
@@ -89,10 +100,10 @@ export const useAuthStore = create<AuthState>()(
       logout: async () => {
         if (AUTH_MODE === 'oidc') {
           try {
-            syncAccessToken(null);
-            await getUserManager().signoutRedirect();
+            await kcLogout();
           } catch (error) {
             console.error('Logout error:', error);
+          } finally {
             set({ user: null, isAuthenticated: false, error: null });
           }
           return;
@@ -133,17 +144,10 @@ export const useAuthStore = create<AuthState>()(
         if (AUTH_MODE === 'oidc') {
           try {
             set({ isLoading: true });
-            const oidcUser = await getUserManager().getUser();
-            if (oidcUser && !oidcUser.expired) {
-              syncAccessToken(oidcUser);
-              set({ user: mapOidcUser(oidcUser), isAuthenticated: true, isLoading: false });
-            } else {
-              syncAccessToken(null);
-              set({ user: null, isAuthenticated: false, isLoading: false });
-            }
+            const user = await restoreSession();
+            set({ user, isAuthenticated: !!user, isLoading: false });
           } catch (error) {
             console.error('Auth check failed:', error);
-            syncAccessToken(null);
             set({ user: null, isAuthenticated: false, isLoading: false });
           }
           return;
