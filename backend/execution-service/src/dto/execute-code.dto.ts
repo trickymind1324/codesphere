@@ -7,6 +7,8 @@ import {
   Max,
   IsArray,
   ValidateNested,
+  Matches,
+  MaxLength,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -113,6 +115,10 @@ export class SubmitSolutionDto {
 
 export class ProjectFileDto {
   @IsString()
+  @MaxLength(256)
+  @Matches(/^(?!\/)(?!.*\.\.)[\w .\/-]+$/, {
+    message: 'filePath must be a relative path without ".." segments',
+  })
   filePath: string;
 
   @IsString()
@@ -129,6 +135,10 @@ export class ExecuteProjectDto {
   language: ProgrammingLanguage;
 
   @IsString()
+  @MaxLength(512)
+  @Matches(/^[\w .\/=:-]+$/, {
+    message: 'entryCommand contains disallowed characters',
+  })
   entryCommand: string;
 
   @IsOptional()
