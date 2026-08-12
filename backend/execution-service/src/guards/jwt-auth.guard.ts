@@ -5,29 +5,14 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import * as jwt from 'jsonwebtoken';
-import { readFileSync } from 'fs';
-import { join } from 'path';
+import { getTokenVerifier, TokenVerifier } from '../auth/token-verifier';
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
-  private publicKey: string;
+  private readonly verifier: TokenVerifier;
 
   constructor(private configService: ConfigService) {
-    // Load public key from auth service (for development)
-    // In production, this should be from environment variable or shared secret manager
-    try {
-      this.publicKey = readFileSync(
-        join(__dirname, '../../../auth-service/keys/public.pem'),
-        'utf8'
-      );
-    } catch (error) {
-      // Fallback to environment variable
-      this.publicKey = this.configService.get<string>('JWT_PUBLIC_KEY') || '';
-      if (!this.publicKey) {
-        console.error('JWT public key not found! Authentication will fail.');
-      }
-    }
+    this.verifier = getTokenVerifier(this.configService);
   }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -39,14 +24,7 @@ export class JwtAuthGuard implements CanActivate {
     }
 
     try {
-      const payload = jwt.verify(token, this.publicKey, {
-        algorithms: ['RS256'],
-        issuer: 'codesphere.com',
-        audience: 'codesphere-api',
-      });
-
-      // Attach user info to request
-      request.user = payload;
+      request.user = await this.verifier.verify(token);
     } catch (error) {
       throw new UnauthorizedException('Invalid token');
     }

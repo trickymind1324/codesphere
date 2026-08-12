@@ -4,15 +4,18 @@ import {
   ExecutionContext,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import * as jwt from 'jsonwebtoken';
-import { resolveJwtPublicKey } from './jwt-auth.guard';
+import { getTokenVerifier, TokenVerifier } from '../auth/token-verifier';
 
 /**
  * Guard that allows both authenticated users and internal service-to-service calls
  */
 @Injectable()
 export class OptionalAuthGuard implements CanActivate {
-  constructor(private configService: ConfigService) {}
+  private readonly verifier: TokenVerifier;
+
+  constructor(private configService: ConfigService) {
+    this.verifier = getTokenVerifier(this.configService);
+  }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
@@ -30,15 +33,7 @@ export class OptionalAuthGuard implements CanActivate {
 
     if (token) {
       try {
-        // Tokens are RS256-signed by auth-service; verify with its public key.
-        const publicKey = resolveJwtPublicKey(this.configService);
-        if (!publicKey) {
-          throw new Error('JWT public key not configured');
-        }
-        const payload = jwt.verify(token, publicKey, { algorithms: ['RS256'] });
-
-        // Attach user info to request
-        request.user = payload;
+        request.user = await this.verifier.verify(token);
         return true;
       } catch (error) {
         // Invalid token, but we'll allow the request through
