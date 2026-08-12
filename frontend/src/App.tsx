@@ -18,6 +18,7 @@ import { AssessmentLanding } from '@/pages/AssessmentLanding';
 import { AssessmentIDE } from '@/pages/AssessmentIDE';
 import { AssessmentCompleted } from '@/pages/AssessmentCompleted';
 import { OAuthCallbackPage } from '@/pages/OAuthCallbackPage';
+import { OidcCallbackPage } from '@/pages/OidcCallbackPage';
 import { EmailVerificationPage } from '@/pages/EmailVerificationPage';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 
@@ -74,6 +75,7 @@ function App() {
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/verify-email" element={<EmailVerificationPage />} />
+          <Route path="/auth/callback" element={<OidcCallbackPage />} />
           <Route path="/auth/google/callback" element={<OAuthCallbackPage />} />
           <Route path="/auth/github/callback" element={<OAuthCallbackPage />} />
           <Route

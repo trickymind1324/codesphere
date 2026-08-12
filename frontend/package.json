@@ -32,6 +32,7 @@
     "date-fns": "^3.0.6",
     "lucide-react": "^0.303.0",
     "monaco-editor": "^0.45.0",
+    "oidc-client-ts": "^3.5.0",
     "papaparse": "^5.5.3",
     "react": "^18.2.0",
     "react-datepicker": "^9.1.0",

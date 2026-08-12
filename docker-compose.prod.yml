@@ -332,6 +332,11 @@ services:
     build:
       context: .
       dockerfile: frontend/Dockerfile
+      args:
+        # Flip to 'oidc' to build the SPA against Keycloak login.
+        VITE_AUTH_MODE: ${VITE_AUTH_MODE:-legacy}
+        VITE_OIDC_AUTHORITY: ${VITE_OIDC_AUTHORITY:-https://localhost/realms/codesphere}
+        VITE_OIDC_CLIENT_ID: ${VITE_OIDC_CLIENT_ID:-codesphere-frontend}
     container_name: codesphere-frontend
     depends_on:
       - auth-service

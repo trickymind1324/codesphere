@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { AUTH_MODE, getUserManager, syncAccessToken } from '@/lib/oidc';
 
 const API_URL = import.meta.env.VITE_API_URL || '';
 
@@ -35,6 +36,21 @@ api.interceptors.response.use(
     // If 401 and we haven't retried yet
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
+
+      if (AUTH_MODE === 'oidc') {
+        try {
+          // Keycloak: silently renew via the refresh token.
+          const renewed = await getUserManager().signinSilent();
+          if (!renewed?.access_token) throw new Error('silent renew failed');
+          syncAccessToken(renewed);
+          originalRequest.headers.Authorization = `Bearer ${renewed.access_token}`;
+          return api(originalRequest);
+        } catch (renewError) {
+          syncAccessToken(null);
+          window.location.href = '/login';
+          return Promise.reject(renewError);
+        }
+      }
 
       try {
         // Try to refresh token

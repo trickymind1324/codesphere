@@ -10,6 +10,14 @@ COPY backend/execution-service/package.json backend/execution-service/
 COPY backend/assessment-service/package.json backend/assessment-service/
 RUN npm ci --ignore-scripts
 COPY frontend frontend
+# Auth mode is baked at build time (Vite). Default 'legacy'; set 'oidc' plus the
+# Keycloak endpoints to switch the SPA to Keycloak login.
+ARG VITE_AUTH_MODE=legacy
+ARG VITE_OIDC_AUTHORITY=https://localhost/realms/codesphere
+ARG VITE_OIDC_CLIENT_ID=codesphere-frontend
+ENV VITE_AUTH_MODE=$VITE_AUTH_MODE \
+    VITE_OIDC_AUTHORITY=$VITE_OIDC_AUTHORITY \
+    VITE_OIDC_CLIENT_ID=$VITE_OIDC_CLIENT_ID
 RUN npm run build --workspace=@codesphere/frontend
 
 FROM nginx:1.27-alpine

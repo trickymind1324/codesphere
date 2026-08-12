@@ -54,5 +54,19 @@
       "protocol": "openid-connect",
       "attributes": { "include.in.token.scope": "true", "display.on.consent.screen": "false" }
     }
+  ],
+  "users": [
+    {
+      "username": "recruiter@codesphere.com",
+      "email": "recruiter@codesphere.com",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Demo",
+      "lastName": "Recruiter",
+      "credentials": [
+        { "type": "password", "value": "Recruiter123!", "temporary": false }
+      ],
+      "realmRoles": ["recruiter"]
+    }
   ]
 }
