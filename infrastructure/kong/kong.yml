@@ -100,6 +100,20 @@ services:
           - https
         https_redirect_status_code: 301
 
+  # Keycloak OIDC endpoints (login pages, tokens, JWKS, account console).
+  # Only /realms and /resources are exposed; the admin API/console at /admin
+  # stays internal — reach it via a tunnel, never the public edge.
+  - name: keycloak
+    url: http://keycloak:8080
+    routes:
+      - name: keycloak-oidc
+        paths:
+          - /realms
+          - /resources
+        protocols:
+          - https
+        https_redirect_status_code: 301
+
   # --- Frontend SPA (catch-all, lowest priority) --------------------------
   - name: frontend
     url: http://frontend:80
