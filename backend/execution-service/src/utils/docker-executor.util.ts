@@ -30,6 +30,7 @@ export class DockerExecutor {
   private readonly tempDir: string;
   private readonly sandboxNetworkMode: 'bridge' | 'none';
   private readonly cleanupTempFiles: boolean;
+  private readonly maxOutputBytes: number;
 
   private readonly languageConfig: Record<string, LanguageConfig> = {
     python: {
@@ -101,7 +102,61 @@ export class DockerExecutor {
       this.configService.get<string>('CLEANUP_TEMP_FILES'),
       true,
     );
+    this.maxOutputBytes = this.configService.get<number>('MAX_OUTPUT_SIZE_BYTES', 1048576);
     this.logger.log(`Sandbox network mode: ${this.sandboxNetworkMode}`);
+  }
+
+  /**
+   * Build a locked-down HostConfig for a sandbox container. Every container
+   * drops all Linux capabilities, forbids privilege escalation, runs on the
+   * isolated network, and is capped on memory/CPU/pids plus file-size and
+   * open-file ulimits so user code cannot exhaust host disk or descriptors.
+   *
+   * `readonlyRootfs` is relaxed only for the compile step, which needs to
+   * write toolchain scratch outside the /app bind mount. A small writable
+   * /tmp tmpfs is always provided.
+   */
+  private buildHostConfig(
+    workDir: string,
+    memoryLimitMb: number,
+    pidsLimit: number,
+    readonlyRootfs: boolean,
+  ): Docker.ContainerCreateOptions['HostConfig'] {
+    const memoryBytes = memoryLimitMb * 1024 * 1024;
+    return {
+      Memory: memoryBytes,
+      MemorySwap: memoryBytes,
+      NanoCpus: 1000000000, // 1 CPU
+      NetworkMode: this.sandboxNetworkMode,
+      PidsLimit: pidsLimit,
+      Binds: [`${workDir}:/app`],
+      ReadonlyRootfs: readonlyRootfs,
+      Tmpfs: { '/tmp': `rw,nosuid,size=${Math.max(memoryLimitMb, 64)}m` },
+      CapDrop: ['ALL'],
+      SecurityOpt: ['no-new-privileges:true'],
+      Ulimits: [
+        { Name: 'fsize', Soft: 64 * 1024 * 1024, Hard: 64 * 1024 * 1024 },
+        { Name: 'nofile', Soft: 256, Hard: 256 },
+      ],
+      AutoRemove: false, // Manual cleanup to avoid race conditions
+    };
+  }
+
+  /**
+   * Append a chunk to an output buffer without letting it grow past the
+   * configured cap. Returns the possibly-extended buffer and whether the cap
+   * was hit, so the caller can stop a runaway (e.g. `while true: print(...)`)
+   * process before it exhausts the service's heap.
+   */
+  private appendCapped(buffer: string, data: string): { buffer: string; overflow: boolean } {
+    if (buffer.length >= this.maxOutputBytes) {
+      return { buffer, overflow: true };
+    }
+    const remaining = this.maxOutputBytes - buffer.length;
+    if (data.length > remaining) {
+      return { buffer: buffer + data.slice(0, remaining), overflow: true };
+    }
+    return { buffer: buffer + data, overflow: false };
   }
 
   /**
@@ -168,6 +223,7 @@ export class DockerExecutor {
           30000, // 30s build timeout
           Math.max(memoryLimitMb, 1024),
           256,
+          false, // compilers need a writable rootfs for toolchain scratch
         );
 
         if (buildResult.status !== ExecutionStatus.SUCCESS) {
@@ -330,16 +386,7 @@ export class DockerExecutor {
       AttachStderr: true,
       OpenStdin: false,
       StdinOnce: false,
-      HostConfig: {
-        Memory: memoryLimitMb * 1024 * 1024,
-        MemorySwap: memoryLimitMb * 1024 * 1024,
-        NanoCpus: 1000000000,
-        NetworkMode: this.sandboxNetworkMode,
-        PidsLimit: 50,
-        Binds: [`${workDir}:/app`],
-        ReadonlyRootfs: false,
-        AutoRemove: false,
-      },
+      HostConfig: this.buildHostConfig(workDir, memoryLimitMb, 50, true),
       WorkingDir: '/app',
     });
 
@@ -357,6 +404,7 @@ export class DockerExecutor {
     let stderr = '';
     let timedOut = false;
     let killed = false;
+    let outputOverflow = false;
 
     const killContainer = async () => {
       if (killed) return;
@@ -377,12 +425,22 @@ export class DockerExecutor {
       stream.on('data', (chunk: Buffer) => {
         if (chunk[0] === 1) {
           const data = chunk.subarray(8).toString('utf-8');
-          stdout += data;
+          const r = this.appendCapped(stdout, data);
+          stdout = r.buffer;
           onOutput('stdout', data);
+          if (r.overflow && !outputOverflow) {
+            outputOverflow = true;
+            killContainer();
+          }
         } else if (chunk[0] === 2) {
           const data = chunk.subarray(8).toString('utf-8');
-          stderr += data;
+          const r = this.appendCapped(stderr, data);
+          stderr = r.buffer;
           onOutput('stderr', data);
+          if (r.overflow && !outputOverflow) {
+            outputOverflow = true;
+            killContainer();
+          }
         }
       });
 
@@ -409,6 +467,8 @@ export class DockerExecutor {
         let status: ExecutionStatus;
         if (timedOut) {
           status = ExecutionStatus.TIME_LIMIT_EXCEEDED;
+        } else if (outputOverflow) {
+          status = ExecutionStatus.OUTPUT_LIMIT_EXCEEDED;
         } else if (killed) {
           status = ExecutionStatus.INTERNAL_ERROR;
         } else if (exitInfo.StatusCode === 0) {
@@ -472,6 +532,7 @@ export class DockerExecutor {
     timeLimitMs: number,
     memoryLimitMb: number,
     pidsLimit: number = 50,
+    readonlyRootfs: boolean = true,
   ): Promise<ExecutionResult> {
     const containerName = `codesphere-exec-${uuidv4()}`;
     const startTime = Date.now();
@@ -490,16 +551,7 @@ export class DockerExecutor {
         AttachStderr: true,
         OpenStdin: false,
         StdinOnce: false,
-        HostConfig: {
-          Memory: memoryLimitMb * 1024 * 1024,
-          MemorySwap: memoryLimitMb * 1024 * 1024,
-          NanoCpus: 1000000000, // 1 CPU
-          NetworkMode: this.sandboxNetworkMode,
-          PidsLimit: pidsLimit,
-          Binds: [`${workDir}:/app`], // Remove :ro to allow compilation
-          ReadonlyRootfs: false,
-          AutoRemove: false, // Manual cleanup to avoid race conditions
-        },
+        HostConfig: this.buildHostConfig(workDir, memoryLimitMb, pidsLimit, readonlyRootfs),
         WorkingDir: '/app',
       });
 
@@ -519,6 +571,7 @@ export class DockerExecutor {
       let stderr = '';
 
       let timedOut = false;
+      let outputOverflow = false;
       await new Promise<void>((resolve, reject) => {
         const timeout = setTimeout(async () => {
           timedOut = true;
@@ -533,14 +586,28 @@ export class DockerExecutor {
           reject(new Error('Time limit exceeded'));
         }, timeLimitMs);
 
+        const killForOverflow = async () => {
+          if (outputOverflow) return;
+          outputOverflow = true;
+          try {
+            if (container) await container.kill();
+          } catch (err) {
+            this.logger.debug(`Failed to kill container on overflow: ${err.message}`);
+          }
+        };
+
         stream.on('data', (chunk) => {
           const output = chunk.toString('utf-8');
           // Docker multiplexes stdout and stderr
           // First byte indicates stream type (1=stdout, 2=stderr)
           if (chunk[0] === 1) {
-            stdout += output.slice(8);
+            const r = this.appendCapped(stdout, output.slice(8));
+            stdout = r.buffer;
+            if (r.overflow) killForOverflow();
           } else if (chunk[0] === 2) {
-            stderr += output.slice(8);
+            const r = this.appendCapped(stderr, output.slice(8));
+            stderr = r.buffer;
+            if (r.overflow) killForOverflow();
           }
         });
 
@@ -572,6 +639,8 @@ export class DockerExecutor {
       let status: ExecutionStatus;
       if (timedOut) {
         status = ExecutionStatus.TIME_LIMIT_EXCEEDED;
+      } else if (outputOverflow) {
+        status = ExecutionStatus.OUTPUT_LIMIT_EXCEEDED;
       } else if (exitInfo.StatusCode === 0) {
         status = ExecutionStatus.SUCCESS;
       } else if (memoryUsageKb >= memoryLimitMb * 1024) {

@@ -135,6 +135,10 @@ export class ExecuteProjectDto {
   language: ProgrammingLanguage;
 
   @IsString()
+  @MaxLength(512)
+  @Matches(/^[\w .\/=:-]+$/, {
+    message: 'entryCommand contains disallowed characters',
+  })
   entryCommand: string;
 
   @IsOptional()
