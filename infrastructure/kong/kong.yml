@@ -1,0 +1,149 @@
+# CodeSphere API gateway — Kong (OSS) declarative config, DB-less mode.
+#
+# Kong is the single edge: it terminates TLS, applies rate limiting, size
+# limits, CORS and security headers, then routes to the frontend (static SPA)
+# and the backend services. No other container publishes a host port.
+#
+# Routes mirror the old nginx table 1:1 so no application URLs change.
+# Validate after editing:  bash scripts/validate-kong-config.sh
+_format_version: "3.0"
+_transform: true
+
+services:
+  # --- Backend APIs -------------------------------------------------------
+  - name: auth-service
+    url: http://auth-service:3001
+    routes:
+      - name: auth
+        paths:
+          - /api/v1/auth
+    plugins:
+      # Auth endpoints are the credential-stuffing / enumeration surface:
+      # a much tighter limit than the global default.
+      - name: rate-limiting
+        config:
+          minute: 20
+          policy: redis
+          redis:
+            host: redis
+            port: 6379
+          fault_tolerant: true
+          hide_client_headers: true
+
+  - name: problem-service
+    url: http://problem-service:8001
+    routes:
+      - name: problems
+        paths:
+          - /api/v1/problems
+          - /api/v1/tags
+          - /api/v1/submissions
+          - /api/v1/playback
+
+  - name: execution-service
+    url: http://execution-service:8002
+    routes:
+      - name: execute
+        paths:
+          - /api/v1/execute
+        plugins:
+          # Code execution is the most expensive route; cap it per client.
+          - name: rate-limiting
+            config:
+              minute: 30
+              policy: redis
+              redis:
+                host: redis
+                port: 6379
+              fault_tolerant: true
+              hide_client_headers: true
+      - name: execution-ws
+        paths:
+          - /socket.io
+        # WebSocket streaming: no request-size cap, long-lived upgrades.
+        strip_path: false
+
+  - name: assessment-service
+    url: http://assessment-service:8003
+    routes:
+      - name: assessments
+        paths:
+          - /api/v1/assessments
+          - /api/v1/invitations
+          - /api/v1/glass-box
+
+  - name: ai-service
+    url: http://ai-service:8004
+    routes:
+      - name: ai
+        paths:
+          - /api/v1/ai
+
+  # --- Frontend SPA (catch-all, lowest priority) --------------------------
+  - name: frontend
+    url: http://frontend:80
+    routes:
+      - name: spa
+        paths:
+          - /
+
+# --- Global plugins (apply to every route unless a route overrides) -------
+plugins:
+  # Baseline per-client rate limit across the whole API.
+  - name: rate-limiting
+    config:
+      minute: 120
+      policy: redis
+      redis:
+        host: redis
+        port: 6379
+      fault_tolerant: true
+      hide_client_headers: true
+
+  # Reject oversized bodies (multi-file submissions are well under this).
+  - name: request-size-limiting
+    config:
+      allowed_payload_size: 10
+      size_unit: megabytes
+
+  - name: cors
+    config:
+      # Behind Kong the SPA and API share one origin, so this is belt-and-
+      # suspenders. Set to the public domain in production.
+      origins:
+        - http://localhost:3000
+      credentials: true
+      methods:
+        - GET
+        - POST
+        - PUT
+        - PATCH
+        - DELETE
+        - OPTIONS
+      headers:
+        - Accept
+        - Content-Type
+        - Authorization
+        - X-Requested-With
+      max_age: 3600
+
+  # Security headers on every response (including the static SPA, which the
+  # per-service helmet does not cover).
+  - name: response-transformer
+    config:
+      add:
+        headers:
+          - "X-Frame-Options:DENY"
+          - "X-Content-Type-Options:nosniff"
+          - "Referrer-Policy:strict-origin-when-cross-origin"
+          - "X-XSS-Protection:0"
+      remove:
+        headers:
+          - Server
+
+  # Prometheus metrics at :8100/metrics (Kong status listener).
+  - name: prometheus
+    config:
+      status_code_metrics: true
+      latency_metrics: true
+      bandwidth_metrics: true
