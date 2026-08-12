@@ -23,10 +23,10 @@ services:
       KONG_PROXY_ACCESS_LOG: /dev/stdout
       KONG_PROXY_ERROR_LOG: /dev/stderr
       KONG_LOG_LEVEL: notice
-      # Production TLS: drop real certs in infrastructure/kong/certs and set:
-      # KONG_SSL_CERT: /kong/certs/fullchain.pem
-      # KONG_SSL_CERT_KEY: /kong/certs/privkey.pem
-      # Until then Kong serves its self-signed cert on :443 (browser warning).
+      # TLS: generate local certs once with scripts/generate-local-tls.sh
+      # (self-signed), or drop real certs at the same paths for production.
+      KONG_SSL_CERT: /kong/certs/fullchain.pem
+      KONG_SSL_CERT_KEY: /kong/certs/privkey.pem
     volumes:
       - ./infrastructure/kong/kong.yml:/kong/kong.yml:ro
       - ./infrastructure/kong/certs:/kong/certs:ro

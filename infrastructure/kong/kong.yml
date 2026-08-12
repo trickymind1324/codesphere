@@ -1,10 +1,13 @@
 # CodeSphere API gateway — Kong (OSS) declarative config, DB-less mode.
 #
-# Kong is the single edge: it terminates TLS, applies rate limiting, size
-# limits, CORS and security headers, then routes to the frontend (static SPA)
-# and the backend services. No other container publishes a host port.
+# Kong is the single edge: it terminates TLS, redirects HTTP→HTTPS, applies
+# rate limiting, size limits, CORS, security headers (incl. HSTS), then routes
+# to the frontend (static SPA) and the backend services. No other container
+# publishes a host port.
 #
-# Routes mirror the old nginx table 1:1 so no application URLs change.
+# Every route lists protocols: [https] with https_redirect_status_code: 301,
+# so any plain-HTTP request on :80 is 301-redirected to HTTPS on :443.
+# Routes otherwise mirror the old nginx table 1:1 so no application URLs change.
 # Validate after editing:  bash scripts/validate-kong-config.sh
 _format_version: "3.0"
 _transform: true
@@ -17,6 +20,9 @@ services:
       - name: auth
         paths:
           - /api/v1/auth
+        protocols:
+          - https
+        https_redirect_status_code: 301
     plugins:
       # Auth endpoints are the credential-stuffing / enumeration surface:
       # a much tighter limit than the global default.
@@ -39,6 +45,9 @@ services:
           - /api/v1/tags
           - /api/v1/submissions
           - /api/v1/playback
+        protocols:
+          - https
+        https_redirect_status_code: 301
 
   - name: execution-service
     url: http://execution-service:8002
@@ -46,6 +55,9 @@ services:
       - name: execute
         paths:
           - /api/v1/execute
+        protocols:
+          - https
+        https_redirect_status_code: 301
         plugins:
           # Code execution is the most expensive route; cap it per client.
           - name: rate-limiting
@@ -60,7 +72,10 @@ services:
       - name: execution-ws
         paths:
           - /socket.io
-        # WebSocket streaming: no request-size cap, long-lived upgrades.
+        # WebSocket streaming (wss after the redirect); long-lived upgrades.
+        protocols:
+          - https
+        https_redirect_status_code: 301
         strip_path: false
 
   - name: assessment-service
@@ -71,6 +86,9 @@ services:
           - /api/v1/assessments
           - /api/v1/invitations
           - /api/v1/glass-box
+        protocols:
+          - https
+        https_redirect_status_code: 301
 
   - name: ai-service
     url: http://ai-service:8004
@@ -78,6 +96,9 @@ services:
       - name: ai
         paths:
           - /api/v1/ai
+        protocols:
+          - https
+        https_redirect_status_code: 301
 
   # --- Frontend SPA (catch-all, lowest priority) --------------------------
   - name: frontend
@@ -86,6 +107,9 @@ services:
       - name: spa
         paths:
           - /
+        protocols:
+          - https
+        https_redirect_status_code: 301
 
 # --- Global plugins (apply to every route unless a route overrides) -------
 plugins:
@@ -111,7 +135,7 @@ plugins:
       # Behind Kong the SPA and API share one origin, so this is belt-and-
       # suspenders. Set to the public domain in production.
       origins:
-        - http://localhost:3000
+        - https://localhost
       credentials: true
       methods:
         - GET
@@ -128,7 +152,8 @@ plugins:
       max_age: 3600
 
   # Security headers on every response (including the static SPA, which the
-  # per-service helmet does not cover).
+  # per-service helmet does not cover). HSTS is honoured by browsers only
+  # over HTTPS, which the per-route redirect guarantees.
   - name: response-transformer
     config:
       add:
@@ -137,6 +162,7 @@ plugins:
           - "X-Content-Type-Options:nosniff"
           - "Referrer-Policy:strict-origin-when-cross-origin"
           - "X-XSS-Protection:0"
+          - "Strict-Transport-Security:max-age=31536000; includeSubDomains"
       remove:
         headers:
           - Server
