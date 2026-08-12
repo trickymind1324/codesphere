@@ -1,0 +1,58 @@
+{
+  "realm": "codesphere",
+  "enabled": true,
+  "displayName": "CodeSphere",
+  "registrationAllowed": true,
+  "registrationEmailAsUsername": true,
+  "resetPasswordAllowed": true,
+  "rememberMe": true,
+  "verifyEmail": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "sslRequired": "external",
+  "bruteForceProtected": true,
+  "permanentLockout": false,
+  "maxFailureWaitSeconds": 900,
+  "failureFactor": 10,
+  "passwordPolicy": "length(12)",
+  "defaultRoles": ["candidate"],
+  "roles": {
+    "realm": [
+      { "name": "candidate", "description": "Learner / assessment candidate" },
+      { "name": "recruiter", "description": "Enterprise recruiter / hiring manager" }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "codesphere-frontend",
+      "name": "CodeSphere SPA",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "implicitFlowEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": ["https://localhost/*"],
+      "webOrigins": ["https://localhost"],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "https://localhost/*"
+      }
+    },
+    {
+      "clientId": "codesphere-api",
+      "name": "CodeSphere API (resource server)",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "bearerOnly": true
+    }
+  ],
+  "clientScopes": [
+    {
+      "name": "roles",
+      "protocol": "openid-connect",
+      "attributes": { "include.in.token.scope": "true", "display.on.consent.screen": "false" }
+    }
+  ]
+}

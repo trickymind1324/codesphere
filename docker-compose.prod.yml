@@ -46,6 +46,8 @@ services:
         condition: service_started
       ai-service:
         condition: service_started
+      keycloak:
+        condition: service_started
       frontend:
         condition: service_started
     restart: unless-stopped
@@ -115,6 +117,48 @@ services:
     container_name: codesphere-mailhog
     # Web UI (8025) intentionally not published — it exposes captured
     # invitation tokens. Reach it via `docker compose port` / an SSH tunnel.
+    restart: unless-stopped
+
+  # Identity provider (ADR-001). Owns login, MFA, account console, and OIDC
+  # token issuance; the services validate its tokens via JWKS.
+  postgres-keycloak:
+    image: postgres:16-alpine
+    container_name: codesphere-postgres-keycloak
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: ${KEYCLOAK_DB_PASSWORD:-keycloak}
+    volumes:
+      - postgres-keycloak-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U keycloak"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    container_name: codesphere-keycloak
+    command: ["start", "--import-realm"]
+    environment:
+      # Bootstrap admin (change in production; admin console is not published).
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN:-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres-keycloak:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD:-keycloak}
+      # Runs HTTP internally; Kong terminates TLS and forwards X-Forwarded-*.
+      KC_HTTP_ENABLED: "true"
+      KC_PROXY_HEADERS: xforwarded
+      KC_HOSTNAME_STRICT: "false"
+      KC_HEALTH_ENABLED: "true"
+    volumes:
+      - ./infrastructure/keycloak/realm-codesphere.json:/opt/keycloak/data/import/realm-codesphere.json:ro
+    depends_on:
+      postgres-keycloak:
+        condition: service_healthy
     restart: unless-stopped
 
   auth-service:
@@ -287,4 +331,5 @@ volumes:
   postgres-auth-data:
   postgres-problems-data:
   postgres-assessments-data:
+  postgres-keycloak-data:
   redis-data:
