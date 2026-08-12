@@ -10,10 +10,8 @@ import {
 import { Logger } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { ConfigService } from '@nestjs/config';
-import * as jwt from 'jsonwebtoken';
-import { readFileSync } from 'fs';
-import { join } from 'path';
 import { v4 as uuidv4 } from 'uuid';
+import { getTokenVerifier, TokenVerifier } from '../auth/token-verifier';
 import { DockerExecutor, StreamingHandle } from '../utils/docker-executor.util';
 import { ExecutionService } from '../services/execution.service';
 import { ProgrammingLanguage } from '../dto/execute-code.dto';
@@ -31,7 +29,7 @@ import {
 })
 export class ExecutionGateway implements OnGatewayConnection, OnGatewayDisconnect {
   private readonly logger = new Logger(ExecutionGateway.name);
-  private publicKey: string;
+  private readonly verifier: TokenVerifier;
   private readonly activeExecutions = new Map<string, StreamingHandle>();
 
   @WebSocketServer()
@@ -42,20 +40,10 @@ export class ExecutionGateway implements OnGatewayConnection, OnGatewayDisconnec
     private readonly executionService: ExecutionService,
     private readonly configService: ConfigService,
   ) {
-    try {
-      this.publicKey = readFileSync(
-        join(__dirname, '../../../auth-service/keys/public.pem'),
-        'utf8',
-      );
-    } catch {
-      this.publicKey = this.configService.get<string>('JWT_PUBLIC_KEY') || '';
-      if (!this.publicKey) {
-        this.logger.error('JWT public key not found! WebSocket authentication will fail.');
-      }
-    }
+    this.verifier = getTokenVerifier(this.configService);
   }
 
-  handleConnection(client: Socket) {
+  async handleConnection(client: Socket) {
     try {
       const token =
         client.handshake.auth?.token ||
@@ -67,13 +55,7 @@ export class ExecutionGateway implements OnGatewayConnection, OnGatewayDisconnec
         return;
       }
 
-      const payload = jwt.verify(token, this.publicKey, {
-        algorithms: ['RS256'],
-        issuer: 'codesphere.com',
-        audience: 'codesphere-api',
-      });
-
-      client.data.user = payload;
+      client.data.user = await this.verifier.verify(token);
       this.logger.log(`Client ${client.id} authenticated`);
     } catch (error) {
       this.logger.warn(`Client ${client.id} auth failed: ${error.message}`);

@@ -217,6 +217,12 @@ services:
       REDIS_DB: 1
       CORS_ORIGIN: ${FRONTEND_URL:-http://localhost}
       EXECUTION_SERVICE_URL: http://execution-service:8002
+      # Keycloak token verification (JWKS). Legacy auth-service tokens still
+      # accepted until the frontend fully moves to OIDC (LEGACY_AUTH_ENABLED).
+      KEYCLOAK_ISSUER: ${KEYCLOAK_ISSUER:-https://localhost/realms/codesphere}
+      KEYCLOAK_JWKS_URI: ${KEYCLOAK_JWKS_URI:-http://keycloak:8080/realms/codesphere/protocol/openid-connect/certs}
+      KEYCLOAK_AUDIENCE: ${KEYCLOAK_AUDIENCE:-codesphere-api}
+      LEGACY_AUTH_ENABLED: ${LEGACY_AUTH_ENABLED:-true}
     volumes:
       # public key only — problem-service verifies, never signs
       - ./backend/auth-service/keys/public.pem:/app/backend/problem-service/keys/public.pem:ro
@@ -250,6 +256,10 @@ services:
       SANDBOX_NETWORK_ENABLED: "false"
       PROBLEM_SERVICE_URL: http://problem-service:8001
       ASSESSMENT_SERVICE_URL: http://assessment-service:8003
+      KEYCLOAK_ISSUER: ${KEYCLOAK_ISSUER:-https://localhost/realms/codesphere}
+      KEYCLOAK_JWKS_URI: ${KEYCLOAK_JWKS_URI:-http://keycloak:8080/realms/codesphere/protocol/openid-connect/certs}
+      KEYCLOAK_AUDIENCE: ${KEYCLOAK_AUDIENCE:-codesphere-api}
+      LEGACY_AUTH_ENABLED: ${LEGACY_AUTH_ENABLED:-true}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /tmp/codesphere-sandbox:/tmp/codesphere-sandbox
@@ -280,6 +290,10 @@ services:
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost}
       PROBLEM_SERVICE_URL: http://problem-service:8001
       JWT_PUBLIC_KEY_FILE: /keys/public.pem
+      KEYCLOAK_ISSUER: ${KEYCLOAK_ISSUER:-https://localhost/realms/codesphere}
+      KEYCLOAK_JWKS_URI: ${KEYCLOAK_JWKS_URI:-http://keycloak:8080/realms/codesphere/protocol/openid-connect/certs}
+      KEYCLOAK_AUDIENCE: ${KEYCLOAK_AUDIENCE:-codesphere-api}
+      LEGACY_AUTH_ENABLED: ${LEGACY_AUTH_ENABLED:-true}
       SMTP_HOST: ${SMTP_HOST:-mailhog}
       SMTP_PORT: ${SMTP_PORT:-1025}
       SMTP_SECURE: ${SMTP_SECURE:-false}

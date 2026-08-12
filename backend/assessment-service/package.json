@@ -24,6 +24,7 @@
     "dotenv": "^17.2.3",
     "helmet": "^7.1.0",
     "jsonwebtoken": "^9.0.2",
+    "jwks-rsa": "^3.2.2",
     "nodemailer": "^6.9.8",
     "pg": "^8.11.3",
     "reflect-metadata": "^0.2.1",

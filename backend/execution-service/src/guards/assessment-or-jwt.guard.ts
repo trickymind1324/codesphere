@@ -5,10 +5,8 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import * as jwt from 'jsonwebtoken';
 import axios from 'axios';
-import { readFileSync } from 'fs';
-import { join } from 'path';
+import { getTokenVerifier, TokenVerifier } from '../auth/token-verifier';
 
 /**
  * Allows two kinds of callers:
@@ -22,18 +20,11 @@ import { join } from 'path';
  */
 @Injectable()
 export class AssessmentOrJwtGuard implements CanActivate {
-  private publicKey: string;
+  private readonly verifier: TokenVerifier;
   private readonly assessmentServiceUrl: string;
 
   constructor(private configService: ConfigService) {
-    try {
-      this.publicKey = readFileSync(
-        join(__dirname, '../../../auth-service/keys/public.pem'),
-        'utf8',
-      );
-    } catch (error) {
-      this.publicKey = this.configService.get<string>('JWT_PUBLIC_KEY') || '';
-    }
+    this.verifier = getTokenVerifier(this.configService);
     this.assessmentServiceUrl = this.configService.get<string>(
       'ASSESSMENT_SERVICE_URL',
       'http://localhost:8003',
@@ -47,11 +38,7 @@ export class AssessmentOrJwtGuard implements CanActivate {
     const [type, bearer] = request.headers.authorization?.split(' ') ?? [];
     if (type === 'Bearer' && bearer) {
       try {
-        request.user = jwt.verify(bearer, this.publicKey, {
-          algorithms: ['RS256'],
-          issuer: 'codesphere.com',
-          audience: 'codesphere-api',
-        });
+        request.user = await this.verifier.verify(bearer);
         return true;
       } catch {
         // fall through to the assessment-token path
