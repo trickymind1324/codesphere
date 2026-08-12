@@ -7,6 +7,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { ExecutionResult, ExecutionStatus } from '../dto/execution-result.dto';
 import { ProgrammingLanguage } from '../dto/execute-code.dto';
 import { CodeWrapper } from './code-wrapper.util';
+import { parseBoolEnv } from './env.util';
 
 export interface StreamingHandle {
   resultPromise: Promise<ExecutionResult>;
@@ -27,6 +28,8 @@ export class DockerExecutor {
   private readonly logger = new Logger(DockerExecutor.name);
   private readonly docker: Docker;
   private readonly tempDir: string;
+  private readonly sandboxNetworkMode: 'bridge' | 'none';
+  private readonly cleanupTempFiles: boolean;
 
   private readonly languageConfig: Record<string, LanguageConfig> = {
     python: {
@@ -87,6 +90,33 @@ export class DockerExecutor {
       socketPath,
     });
     this.tempDir = this.configService.get<string>('SANDBOX_TEMP_DIR') || '/tmp/codesphere-sandbox';
+
+    this.sandboxNetworkMode = parseBoolEnv(
+      this.configService.get<string>('SANDBOX_NETWORK_ENABLED'),
+      false,
+    )
+      ? 'bridge'
+      : 'none';
+    this.cleanupTempFiles = parseBoolEnv(
+      this.configService.get<string>('CLEANUP_TEMP_FILES'),
+      true,
+    );
+    this.logger.log(`Sandbox network mode: ${this.sandboxNetworkMode}`);
+  }
+
+  /**
+   * Resolve a user-supplied relative path strictly inside workDir.
+   * Rejects absolute paths and anything that escapes the sandbox directory.
+   */
+  private resolveInWorkDir(workDir: string, filePath: string): string {
+    if (path.isAbsolute(filePath) || filePath.includes('\0')) {
+      throw new Error(`Invalid file path: ${filePath}`);
+    }
+    const fullPath = path.resolve(workDir, filePath);
+    if (fullPath !== workDir && !fullPath.startsWith(workDir + path.sep)) {
+      throw new Error(`Invalid file path: ${filePath}`);
+    }
+    return fullPath;
   }
 
   async execute(
@@ -168,7 +198,7 @@ export class DockerExecutor {
       };
     } finally {
       // Cleanup temporary files
-      if (this.configService.get<boolean>('CLEANUP_TEMP_FILES', true)) {
+      if (this.cleanupTempFiles) {
         await this.cleanupWorkDir(workDir);
       }
     }
@@ -204,7 +234,7 @@ export class DockerExecutor {
 
       // Write all files to the work directory with proper directory structure
       for (const file of files) {
-        const fullPath = path.join(workDir, file.filePath);
+        const fullPath = this.resolveInWorkDir(workDir, file.filePath);
         const dirPath = path.dirname(fullPath);
 
         // Create directory if it doesn't exist
@@ -241,7 +271,7 @@ export class DockerExecutor {
       };
     } finally {
       // Cleanup temporary files
-      if (this.configService.get<boolean>('CLEANUP_TEMP_FILES', true)) {
+      if (this.cleanupTempFiles) {
         await this.cleanupWorkDir(workDir);
       }
     }
@@ -272,14 +302,19 @@ export class DockerExecutor {
     // Prepare files on disk
     await fs.mkdir(workDir, { recursive: true });
 
-    for (const file of files) {
-      const fullPath = path.join(workDir, file.filePath);
-      await fs.mkdir(path.dirname(fullPath), { recursive: true });
-      await fs.writeFile(fullPath, file.content);
-    }
+    try {
+      for (const file of files) {
+        const fullPath = this.resolveInWorkDir(workDir, file.filePath);
+        await fs.mkdir(path.dirname(fullPath), { recursive: true });
+        await fs.writeFile(fullPath, file.content);
+      }
 
-    if (stdin) {
-      await fs.writeFile(path.join(workDir, 'input.txt'), stdin);
+      if (stdin) {
+        await fs.writeFile(path.join(workDir, 'input.txt'), stdin);
+      }
+    } catch (error) {
+      await this.cleanupWorkDir(workDir);
+      throw error;
     }
 
     const cmdParts = entryCommand.split(' ').filter(part => part.trim());
@@ -299,9 +334,7 @@ export class DockerExecutor {
         Memory: memoryLimitMb * 1024 * 1024,
         MemorySwap: memoryLimitMb * 1024 * 1024,
         NanoCpus: 1000000000,
-        NetworkMode: this.configService.get<boolean>('SANDBOX_NETWORK_ENABLED', false)
-          ? 'bridge'
-          : 'none',
+        NetworkMode: this.sandboxNetworkMode,
         PidsLimit: 50,
         Binds: [`${workDir}:/app`],
         ReadonlyRootfs: false,
@@ -390,7 +423,7 @@ export class DockerExecutor {
 
         // Cleanup
         try { await container.remove({ force: true }); } catch {}
-        if (this.configService.get<boolean>('CLEANUP_TEMP_FILES', true)) {
+        if (this.cleanupTempFiles) {
           await this.cleanupWorkDir(workDir);
         }
 
@@ -405,7 +438,7 @@ export class DockerExecutor {
       }).catch(async (error) => {
         const executionTimeMs = Date.now() - startTime;
         try { await container.remove({ force: true }); } catch {}
-        if (this.configService.get<boolean>('CLEANUP_TEMP_FILES', true)) {
+        if (this.cleanupTempFiles) {
           await this.cleanupWorkDir(workDir);
         }
 
@@ -461,9 +494,7 @@ export class DockerExecutor {
           Memory: memoryLimitMb * 1024 * 1024,
           MemorySwap: memoryLimitMb * 1024 * 1024,
           NanoCpus: 1000000000, // 1 CPU
-          NetworkMode: this.configService.get<boolean>('SANDBOX_NETWORK_ENABLED', false)
-            ? 'bridge'
-            : 'none',
+          NetworkMode: this.sandboxNetworkMode,
           PidsLimit: pidsLimit,
           Binds: [`${workDir}:/app`], // Remove :ro to allow compilation
           ReadonlyRootfs: false,

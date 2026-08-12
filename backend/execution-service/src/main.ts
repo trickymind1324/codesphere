@@ -6,6 +6,7 @@ import { AppModule } from './app.module';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import { DockerExecutor } from './utils/docker-executor.util';
+import { parseBoolEnv } from './utils/env.util';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -43,7 +44,7 @@ async function bootstrap() {
   app.useWebSocketAdapter(new IoAdapter(app));
 
   // Build Docker images if enabled
-  if (configService.get<boolean>('ENABLE_DOCKER', true)) {
+  if (parseBoolEnv(configService.get<string>('ENABLE_DOCKER'), true)) {
     const dockerExecutor = app.get(DockerExecutor);
     try {
       await dockerExecutor.buildImages();
