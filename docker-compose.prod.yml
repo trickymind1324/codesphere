@@ -152,6 +152,9 @@ services:
       # Runs HTTP internally; Kong terminates TLS and forwards X-Forwarded-*.
       KC_HTTP_ENABLED: "true"
       KC_PROXY_HEADERS: xforwarded
+      # Pin the public base URL so the token issuer is stable regardless of
+      # the port Kong forwards (otherwise it leaks Kong's internal :8443).
+      KC_HOSTNAME: ${KEYCLOAK_HOSTNAME:-https://localhost}
       KC_HOSTNAME_STRICT: "false"
       KC_HEALTH_ENABLED: "true"
     volumes:
