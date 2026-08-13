@@ -3,10 +3,13 @@ import {
   CanActivate,
   ExecutionContext,
   UnauthorizedException,
+  HttpException,
+  HttpStatus,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 import { getTokenVerifier, TokenVerifier } from '../auth/token-verifier';
+import { ExecutionQuotaService } from '../services/execution-quota.service';
 
 /**
  * Allows two kinds of callers:
@@ -17,13 +20,18 @@ import { getTokenVerifier, TokenVerifier } from '../auth/token-verifier';
  *    assessment-service server-side (same trust model as glass-box ingest).
  *
  * Sets request.user for JWT callers, request.assessmentToken for candidates.
+ * Candidate tokens are rate-limited per session and their validity is cached
+ * so a rapid run/test loop doesn't hammer assessment-service.
  */
 @Injectable()
 export class AssessmentOrJwtGuard implements CanActivate {
   private readonly verifier: TokenVerifier;
   private readonly assessmentServiceUrl: string;
 
-  constructor(private configService: ConfigService) {
+  constructor(
+    private configService: ConfigService,
+    private readonly quota: ExecutionQuotaService,
+  ) {
     this.verifier = getTokenVerifier(this.configService);
     this.assessmentServiceUrl = this.configService.get<string>(
       'ASSESSMENT_SERVICE_URL',
@@ -48,22 +56,42 @@ export class AssessmentOrJwtGuard implements CanActivate {
     // Path 2: live assessment session token
     const assessmentToken = request.headers['x-assessment-token'];
     if (typeof assessmentToken === 'string' && assessmentToken.length > 0) {
-      try {
-        const { data } = await axios.get(
-          `${this.assessmentServiceUrl}/api/v1/invitations/${encodeURIComponent(
-            assessmentToken,
-          )}`,
-          { timeout: 5000 },
-        );
-        if (data?.valid && data?.invitation?.status === 'started') {
-          request.user = null;
-          request.assessmentToken = assessmentToken;
-          return true;
+      const now = Date.now();
+
+      // Validate the token (using a short-lived cache to avoid calling
+      // assessment-service on every run).
+      let valid = this.quota.isValidationCached(assessmentToken, now);
+      if (!valid) {
+        try {
+          const { data } = await axios.get(
+            `${this.assessmentServiceUrl}/api/v1/invitations/${encodeURIComponent(
+              assessmentToken,
+            )}`,
+            { timeout: 5000 },
+          );
+          if (data?.valid && data?.invitation?.status === 'started') {
+            valid = true;
+            this.quota.cacheValidation(assessmentToken, now);
+          }
+        } catch {
+          // invalid/expired token — handled below
         }
-      } catch {
-        // invalid/expired token — handled below
       }
-      throw new UnauthorizedException('Assessment session is not active');
+      if (!valid) {
+        throw new UnauthorizedException('Assessment session is not active');
+      }
+
+      // Enforce the per-token execution quota.
+      if (!this.quota.consume(assessmentToken, now)) {
+        throw new HttpException(
+          'Execution limit reached for this assessment session',
+          HttpStatus.TOO_MANY_REQUESTS,
+        );
+      }
+
+      request.user = null;
+      request.assessmentToken = assessmentToken;
+      return true;
     }
 
     throw new UnauthorizedException('No token provided');

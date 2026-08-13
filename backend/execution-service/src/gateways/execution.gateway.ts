@@ -23,7 +23,8 @@ import {
 @WebSocketGateway({
   namespace: '/execution',
   cors: {
-    origin: true,
+    // Pin to the configured frontend origin instead of reflecting any origin.
+    origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
     credentials: true,
   },
 })

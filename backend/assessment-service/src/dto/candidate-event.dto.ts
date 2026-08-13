@@ -6,6 +6,7 @@ import {
   IsOptional,
   IsUUID,
   Min,
+  ArrayMaxSize,
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
@@ -40,6 +41,8 @@ export class CandidateEventDto {
 
 export class IngestCandidateEventsDto {
   @IsArray()
+  // Bound the batch so a single request can't insert unbounded telemetry rows.
+  @ArrayMaxSize(200)
   @ValidateNested({ each: true })
   @Type(() => CandidateEventDto)
   events: CandidateEventDto[];

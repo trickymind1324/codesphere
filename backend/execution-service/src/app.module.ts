@@ -6,6 +6,7 @@ import { ExecutionController } from './controllers/execution.controller';
 
 // Services
 import { ExecutionService } from './services/execution.service';
+import { ExecutionQuotaService } from './services/execution-quota.service';
 
 // Utils
 import { DockerExecutor } from './utils/docker-executor.util';
@@ -24,6 +25,6 @@ import { ExecutionGateway } from './gateways/execution.gateway';
     }),
   ],
   controllers: [ExecutionController],
-  providers: [ExecutionService, DockerExecutor, JwtAuthGuard, ExecutionGateway],
+  providers: [ExecutionService, ExecutionQuotaService, DockerExecutor, JwtAuthGuard, ExecutionGateway],
 })
 export class AppModule {}
