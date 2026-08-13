@@ -11,9 +11,11 @@ import {
 import { InvitationService } from '../services/invitation.service';
 import { ProblemService } from '../services/problem.service';
 import { CreateInvitationDto } from '../dto/create-invitation.dto';
+import { RecordResultDto } from '../dto/record-result.dto';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { RolesGuard } from '../guards/roles.guard';
 import { OptionalAuthGuard } from '../guards/optional-auth.guard';
+import { InternalKeyGuard } from '../guards/internal-key.guard';
 
 @Controller('assessments')
 export class InvitationController {
@@ -113,18 +115,26 @@ export class PublicInvitationController {
     };
   }
 
+  /**
+   * Record a per-problem result. Internal only (execution-service) — a
+   * candidate cannot call this to inflate their score.
+   */
+  @Post(':token/results')
+  @UseGuards(InternalKeyGuard)
+  @HttpCode(HttpStatus.OK)
+  async recordResult(
+    @Param('token') token: string,
+    @Body() dto: RecordResultDto,
+  ) {
+    await this.invitationService.recordResult(token, dto.problemId, dto.passed);
+    return { recorded: true };
+  }
+
   @Post(':token/complete')
   @HttpCode(HttpStatus.OK)
-  async completeAssessment(
-    @Param('token') token: string,
-    @Body() body: { score: number; problemsSolved: number; totalPoints: number },
-  ) {
-    const invitation = await this.invitationService.completeAssessment(
-      token,
-      body.score,
-      body.problemsSolved,
-      body.totalPoints,
-    );
+  async completeAssessment(@Param('token') token: string) {
+    // Score is recomputed server-side from recorded results; no client input.
+    const invitation = await this.invitationService.completeAssessment(token);
     return {
       message: 'Assessment completed successfully',
       score: invitation.score,

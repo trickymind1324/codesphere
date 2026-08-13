@@ -229,8 +229,10 @@ export const assessmentApi = {
     return response.data;
   },
 
-  completeAssessment: async (token: string, data: { score: number; problemsSolved: number; totalPoints: number }): Promise<AssessmentInvitation> => {
-    const response = await api.post(`/api/v1/invitations/${token}/complete`, data);
+  // The score is recomputed server-side from recorded results; the client
+  // sends no score of its own.
+  completeAssessment: async (token: string): Promise<AssessmentInvitation> => {
+    const response = await api.post(`/api/v1/invitations/${token}/complete`);
     return response.data;
   },
 };

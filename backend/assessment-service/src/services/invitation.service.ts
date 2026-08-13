@@ -12,6 +12,7 @@ import {
   InvitationStatus,
 } from '../entities/assessment-invitation.entity';
 import { Assessment } from '../entities/assessment.entity';
+import { AssessmentResult } from '../entities/assessment-result.entity';
 import { CreateInvitationDto } from '../dto/create-invitation.dto';
 import { EmailService } from './email.service';
 
@@ -22,8 +23,52 @@ export class InvitationService {
     private invitationRepository: Repository<AssessmentInvitation>,
     @InjectRepository(Assessment)
     private assessmentRepository: Repository<Assessment>,
+    @InjectRepository(AssessmentResult)
+    private resultRepository: Repository<AssessmentResult>,
     private emailService: EmailService,
   ) {}
+
+  /**
+   * Record a per-problem result for a live assessment session. Called only by
+   * execution-service (behind an internal key), which is the only component
+   * that actually runs the tests. Stores the best attempt per problem: points
+   * come from the assessment's own configuration, never from the caller.
+   */
+  async recordResult(
+    token: string,
+    problemId: string,
+    passed: boolean,
+  ): Promise<void> {
+    const invitation = await this.findStartedByToken(token);
+    const assessmentProblem = (invitation.assessment.assessmentProblems ?? []).find(
+      (ap) => ap.problemId === problemId,
+    );
+    if (!assessmentProblem) {
+      throw new BadRequestException('Problem is not part of this assessment');
+    }
+    const pointsAwarded = passed ? assessmentProblem.points : 0;
+
+    const existing = await this.resultRepository.findOne({
+      where: { invitationId: invitation.id, problemId },
+    });
+    if (!existing) {
+      await this.resultRepository.save(
+        this.resultRepository.create({
+          invitationId: invitation.id,
+          problemId,
+          passed,
+          pointsAwarded,
+        }),
+      );
+      return;
+    }
+    // Keep the best attempt — never downgrade a previously-passed problem.
+    if (pointsAwarded > existing.pointsAwarded || (passed && !existing.passed)) {
+      existing.passed = passed || existing.passed;
+      existing.pointsAwarded = Math.max(existing.pointsAwarded, pointsAwarded);
+      await this.resultRepository.save(existing);
+    }
+  }
 
   async createInvitations(
     assessmentId: string,
@@ -150,18 +195,22 @@ export class InvitationService {
     return this.invitationRepository.save(invitation);
   }
 
-  async completeAssessment(
-    token: string,
-    score: number,
-    problemsSolved: number,
-    totalPoints: number,
-  ): Promise<AssessmentInvitation> {
+  async completeAssessment(token: string): Promise<AssessmentInvitation> {
     const invitation = await this.findByToken(token);
 
     if (invitation.status === InvitationStatus.COMPLETED) {
       throw new BadRequestException('Assessment already completed');
     }
 
+    // Recompute the score server-side from the recorded per-problem results —
+    // the candidate's browser is never trusted for the score.
+    const results = await this.resultRepository.find({
+      where: { invitationId: invitation.id },
+    });
+    const problems = invitation.assessment.assessmentProblems ?? [];
+    const totalPoints = problems.reduce((sum, p) => sum + p.points, 0);
+    const score = results.reduce((sum, r) => sum + r.pointsAwarded, 0);
+    const problemsSolved = results.filter((r) => r.passed).length;
     const percentage = totalPoints > 0 ? Math.round((score / totalPoints) * 100) : 0;
 
     invitation.status = InvitationStatus.COMPLETED;
