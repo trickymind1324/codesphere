@@ -149,7 +149,7 @@ export function PlaybackPage() {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="text-center">
-          <div className="mb-4 text-4xl">🎬</div>
+          <div className="mb-4 text-4xl"></div>
           <h2 className="text-2xl font-bold">No recording found</h2>
           <p className="mt-2 text-muted-foreground">
             This session has no recorded events yet. Solve a problem first,

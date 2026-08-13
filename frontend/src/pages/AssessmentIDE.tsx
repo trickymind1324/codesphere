@@ -242,7 +242,7 @@ export function AssessmentIDE() {
       setSubmissions(updatedSubmissions);
 
       if (response.status === 'accepted') {
-        toast.success('Submission accepted! All tests passed! 🎉');
+        toast.success('Submission accepted! All tests passed!');
       } else {
         toast.error(`Submission failed: ${response.status.replace(/_/g, ' ')}`);
       }

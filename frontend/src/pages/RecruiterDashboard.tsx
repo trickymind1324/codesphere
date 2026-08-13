@@ -100,7 +100,7 @@ export function RecruiterDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-4xl font-bold tracking-tight text-foreground">
-                  {getGreeting()}, Recruiter! 👔
+                  {getGreeting()}, Recruiter!
                 </h1>
                 <p className="mt-2 text-lg text-muted-foreground">
                   Manage assessments and track candidate performance

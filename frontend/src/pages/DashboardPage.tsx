@@ -37,7 +37,7 @@ export function DashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-4xl font-bold tracking-tight text-gray-900 dark:text-white">
-                  {getGreeting()}, {user?.name?.split(' ')[0] || 'Developer'}! 👋
+                  {getGreeting()}, {user?.name?.split(' ')[0] || 'Developer'}!
                 </h1>
                 <p className="mt-2 text-lg text-gray-600 dark:text-gray-400">
                   Ready to sharpen your coding skills today?
@@ -48,7 +48,7 @@ export function DashboardPage() {
                   <div className="text-right">
                     <div className="text-sm text-gray-600 dark:text-gray-400">Current Streak</div>
                     <div className="text-2xl font-bold text-primary">
-                      🔥 0 days
+                      0 days
                     </div>
                   </div>
                 </div>
