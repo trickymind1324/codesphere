@@ -34,11 +34,11 @@ export function AssessmentCompleted() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 px-4">
+    <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-2xl">
         <div className="rounded-lg border border-border bg-card p-12 text-center shadow-xl">
           {/* Success Icon */}
-          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-r from-green-500 to-emerald-600">
+          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-state-pass">
             <svg
               className="h-12 w-12 text-white"
               fill="none"
