@@ -41,6 +41,24 @@ export default {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
         },
+        // Semantic — problem difficulty
+        difficulty: {
+          easy: 'hsl(var(--difficulty-easy))',
+          medium: 'hsl(var(--difficulty-medium))',
+          hard: 'hsl(var(--difficulty-hard))',
+        },
+        // Semantic — execution / submission state
+        state: {
+          pass: 'hsl(var(--state-pass))',
+          fail: 'hsl(var(--state-fail))',
+          running: 'hsl(var(--state-running))',
+          pending: 'hsl(var(--state-pending))',
+          warning: 'hsl(var(--state-warning))',
+        },
+      },
+      fontFamily: {
+        sans: ['"Inter Variable"', 'Inter', 'system-ui', 'sans-serif'],
+        mono: ['"JetBrains Mono Variable"', '"JetBrains Mono"', 'ui-monospace', 'monospace'],
       },
       borderRadius: {
         lg: 'var(--radius)',
