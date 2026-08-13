@@ -49,6 +49,22 @@ export class UserProfile {
   @Column({ type: 'varchar', length: 200, nullable: true })
   websiteUrl: string | null;
 
+  // Small avatar stored as a data URL (resized client-side). Fine for MVP;
+  // move to object storage (MinIO/S3) before scale.
+  @Column({ type: 'text', nullable: true })
+  avatarUrl: string | null;
+
+  @Column({ type: 'jsonb', default: () => "'[]'::jsonb" })
+  skills: string[];
+
+  // Résumé (PDF) as a data URL — excluded from default queries so profile
+  // responses stay light; fetched via the dedicated résumé endpoint.
+  @Column({ type: 'text', nullable: true, select: false })
+  resumeData: string | null;
+
+  @Column({ type: 'varchar', length: 200, nullable: true })
+  resumeName: string | null;
+
   @Column({ type: 'jsonb', default: () => "'[]'::jsonb" })
   experience: ExperienceItem[];
 

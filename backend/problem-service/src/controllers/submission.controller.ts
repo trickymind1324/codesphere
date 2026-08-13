@@ -45,11 +45,16 @@ export class SubmissionController {
   @Get()
   @UseGuards(OptionalAuthGuard)
   async findAll(@Query() queryDto: QuerySubmissionsDto, @Request() req) {
-    // If not an internal request, filter by authenticated user
-    if (!req.isInternalRequest && req.user) {
-      queryDto.userId = req.user.sub;
+    if (req.isInternalRequest) {
+      // Trusted service-to-service call: honour the provided filters.
+      return this.submissionService.findAll(queryDto);
     }
-
+    if (!req.user) {
+      // No authenticated user — never leak other people's submissions.
+      return { data: [], total: 0, page: queryDto.page ?? 1, pageSize: queryDto.pageSize ?? 20 };
+    }
+    // Authenticated user: scope strictly to their own submissions.
+    queryDto.userId = req.user.sub;
     return this.submissionService.findAll(queryDto);
   }
 

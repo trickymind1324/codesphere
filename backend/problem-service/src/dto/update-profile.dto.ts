@@ -57,7 +57,28 @@ export class UpdateProfileDto {
 
   @IsOptional()
   @IsArray()
+  @IsString({ each: true })
+  @MaxLength(40, { each: true })
+  skills?: string[];
+
+  @IsOptional()
+  @IsArray()
   @ValidateNested({ each: true })
   @Type(() => ExperienceItemDto)
   experience?: ExperienceItemDto[];
+}
+
+export class SetAvatarDto {
+  // data:image/...;base64,... — capped in the service
+  @IsString()
+  dataUrl: string;
+}
+
+export class SetResumeDto {
+  @IsString()
+  dataUrl: string;
+
+  @IsString()
+  @MaxLength(200)
+  fileName: string;
 }

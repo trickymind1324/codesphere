@@ -19,7 +19,10 @@ export interface UserProfile {
   githubUrl: string | null;
   linkedinUrl: string | null;
   websiteUrl: string | null;
+  avatarUrl: string | null;
+  skills: string[];
   experience: ExperienceItem[];
+  hasResume: boolean;
   updatedAt: string;
 }
 
@@ -33,7 +36,7 @@ export interface ProfileResponse {
 export type UpdateProfileData = Partial<
   Pick<
     UserProfile,
-    'headline' | 'bio' | 'college' | 'location' | 'githubUrl' | 'linkedinUrl' | 'websiteUrl' | 'experience'
+    'headline' | 'bio' | 'college' | 'location' | 'githubUrl' | 'linkedinUrl' | 'websiteUrl' | 'skills' | 'experience'
   >
 >;
 
@@ -48,6 +51,19 @@ export const profileApi = {
   },
   getPublic: async (userId: string): Promise<ProfileResponse> => {
     const res = await api.get(`/api/v1/profile/${userId}`);
+    return res.data;
+  },
+  setAvatar: async (dataUrl: string): Promise<void> => {
+    await api.put('/api/v1/profile/me/avatar', { dataUrl });
+  },
+  setResume: async (dataUrl: string, fileName: string): Promise<void> => {
+    await api.put('/api/v1/profile/me/resume', { dataUrl, fileName });
+  },
+  deleteResume: async (): Promise<void> => {
+    await api.delete('/api/v1/profile/me/resume');
+  },
+  getResume: async (userId: string): Promise<{ fileName: string; dataUrl: string }> => {
+    const res = await api.get(`/api/v1/profile/${userId}/resume`);
     return res.data;
   },
 };
