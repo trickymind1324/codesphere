@@ -1,5 +1,4 @@
-import { IsEmail, IsString, MinLength, MaxLength, IsEnum } from 'class-validator';
-import { UserRole } from '../entities/user.entity';
+import { IsEmail, IsString, MinLength, MaxLength, IsOptional, IsIn } from 'class-validator';
 
 export class RegisterDto {
   @IsEmail({}, { message: 'Please provide a valid email address' })
@@ -15,6 +14,9 @@ export class RegisterDto {
   @MaxLength(255, { message: 'Full name must not exceed 255 characters' })
   full_name: string;
 
-  @IsEnum(UserRole, { message: 'Invalid role' })
-  role: UserRole;
+  // Accepted from the sign-up form but ignored: self-registrations always get
+  // the candidate role from the realm default (no self-granted recruiter).
+  @IsOptional()
+  @IsIn(['candidate', 'recruiter'])
+  role?: string;
 }
