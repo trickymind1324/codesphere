@@ -1,44 +1,21 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { ThrottlerModule } from '@nestjs/throttler';
+import { ConfigModule } from '@nestjs/config';
 import { AuthController } from './controllers/auth.controller';
-import { AuthService } from './services/auth.service';
 import { KeycloakAdminService } from './services/keycloak-admin.service';
-import { RedisService } from './services/redis.service';
-import { EmailService } from './services/email.service';
-import { User } from './entities/user.entity';
-import { getDatabaseConfig } from './config/database.config';
-import { GoogleStrategy } from './strategies/google.strategy';
-import { GithubStrategy } from './strategies/github.strategy';
 
+/**
+ * Auth-service is a thin, stateless proxy: it only creates users in Keycloak
+ * for the first-party sign-up form. Keycloak owns everything else, so there is
+ * no database, cache, mailer, or token signing here.
+ */
 @Module({
   imports: [
-    // Configuration
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: process.env.NODE_ENV === 'production' ? '.env.production' : '.env',
     }),
-
-    // Database
-    TypeOrmModule.forRootAsync({
-      imports: [ConfigModule],
-      useFactory: getDatabaseConfig,
-      inject: [ConfigService],
-    }),
-
-    // Repository
-    TypeOrmModule.forFeature([User]),
-
-    // Rate Limiting
-    ThrottlerModule.forRoot([
-      {
-        ttl: 60000, // 1 minute
-        limit: 10, // 10 requests per minute
-      },
-    ]),
   ],
   controllers: [AuthController],
-  providers: [AuthService, KeycloakAdminService, RedisService, EmailService, GoogleStrategy, GithubStrategy],
+  providers: [KeycloakAdminService],
 })
 export class AppModule {}

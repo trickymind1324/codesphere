@@ -38,7 +38,6 @@ async function bootstrap() {
 
   console.log(`🚀 Auth Service is running on port ${port}`);
   console.log(`📧 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🔗 Database: ${process.env.DB_HOST || 'localhost'}:${process.env.DB_PORT || 5432}`);
 }
 
 bootstrap();
