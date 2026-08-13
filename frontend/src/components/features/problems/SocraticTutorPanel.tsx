@@ -64,7 +64,7 @@ export function SocraticTutorPanel({
   return (
     <div className="flex h-full flex-col">
       <div className="mb-4 rounded-lg bg-muted p-3 text-sm text-muted-foreground">
-        🦉 I won't write code for you — I'll ask questions that help you find
+        I won't write code for you — I'll ask questions that help you find
         the answer yourself. Tell me where you're stuck.
       </div>
 

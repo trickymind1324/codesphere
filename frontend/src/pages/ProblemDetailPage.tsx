@@ -194,7 +194,7 @@ export function ProblemDetailPage() {
       queryClient.invalidateQueries({ queryKey: ['recentSubmissions'] });
 
       if (response.status === 'accepted') {
-        toast.success('Submission accepted! All tests passed! 🎉');
+        toast.success('Submission accepted! All tests passed!');
       } else {
         toast.error(`Submission failed: ${response.status.replace(/_/g, ' ')}`);
       }
@@ -231,7 +231,7 @@ export function ProblemDetailPage() {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="text-center">
-          <div className="text-4xl mb-4">❌</div>
+          <div className="text-4xl mb-4"></div>
           <h2 className="text-2xl font-bold">Problem not found</h2>
           <p className="mt-2 text-muted-foreground">
             The problem you're looking for doesn't exist.
@@ -489,7 +489,7 @@ export function ProblemDetailPage() {
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center py-12 text-center">
-                    <div className="text-4xl mb-4">📝</div>
+                    <div className="text-4xl mb-4"></div>
                     <h3 className="text-lg font-semibold">No submissions yet</h3>
                     <p className="mt-2 text-sm text-muted-foreground">
                       Your submissions will appear here

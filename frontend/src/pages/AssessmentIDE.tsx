@@ -242,7 +242,7 @@ export function AssessmentIDE() {
       setSubmissions(updatedSubmissions);
 
       if (response.status === 'accepted') {
-        toast.success('Submission accepted! All tests passed! 🎉');
+        toast.success('Submission accepted! All tests passed!');
       } else {
         toast.error(`Submission failed: ${response.status.replace(/_/g, ' ')}`);
       }
@@ -548,7 +548,7 @@ export function AssessmentIDE() {
           <button
             onClick={handleSubmitAssessment}
             disabled={completeMutation.isPending}
-            className="rounded-md bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-2 text-sm font-medium text-white shadow-md hover:shadow-lg disabled:opacity-50"
+            className="rounded-md bg-primary px-6 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 disabled:opacity-50"
           >
             {completeMutation.isPending ? 'Submitting...' : 'Submit Assessment'}
           </button>

@@ -30,14 +30,14 @@ export function DashboardPage() {
 
   return (
     <AppLayout>
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-indigo-50/30 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
+      <div className="min-h-screen bg-background">
         {/* Hero Section */}
         <div className="border-b border-gray-200 bg-white/50 backdrop-blur-sm dark:border-gray-800 dark:bg-gray-900/50">
           <div className="container mx-auto px-4 py-12">
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-4xl font-bold tracking-tight text-gray-900 dark:text-white">
-                  {getGreeting()}, {user?.name?.split(' ')[0] || 'Developer'}! 👋
+                  {getGreeting()}, {user?.name?.split(' ')[0] || 'Developer'}!
                 </h1>
                 <p className="mt-2 text-lg text-gray-600 dark:text-gray-400">
                   Ready to sharpen your coding skills today?
@@ -47,8 +47,8 @@ export function DashboardPage() {
                 <div className="flex items-center gap-4">
                   <div className="text-right">
                     <div className="text-sm text-gray-600 dark:text-gray-400">Current Streak</div>
-                    <div className="text-2xl font-bold bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-transparent">
-                      🔥 0 days
+                    <div className="text-2xl font-bold text-primary">
+                      0 days
                     </div>
                   </div>
                 </div>
@@ -61,104 +61,87 @@ export function DashboardPage() {
           {/* Stats Overview */}
           <div className="mb-8">
             <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-white">Your Progress</h2>
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
               {/* Problems Solved */}
-              <div className="group relative overflow-hidden rounded-xl border border-gray-200 bg-gradient-to-br from-blue-500 to-indigo-600 p-6 shadow-lg transition-all hover:scale-105 hover:shadow-xl dark:border-gray-700">
-                <div className="absolute right-0 top-0 h-32 w-32 translate-x-8 -translate-y-8 rounded-full bg-white/10"></div>
-                <div className="relative">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-blue-100">Problems Solved</p>
-                      <p className="mt-2 text-4xl font-bold text-white">
-                        {userStats?.problemsSolved || 0}
-                      </p>
-                    </div>
-                    <div className="rounded-full bg-white/20 p-3">
-                      <svg className="h-8 w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
+              <div className="surface-raised rounded-xl p-5 transition-transform hover:-translate-y-0.5">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Problems Solved</p>
+                    <p className="mt-2 text-4xl font-bold tabular-nums text-foreground">
+                      {userStats?.problemsSolved || 0}
+                    </p>
                   </div>
-                  <div className="mt-4 flex items-center text-sm text-blue-100">
-                    <svg className="mr-1 h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z" clipRule="evenodd" />
+                  <div className="rounded-lg bg-muted p-2.5">
+                    <svg className="h-6 w-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    Keep going!
                   </div>
                 </div>
+                <div className="mt-4 text-sm text-muted-foreground">Keep going!</div>
               </div>
 
               {/* Total Submissions */}
-              <div className="group relative overflow-hidden rounded-xl border border-gray-200 bg-gradient-to-br from-purple-500 to-pink-600 p-6 shadow-lg transition-all hover:scale-105 hover:shadow-xl dark:border-gray-700">
-                <div className="absolute right-0 top-0 h-32 w-32 translate-x-8 -translate-y-8 rounded-full bg-white/10"></div>
-                <div className="relative">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-purple-100">Total Submissions</p>
-                      <p className="mt-2 text-4xl font-bold text-white">
-                        {userStats?.totalSubmissions || 0}
-                      </p>
-                    </div>
-                    <div className="rounded-full bg-white/20 p-3">
-                      <svg className="h-8 w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
-                      </svg>
-                    </div>
+              <div className="surface-raised rounded-xl p-5 transition-transform hover:-translate-y-0.5">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Total Submissions</p>
+                    <p className="mt-2 text-4xl font-bold tabular-nums text-foreground">
+                      {userStats?.totalSubmissions || 0}
+                    </p>
                   </div>
-                  <div className="mt-4 text-sm text-purple-100">
-                    {userStats?.acceptedSubmissions || 0} accepted
+                  <div className="rounded-lg bg-muted p-2.5">
+                    <svg className="h-6 w-6 text-state-running" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+                    </svg>
                   </div>
+                </div>
+                <div className="mt-4 text-sm text-muted-foreground">
+                  {userStats?.acceptedSubmissions || 0} accepted
                 </div>
               </div>
 
               {/* Acceptance Rate */}
-              <div className="group relative overflow-hidden rounded-xl border border-gray-200 bg-gradient-to-br from-green-500 to-emerald-600 p-6 shadow-lg transition-all hover:scale-105 hover:shadow-xl dark:border-gray-700">
-                <div className="absolute right-0 top-0 h-32 w-32 translate-x-8 -translate-y-8 rounded-full bg-white/10"></div>
-                <div className="relative">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-green-100">Acceptance Rate</p>
-                      <p className="mt-2 text-4xl font-bold text-white">
-                        {acceptanceRate}%
-                      </p>
-                    </div>
-                    <div className="rounded-full bg-white/20 p-3">
-                      <svg className="h-8 w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                      </svg>
-                    </div>
+              <div className="surface-raised rounded-xl p-5 transition-transform hover:-translate-y-0.5">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Acceptance Rate</p>
+                    <p className="mt-2 text-4xl font-bold tabular-nums text-foreground">
+                      {acceptanceRate}%
+                    </p>
                   </div>
-                  <div className="mt-4">
-                    <div className="h-2 overflow-hidden rounded-full bg-white/30">
-                      <div
-                        className="h-full rounded-full bg-white transition-all duration-500"
-                        style={{ width: `${acceptanceRate}%` }}
-                      ></div>
-                    </div>
+                  <div className="rounded-lg bg-muted p-2.5">
+                    <svg className="h-6 w-6 text-state-pass" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                    </svg>
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+                    <div
+                      className="h-full rounded-full bg-state-pass transition-all duration-500"
+                      style={{ width: `${acceptanceRate}%` }}
+                    ></div>
                   </div>
                 </div>
               </div>
 
               {/* Languages Used */}
-              <div className="group relative overflow-hidden rounded-xl border border-gray-200 bg-gradient-to-br from-orange-500 to-red-600 p-6 shadow-lg transition-all hover:scale-105 hover:shadow-xl dark:border-gray-700">
-                <div className="absolute right-0 top-0 h-32 w-32 translate-x-8 -translate-y-8 rounded-full bg-white/10"></div>
-                <div className="relative">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-orange-100">Languages</p>
-                      <p className="mt-2 text-4xl font-bold text-white">
-                        {userStats?.languagesUsed?.length || 0}
-                      </p>
-                    </div>
-                    <div className="rounded-full bg-white/20 p-3">
-                      <svg className="h-8 w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-                      </svg>
-                    </div>
+              <div className="surface-raised rounded-xl p-5 transition-transform hover:-translate-y-0.5">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Languages</p>
+                    <p className="mt-2 text-4xl font-bold tabular-nums text-foreground">
+                      {userStats?.languagesUsed?.length || 0}
+                    </p>
                   </div>
-                  <div className="mt-4 text-sm text-orange-100">
-                    {userStats?.languagesUsed?.slice(0, 2).join(', ') || 'Start coding!'}
+                  <div className="rounded-lg bg-muted p-2.5">
+                    <svg className="h-6 w-6 text-state-warning" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                    </svg>
                   </div>
+                </div>
+                <div className="mt-4 text-sm text-muted-foreground">
+                  {userStats?.languagesUsed?.slice(0, 2).join(', ') || 'Start coding!'}
                 </div>
               </div>
             </div>
@@ -253,7 +236,7 @@ export function DashboardPage() {
                 <div className="space-y-3">
                   <Link
                     to="/problems"
-                    className="flex items-center gap-3 rounded-lg border border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50 p-4 transition-all hover:scale-105 hover:shadow-md dark:border-gray-700 dark:from-blue-900/20 dark:to-indigo-900/20"
+                    className="flex items-center gap-3 rounded-lg border border-border bg-muted/40 p-4 transition-colors hover:bg-muted"
                   >
                     <div className="rounded-lg bg-blue-600 p-2">
                       <svg className="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -268,7 +251,7 @@ export function DashboardPage() {
 
                   <Link
                     to="/submissions"
-                    className="flex items-center gap-3 rounded-lg border border-gray-200 bg-gradient-to-r from-purple-50 to-pink-50 p-4 transition-all hover:scale-105 hover:shadow-md dark:border-gray-700 dark:from-purple-900/20 dark:to-pink-900/20"
+                    className="flex items-center gap-3 rounded-lg border border-border bg-muted/40 p-4 transition-colors hover:bg-muted"
                   >
                     <div className="rounded-lg bg-purple-600 p-2">
                       <svg className="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -286,7 +269,7 @@ export function DashboardPage() {
               {/* Profile Card */}
               <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
                 <div className="mb-4 flex items-center gap-4">
-                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-2xl font-bold text-white">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary text-2xl font-bold text-primary-foreground">
                     {user?.name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'U'}
                   </div>
                   <div>

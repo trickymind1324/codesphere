@@ -2,67 +2,115 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Self-hosted variable fonts (no CDN — works offline/air-gapped). */
+@font-face {
+  font-family: 'Inter Variable';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url('/fonts/inter-latin-wght-normal.woff2') format('woff2-variations');
+}
+@font-face {
+  font-family: 'JetBrains Mono Variable';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 800;
+  src: url('/fonts/jetbrains-mono-latin-wght-normal.woff2') format('woff2-variations');
+}
+
+/*
+ * CodeSphere design system — modern developer-tool, dark-first.
+ * Charcoal grounds, a single confident teal accent, Inter UI + JetBrains Mono.
+ * Tokens are HSL triplets consumed as hsl(var(--token)); components never use
+ * raw colors, so the whole app reskins from here.
+ */
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Light theme — cool, near-white, restrained */
+    --background: 210 30% 98%;
+    --foreground: 213 30% 12%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 213 30% 12%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 213 30% 12%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Teal accent, darkened for contrast on light grounds */
+    --primary: 174 70% 30%;
+    --primary-foreground: 174 40% 97%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 210 24% 94%;
+    --secondary-foreground: 213 30% 20%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 210 24% 95%;
+    --muted-foreground: 213 12% 42%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 174 45% 92%;
+    --accent-foreground: 174 70% 24%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 72% 45%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 213 20% 88%;
+    --input: 213 20% 88%;
+    --ring: 174 70% 34%;
 
-    --radius: 0.5rem;
+    /* Semantic — problem difficulty */
+    --difficulty-easy: 152 55% 34%;
+    --difficulty-medium: 38 80% 42%;
+    --difficulty-hard: 349 65% 48%;
+
+    /* Semantic — execution / submission state */
+    --state-pass: 152 55% 34%;
+    --state-fail: 0 72% 48%;
+    --state-running: 199 75% 42%;
+    --state-pending: 213 12% 50%;
+    --state-warning: 33 85% 44%;
+
+    --radius: 0.6rem;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    /* Dark theme — the primary look. Deep desaturated charcoal, not black. */
+    --background: 213 24% 8%;
+    --foreground: 210 20% 92%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 214 22% 11%;
+    --card-foreground: 210 20% 92%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 214 24% 10%;
+    --popover-foreground: 210 20% 92%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    /* Teal accent, brighter to sit on charcoal */
+    --primary: 171 55% 52%;
+    --primary-foreground: 213 40% 8%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 213 20% 16%;
+    --secondary-foreground: 210 20% 92%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 213 18% 15%;
+    --muted-foreground: 210 12% 64%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 213 22% 17%;
+    --accent-foreground: 171 55% 60%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 62% 52%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --border: 213 18% 18%;
+    --input: 213 18% 20%;
+    --ring: 171 55% 48%;
+
+    --difficulty-easy: 152 48% 52%;
+    --difficulty-medium: 40 85% 58%;
+    --difficulty-hard: 349 70% 62%;
+
+    --state-pass: 152 48% 52%;
+    --state-fail: 0 68% 62%;
+    --state-running: 199 75% 60%;
+    --state-pending: 210 12% 56%;
+    --state-warning: 36 90% 60%;
   }
 }
 
@@ -72,54 +120,67 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-feature-settings: "rlig" 1, "calt" 1;
+    font-feature-settings: "cv02", "cv03", "cv04", "ss01", "calt" 1;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  h1, h2, h3, h4 {
+    @apply font-semibold tracking-tight;
+    text-wrap: balance;
+  }
+  code, kbd, pre, samp {
+    font-family: 'JetBrains Mono Variable', ui-monospace, monospace;
   }
 }
 
 @layer utilities {
   .scrollbar-thin::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 10px;
+    height: 10px;
   }
-
   .scrollbar-thin::-webkit-scrollbar-track {
     @apply bg-transparent;
   }
-
   .scrollbar-thin::-webkit-scrollbar-thumb {
-    @apply bg-gray-300 dark:bg-gray-700 rounded-full;
+    @apply rounded-full;
+    background-color: hsl(var(--border));
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(var(--muted-foreground));
   }
 
-  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-    @apply bg-gray-400 dark:bg-gray-600;
+  /* Subtle elevated surface with a hairline top highlight — premium depth. */
+  .surface-raised {
+    background-color: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.03),
+      0 1px 2px 0 rgba(6, 10, 16, 0.4);
   }
 }
 
-/* Monaco Editor Theme Override */
-.monaco-editor {
+/* Monaco editor rounding */
+.monaco-editor,
+.monaco-editor .overflow-guard {
   @apply rounded-lg;
 }
 
-/* Custom animations */
 @keyframes pulse-slow {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
-
 .animate-pulse-slow {
   animation: pulse-slow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-/* Loading states */
-.skeleton {
-  @apply animate-pulse bg-gray-200 dark:bg-gray-700;
+@media (prefers-reduced-motion: reduce) {
+  .animate-pulse-slow { animation: none; }
 }
 
-/* Focus visible improvements */
+.skeleton {
+  @apply animate-pulse rounded-md;
+  background-color: hsl(var(--muted));
+}
+
 .focus-ring {
-  @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
+  @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
 }

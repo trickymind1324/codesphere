@@ -147,7 +147,7 @@ function TreeNode({
           <span className="text-yellow-500 text-xs ml-1" title="Modified">●</span>
         )}
         {node.isReadOnly && (
-          <span className="text-gray-500 text-xs ml-1" title="Read-only">🔒</span>
+          <span className="text-gray-500 text-xs ml-1" title="Read-only"></span>
         )}
       </div>
 

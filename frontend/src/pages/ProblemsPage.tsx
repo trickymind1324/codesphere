@@ -196,7 +196,7 @@ export function ProblemsPage() {
         {/* Empty State */}
         {!isLoading && problemsData?.data.length === 0 && (
           <div className="flex flex-col items-center justify-center py-12 text-center">
-            <div className="text-4xl mb-4">📝</div>
+            <div className="text-4xl mb-4"></div>
             <h3 className="text-lg font-semibold">No problems found</h3>
             <p className="mt-2 text-sm text-muted-foreground">
               {filters.search || filters.difficulty

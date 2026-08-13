@@ -45,12 +45,12 @@ export function AppLayout({ children }: AppLayoutProps) {
               to={isRecruiter ? '/recruiter/dashboard' : '/problems'}
               className="flex items-center gap-2"
             >
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
                 <svg className="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
                 </svg>
               </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+              <span className="text-xl font-bold text-foreground">
                 CodeSphere
               </span>
             </Link>
@@ -85,7 +85,7 @@ export function AppLayout({ children }: AppLayoutProps) {
             {/* User Dropdown */}
             <div className="relative group">
               <button className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 text-sm font-semibold text-white">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
                   {user?.name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'U'}
                 </div>
                 <span className="hidden lg:inline-block max-w-[150px] truncate">

@@ -222,12 +222,6 @@ export function AssessmentForm() {
               >
                 Dashboard
               </Link>
-              <Link
-                to="/problems"
-                className="text-sm font-medium text-muted-foreground hover:text-foreground"
-              >
-                Problems
-              </Link>
             </div>
           </div>
 
