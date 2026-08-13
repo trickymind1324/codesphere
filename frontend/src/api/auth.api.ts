@@ -43,6 +43,15 @@ export const authApi = {
   },
 
   /**
+   * Register via Keycloak (first-party flow). Creates the user in Keycloak;
+   * the caller then logs in with the same credentials.
+   */
+  async registerKeycloak(data: RegisterData): Promise<{ message: string }> {
+    const response = await api.post('/api/v1/auth/keycloak/register', data);
+    return response.data;
+  },
+
+  /**
    * Login with email and password
    */
   async login(data: LoginData): Promise<AuthResponse> {

@@ -75,6 +75,23 @@ export const useAuthStore = create<AuthState>()(
       },
 
       register: async (data: RegisterData) => {
+        // Keycloak: create the user in Keycloak, then sign in with the same
+        // credentials so registration lands the user straight in the app.
+        if (AUTH_MODE === 'oidc') {
+          try {
+            set({ isLoading: true, error: null });
+            await authApi.registerKeycloak(data);
+            const user = await passwordLogin(data.email, data.password);
+            set({ user, isAuthenticated: true, isLoading: false, error: null });
+          } catch (error: any) {
+            const errorMessage =
+              error.response?.data?.message || 'Registration failed. Please try again.';
+            set({ isLoading: false, error: errorMessage });
+            throw error;
+          }
+          return;
+        }
+
         try {
           set({ isLoading: true, error: null });
 

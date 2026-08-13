@@ -192,6 +192,11 @@ services:
       GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-not-configured}
       GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-not-configured}
       GITHUB_CALLBACK_URL: ${GITHUB_CALLBACK_URL:-http://localhost/api/v1/auth/oauth/github/callback}
+      # First-party registration creates users in Keycloak via the admin API.
+      KEYCLOAK_URL: ${KEYCLOAK_URL_INTERNAL:-http://keycloak:8080}
+      KEYCLOAK_REALM: codesphere
+      KEYCLOAK_ADMIN_USER: ${KEYCLOAK_ADMIN:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
     volumes:
       - ./backend/auth-service/keys:/app/backend/auth-service/keys:ro
     depends_on:
@@ -199,6 +204,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      keycloak:
+        condition: service_started
     restart: unless-stopped
 
   problem-service:
