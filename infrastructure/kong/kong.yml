@@ -23,6 +23,7 @@ services:
         protocols:
           - https
         https_redirect_status_code: 301
+        strip_path: false
     plugins:
       # Auth endpoints are the credential-stuffing / enumeration surface:
       # a much tighter limit than the global default.
@@ -48,6 +49,7 @@ services:
         protocols:
           - https
         https_redirect_status_code: 301
+        strip_path: false
 
   - name: execution-service
     url: http://execution-service:8002
@@ -58,6 +60,7 @@ services:
         protocols:
           - https
         https_redirect_status_code: 301
+        strip_path: false
         plugins:
           # Code execution is the most expensive route; cap it per client.
           - name: rate-limiting
@@ -89,6 +92,7 @@ services:
         protocols:
           - https
         https_redirect_status_code: 301
+        strip_path: false
 
   - name: ai-service
     url: http://ai-service:8004
@@ -99,6 +103,7 @@ services:
         protocols:
           - https
         https_redirect_status_code: 301
+        strip_path: false
 
   # Keycloak OIDC endpoints (login pages, tokens, JWKS, account console).
   # Only /realms and /resources are exposed; the admin API/console at /admin
@@ -113,6 +118,7 @@ services:
         protocols:
           - https
         https_redirect_status_code: 301
+        strip_path: false
 
   # --- Frontend SPA (catch-all, lowest priority) --------------------------
   - name: frontend
@@ -124,6 +130,7 @@ services:
         protocols:
           - https
         https_redirect_status_code: 301
+        strip_path: false
 
 # --- Global plugins (apply to every route unless a route overrides) -------
 plugins:

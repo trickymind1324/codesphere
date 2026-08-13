@@ -30,7 +30,7 @@
       "protocol": "openid-connect",
       "publicClient": true,
       "standardFlowEnabled": true,
-      "directAccessGrantsEnabled": false,
+      "directAccessGrantsEnabled": true,
       "implicitFlowEnabled": false,
       "serviceAccountsEnabled": false,
       "redirectUris": ["https://localhost/*"],
@@ -38,7 +38,21 @@
       "attributes": {
         "pkce.code.challenge.method": "S256",
         "post.logout.redirect.uris": "https://localhost/*"
-      }
+      },
+      "defaultClientScopes": ["web-origins", "acr", "profile", "roles", "email", "basic"],
+      "optionalClientScopes": ["address", "phone", "offline_access", "microprofile-jwt"],
+      "protocolMappers": [
+        {
+          "name": "codesphere-api-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": {
+            "included.client.audience": "codesphere-api",
+            "id.token.claim": "false",
+            "access.token.claim": "true"
+          }
+        }
+      ]
     },
     {
       "clientId": "codesphere-api",
@@ -48,11 +62,18 @@
       "bearerOnly": true
     }
   ],
-  "clientScopes": [
+  "users": [
     {
-      "name": "roles",
-      "protocol": "openid-connect",
-      "attributes": { "include.in.token.scope": "true", "display.on.consent.screen": "false" }
+      "username": "recruiter@codesphere.com",
+      "email": "recruiter@codesphere.com",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Demo",
+      "lastName": "Recruiter",
+      "credentials": [
+        { "type": "password", "value": "Recruiter123!", "temporary": false }
+      ],
+      "realmRoles": ["recruiter"]
     }
   ]
 }

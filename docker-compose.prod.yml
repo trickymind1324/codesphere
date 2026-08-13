@@ -152,6 +152,9 @@ services:
       # Runs HTTP internally; Kong terminates TLS and forwards X-Forwarded-*.
       KC_HTTP_ENABLED: "true"
       KC_PROXY_HEADERS: xforwarded
+      # Pin the public base URL so the token issuer is stable regardless of
+      # the port Kong forwards (otherwise it leaks Kong's internal :8443).
+      KC_HOSTNAME: ${KEYCLOAK_HOSTNAME:-https://localhost}
       KC_HOSTNAME_STRICT: "false"
       KC_HEALTH_ENABLED: "true"
     volumes:
@@ -189,6 +192,11 @@ services:
       GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-not-configured}
       GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-not-configured}
       GITHUB_CALLBACK_URL: ${GITHUB_CALLBACK_URL:-http://localhost/api/v1/auth/oauth/github/callback}
+      # First-party registration creates users in Keycloak via the admin API.
+      KEYCLOAK_URL: ${KEYCLOAK_URL_INTERNAL:-http://keycloak:8080}
+      KEYCLOAK_REALM: codesphere
+      KEYCLOAK_ADMIN_USER: ${KEYCLOAK_ADMIN:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
     volumes:
       - ./backend/auth-service/keys:/app/backend/auth-service/keys:ro
     depends_on:
@@ -196,6 +204,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      keycloak:
+        condition: service_started
     restart: unless-stopped
 
   problem-service:
@@ -332,6 +342,11 @@ services:
     build:
       context: .
       dockerfile: frontend/Dockerfile
+      args:
+        # Flip to 'oidc' to build the SPA against Keycloak login.
+        VITE_AUTH_MODE: ${VITE_AUTH_MODE:-legacy}
+        VITE_OIDC_AUTHORITY: ${VITE_OIDC_AUTHORITY:-https://localhost/realms/codesphere}
+        VITE_OIDC_CLIENT_ID: ${VITE_OIDC_CLIENT_ID:-codesphere-frontend}
     container_name: codesphere-frontend
     depends_on:
       - auth-service

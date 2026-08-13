@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { User } from '@/types';
 import { authApi, type LoginData, type RegisterData } from '@/api/auth.api';
+import { AUTH_MODE, passwordLogin, kcLogout, restoreSession } from '@/lib/oidc';
 
 interface AuthState {
   user: User | null;
@@ -29,6 +30,24 @@ export const useAuthStore = create<AuthState>()(
       error: null,
 
       login: async (data: LoginData) => {
+        // Keycloak: our own form calls the token endpoint directly.
+        if (AUTH_MODE === 'oidc') {
+          try {
+            set({ isLoading: true, error: null });
+            const user = await passwordLogin(data.email, data.password);
+            set({ user, isAuthenticated: true, isLoading: false, error: null });
+          } catch (error: any) {
+            set({
+              user: null,
+              isAuthenticated: false,
+              isLoading: false,
+              error: 'Invalid email or password.',
+            });
+            throw error;
+          }
+          return;
+        }
+
         try {
           set({ isLoading: true, error: null });
 
@@ -56,6 +75,23 @@ export const useAuthStore = create<AuthState>()(
       },
 
       register: async (data: RegisterData) => {
+        // Keycloak: create the user in Keycloak, then sign in with the same
+        // credentials so registration lands the user straight in the app.
+        if (AUTH_MODE === 'oidc') {
+          try {
+            set({ isLoading: true, error: null });
+            await authApi.registerKeycloak(data);
+            const user = await passwordLogin(data.email, data.password);
+            set({ user, isAuthenticated: true, isLoading: false, error: null });
+          } catch (error: any) {
+            const errorMessage =
+              error.response?.data?.message || 'Registration failed. Please try again.';
+            set({ isLoading: false, error: errorMessage });
+            throw error;
+          }
+          return;
+        }
+
         try {
           set({ isLoading: true, error: null });
 
@@ -79,6 +115,16 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: async () => {
+        if (AUTH_MODE === 'oidc') {
+          try {
+            await kcLogout();
+          } catch (error) {
+            console.error('Logout error:', error);
+          } finally {
+            set({ user: null, isAuthenticated: false, error: null });
+          }
+          return;
+        }
         try {
           await authApi.logout();
         } catch (error) {
@@ -112,6 +158,18 @@ export const useAuthStore = create<AuthState>()(
       },
 
       checkAuth: async () => {
+        if (AUTH_MODE === 'oidc') {
+          try {
+            set({ isLoading: true });
+            const user = await restoreSession();
+            set({ user, isAuthenticated: !!user, isLoading: false });
+          } catch (error) {
+            console.error('Auth check failed:', error);
+            set({ user: null, isAuthenticated: false, isLoading: false });
+          }
+          return;
+        }
+
         const accessToken = localStorage.getItem('accessToken');
 
         if (!accessToken) {

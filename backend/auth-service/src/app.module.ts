@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { AuthController } from './controllers/auth.controller';
 import { AuthService } from './services/auth.service';
+import { KeycloakAdminService } from './services/keycloak-admin.service';
 import { RedisService } from './services/redis.service';
 import { EmailService } from './services/email.service';
 import { User } from './entities/user.entity';
@@ -38,6 +39,6 @@ import { GithubStrategy } from './strategies/github.strategy';
     ]),
   ],
   controllers: [AuthController],
-  providers: [AuthService, RedisService, EmailService, GoogleStrategy, GithubStrategy],
+  providers: [AuthService, KeycloakAdminService, RedisService, EmailService, GoogleStrategy, GithubStrategy],
 })
 export class AppModule {}

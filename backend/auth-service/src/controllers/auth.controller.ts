@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { AuthService } from '../services/auth.service';
+import { KeycloakAdminService } from '../services/keycloak-admin.service';
 import { RegisterDto } from '../dto/register.dto';
 import { LoginDto } from '../dto/login.dto';
 import { ForgotPasswordDto } from '../dto/forgot-password.dto';
@@ -23,7 +24,10 @@ import { GithubOAuthGuard } from '../guards/github-oauth.guard';
 
 @Controller('api/v1/auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly keycloakAdmin: KeycloakAdminService,
+  ) {}
 
   /**
    * POST /api/v1/auth/register
@@ -33,6 +37,22 @@ export class AuthController {
   @HttpCode(HttpStatus.CREATED)
   async register(@Body() registerDto: RegisterDto) {
     return await this.authService.register(registerDto);
+  }
+
+  /**
+   * POST /api/v1/auth/keycloak/register
+   * First-party registration: create the user in Keycloak. The SPA then logs
+   * in via the password grant. Candidate role is applied by the realm default.
+   */
+  @Post('keycloak/register')
+  @HttpCode(HttpStatus.CREATED)
+  async keycloakRegister(@Body() registerDto: RegisterDto) {
+    await this.keycloakAdmin.createUser({
+      email: registerDto.email,
+      password: registerDto.password,
+      fullName: (registerDto as { full_name?: string }).full_name || registerDto.email,
+    });
+    return { message: 'Account created' };
   }
 
   /**

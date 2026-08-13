@@ -20,6 +20,7 @@ import { AssessmentCompleted } from '@/pages/AssessmentCompleted';
 import { OAuthCallbackPage } from '@/pages/OAuthCallbackPage';
 import { EmailVerificationPage } from '@/pages/EmailVerificationPage';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
+import { HomeRedirect } from '@/components/auth/HomeRedirect';
 
 function App() {
   return (
@@ -51,24 +52,7 @@ function App() {
 
       <div className="min-h-screen bg-background">
         <Routes>
-          <Route
-            path="/"
-            element={
-              <div className="flex h-screen items-center justify-center">
-                <div className="text-center">
-                  <h1 className="text-4xl font-bold tracking-tight text-foreground">
-                    CodeSphere
-                  </h1>
-                  <p className="mt-4 text-lg text-muted-foreground">
-                    Where Code Meets Reality
-                  </p>
-                  <p className="mt-8 text-sm text-muted-foreground">
-                    Frontend is running! 🚀
-                  </p>
-                </div>
-              </div>
-            }
-          />
+          <Route path="/" element={<HomeRedirect />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />

@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { AUTH_MODE, refreshTokens, clearTokens } from '@/lib/oidc';
 
 const API_URL = import.meta.env.VITE_API_URL || '';
 
@@ -35,6 +36,19 @@ api.interceptors.response.use(
     // If 401 and we haven't retried yet
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
+
+      if (AUTH_MODE === 'oidc') {
+        try {
+          // Keycloak: renew via the stored refresh token.
+          const accessToken = await refreshTokens();
+          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+          return api(originalRequest);
+        } catch (renewError) {
+          clearTokens();
+          window.location.href = '/login';
+          return Promise.reject(renewError);
+        }
+      }
 
       try {
         // Try to refresh token
