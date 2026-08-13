@@ -6,7 +6,10 @@ import {
   Request,
   HttpCode,
   HttpStatus,
+  Logger,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import axios from 'axios';
 import { ExecutionService } from '../services/execution.service';
 import {
   ExecuteCodeDto,
@@ -20,7 +23,38 @@ import { AssessmentOrJwtGuard } from '../guards/assessment-or-jwt.guard';
 
 @Controller('execute')
 export class ExecutionController {
-  constructor(private readonly executionService: ExecutionService) {}
+  private readonly logger = new Logger(ExecutionController.name);
+
+  constructor(
+    private readonly executionService: ExecutionService,
+    private readonly configService: ConfigService,
+  ) {}
+
+  /**
+   * Report a genuine per-problem result to assessment-service so the score is
+   * computed there from what actually ran — never from the candidate's browser.
+   * Best-effort: a reporting failure must not fail the candidate's submission.
+   */
+  private async reportAssessmentResult(
+    token: string,
+    problemId: string,
+    passed: boolean,
+  ): Promise<void> {
+    const url = this.configService.get<string>(
+      'ASSESSMENT_SERVICE_URL',
+      'http://localhost:8003',
+    );
+    const key = this.configService.get<string>('INTERNAL_API_KEY', '');
+    try {
+      await axios.post(
+        `${url}/api/v1/invitations/${encodeURIComponent(token)}/results`,
+        { problemId, passed },
+        { headers: { 'X-Internal-Key': key }, timeout: 5000 },
+      );
+    } catch (err) {
+      this.logger.warn(`Failed to report assessment result: ${err.message}`);
+    }
+  }
 
   /**
    * Execute code with optional stdin (for testing)
@@ -65,6 +99,16 @@ export class ExecutionController {
       dto,
       req.user?.sub ?? null,
     );
+
+    // For a live assessment session, record the genuine result server-side.
+    if (req.assessmentToken) {
+      await this.reportAssessmentResult(
+        req.assessmentToken,
+        dto.problemId,
+        result.status === 'accepted',
+      );
+    }
+
     return {
       message: 'Solution submitted successfully',
       result,

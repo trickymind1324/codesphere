@@ -118,19 +118,8 @@ export function AssessmentIDE() {
 
   const completeMutation = useMutation({
     mutationFn: async () => {
-      const submissionArray = Array.from(submissions.values());
-      const acceptedCount = submissionArray.filter(s => s.status === 'accepted').length;
-      const totalPoints = assessment?.assessmentProblems.reduce((sum, p) => sum + p.points, 0) || 0;
-      const earnedPoints = submissionArray.reduce((sum, s) => {
-        const problemData = assessment?.assessmentProblems.find(p => p.problemId === s.problemId);
-        return sum + (s.status === 'accepted' ? (problemData?.points || 0) : 0);
-      }, 0);
-
-      return assessmentApi.completeAssessment(token!, {
-        score: earnedPoints,
-        problemsSolved: acceptedCount,
-        totalPoints,
-      });
+      // Score is computed server-side from results recorded on each submit.
+      return assessmentApi.completeAssessment(token!);
     },
     onSuccess: () => {
       // Clear localStorage

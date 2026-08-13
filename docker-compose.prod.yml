@@ -225,6 +225,8 @@ services:
       SANDBOX_NETWORK_ENABLED: "false"
       PROBLEM_SERVICE_URL: http://problem-service:8001
       ASSESSMENT_SERVICE_URL: http://assessment-service:8003
+      # Shared secret so only this service can report genuine assessment results.
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:-dev-internal-key-change-me}
       KEYCLOAK_ISSUER: ${KEYCLOAK_ISSUER:-https://localhost/realms/codesphere}
       KEYCLOAK_JWKS_URI: ${KEYCLOAK_JWKS_URI:-http://keycloak:8080/realms/codesphere/protocol/openid-connect/certs}
       KEYCLOAK_AUDIENCE: ${KEYCLOAK_AUDIENCE:-codesphere-api}
@@ -259,6 +261,7 @@ services:
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost}
       PROBLEM_SERVICE_URL: http://problem-service:8001
       JWT_PUBLIC_KEY_FILE: /keys/public.pem
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:-dev-internal-key-change-me}
       KEYCLOAK_ISSUER: ${KEYCLOAK_ISSUER:-https://localhost/realms/codesphere}
       KEYCLOAK_JWKS_URI: ${KEYCLOAK_JWKS_URI:-http://keycloak:8080/realms/codesphere/protocol/openid-connect/certs}
       KEYCLOAK_AUDIENCE: ${KEYCLOAK_AUDIENCE:-codesphere-api}

@@ -8,6 +8,7 @@ import { Assessment } from './entities/assessment.entity';
 import { AssessmentProblem } from './entities/assessment-problem.entity';
 import { AssessmentInvitation } from './entities/assessment-invitation.entity';
 import { CandidateEvent } from './entities/candidate-event.entity';
+import { AssessmentResult } from './entities/assessment-result.entity';
 
 // Services
 import { AssessmentService } from './services/assessment.service';
@@ -35,6 +36,7 @@ import { GlassBoxController } from './controllers/glass-box.controller';
       AssessmentProblem,
       AssessmentInvitation,
       CandidateEvent,
+      AssessmentResult,
     ]),
   ],
   controllers: [
