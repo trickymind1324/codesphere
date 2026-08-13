@@ -3,6 +3,7 @@ import { Toaster } from 'react-hot-toast';
 import { LoginPage } from '@/pages/LoginPage';
 import { RegisterPage } from '@/pages/RegisterPage';
 import { LegalPage } from '@/pages/LegalPage';
+import { ProfilePage } from '@/pages/ProfilePage';
 import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage';
 import { ResetPasswordPage } from '@/pages/ResetPasswordPage';
 import { DashboardPage } from '@/pages/DashboardPage';
@@ -61,6 +62,17 @@ function App() {
           <Route path="/verify-email" element={<EmailVerificationPage />} />
           <Route path="/terms" element={<LegalPage kind="terms" />} />
           <Route path="/privacy" element={<LegalPage kind="privacy" />} />
+          {/* Public, shareable profile */}
+          <Route path="/profile/:userId" element={<ProfilePage />} />
+          {/* Own profile (any signed-in user) */}
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <ProfilePage />
+              </ProtectedRoute>
+            }
+          />
           <Route path="/auth/google/callback" element={<OAuthCallbackPage />} />
           <Route path="/auth/github/callback" element={<OAuthCallbackPage />} />
           <Route
