@@ -117,6 +117,26 @@ export interface AssessmentResult {
   timeSpentMinutes?: number;
 }
 
+export interface RecruiterQuarterStat {
+  quarter: string;
+  assessmentsCreated: number;
+  invited: number;
+  completed: number;
+  averageScorePercent: number | null;
+}
+
+export interface RecruiterStats {
+  totals: {
+    assessmentsCreated: number;
+    byStatus: { draft: number; published: number; archived: number };
+    candidatesInvited: number;
+    candidatesCompleted: number;
+    completionRate: number;
+    averageScorePercent: number | null;
+  };
+  byQuarter: RecruiterQuarterStat[];
+}
+
 export interface QueryAssessmentsParams {
   page?: number;
   pageSize?: number;
@@ -192,6 +212,12 @@ export const assessmentApi = {
   // Get assessment statistics
   getStatistics: async (id: string): Promise<AssessmentStatistics> => {
     const response = await api.get(`/api/v1/assessments/${id}/statistics`);
+    return response.data;
+  },
+
+  // Get the signed-in recruiter's own aggregated hiring stats
+  getRecruiterStats: async (): Promise<RecruiterStats> => {
+    const response = await api.get('/api/v1/assessments/recruiter/me/stats');
     return response.data;
   },
 

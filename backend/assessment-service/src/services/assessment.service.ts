@@ -4,9 +4,13 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { Assessment, AssessmentStatus } from '../entities/assessment.entity';
 import { AssessmentProblem } from '../entities/assessment-problem.entity';
+import {
+  AssessmentInvitation,
+  InvitationStatus,
+} from '../entities/assessment-invitation.entity';
 import { CreateAssessmentDto } from '../dto/create-assessment.dto';
 import { UpdateAssessmentDto } from '../dto/update-assessment.dto';
 import { ProblemService } from './problem.service';
@@ -18,6 +22,8 @@ export class AssessmentService {
     private assessmentRepository: Repository<Assessment>,
     @InjectRepository(AssessmentProblem)
     private assessmentProblemRepository: Repository<AssessmentProblem>,
+    @InjectRepository(AssessmentInvitation)
+    private invitationRepository: Repository<AssessmentInvitation>,
     private problemService: ProblemService,
   ) {}
 
@@ -221,5 +227,139 @@ export class AssessmentService {
         0,
       ) || 0,
     };
+  }
+
+  /**
+   * Aggregate hiring activity for a single recruiter, scoped strictly to the
+   * assessments they own (`createdBy = userId`). Returns headline totals plus a
+   * per-quarter breakdown. There is no "hire" outcome or structured job-role in
+   * the data yet, so grouping is by quarter only (role grouping is future work).
+   */
+  async getRecruiterStats(userId: string) {
+    // Own, non-deleted assessments only. Query builder avoids loading the eager
+    // problem relation and automatically excludes soft-deleted rows.
+    const assessments = await this.assessmentRepository
+      .createQueryBuilder('a')
+      .select(['a.id', 'a.status', 'a.createdAt'])
+      .where('a.createdBy = :userId', { userId })
+      .getMany();
+
+    const byStatus: Record<string, number> = {
+      draft: 0,
+      published: 0,
+      archived: 0,
+    };
+    for (const a of assessments) {
+      if (a.status in byStatus) byStatus[a.status]++;
+    }
+
+    const assessmentIds = assessments.map((a) => a.id);
+    const invitations = assessmentIds.length
+      ? await this.invitationRepository
+          .createQueryBuilder('i')
+          .select(['i.status', 'i.percentage', 'i.createdAt', 'i.completedAt'])
+          .where('i.assessmentId IN (:...ids)', { ids: assessmentIds })
+          .getMany()
+      : [];
+
+    const completedInvites = invitations.filter(
+      (i) => i.status === InvitationStatus.COMPLETED,
+    );
+    const candidatesInvited = invitations.length;
+    const candidatesCompleted = completedInvites.length;
+    const completionRate = candidatesInvited
+      ? (candidatesCompleted / candidatesInvited) * 100
+      : 0;
+
+    const scored = completedInvites.filter((i) => i.percentage != null);
+    const averageScorePercent = scored.length
+      ? scored.reduce((sum, i) => sum + (i.percentage as number), 0) /
+        scored.length
+      : null;
+
+    // Per-quarter buckets: assessments/invitations by createdAt, completions by
+    // completedAt (with the score collected where the invitation carries one).
+    const buckets = new Map<
+      string,
+      {
+        quarter: string;
+        assessmentsCreated: number;
+        invited: number;
+        completed: number;
+        scoreSum: number;
+        scoreCount: number;
+      }
+    >();
+    const bucketFor = (d: Date) => {
+      const label = this.quarterLabel(d);
+      let b = buckets.get(label);
+      if (!b) {
+        b = {
+          quarter: label,
+          assessmentsCreated: 0,
+          invited: 0,
+          completed: 0,
+          scoreSum: 0,
+          scoreCount: 0,
+        };
+        buckets.set(label, b);
+      }
+      return b;
+    };
+
+    for (const a of assessments) bucketFor(a.createdAt).assessmentsCreated++;
+    for (const i of invitations) {
+      bucketFor(i.createdAt).invited++;
+      if (i.status === InvitationStatus.COMPLETED && i.completedAt) {
+        const b = bucketFor(i.completedAt);
+        b.completed++;
+        if (i.percentage != null) {
+          b.scoreSum += i.percentage;
+          b.scoreCount++;
+        }
+      }
+    }
+
+    // Keep the most recent 8 quarters that saw any activity, oldest first.
+    const byQuarter = Array.from(buckets.values())
+      .sort((x, y) => this.quarterSortKey(x.quarter) - this.quarterSortKey(y.quarter))
+      .slice(-8)
+      .map((b) => ({
+        quarter: b.quarter,
+        assessmentsCreated: b.assessmentsCreated,
+        invited: b.invited,
+        completed: b.completed,
+        averageScorePercent: b.scoreCount
+          ? this.round1(b.scoreSum / b.scoreCount)
+          : null,
+      }));
+
+    return {
+      totals: {
+        assessmentsCreated: assessments.length,
+        byStatus,
+        candidatesInvited,
+        candidatesCompleted,
+        completionRate: this.round1(completionRate),
+        averageScorePercent:
+          averageScorePercent != null ? this.round1(averageScorePercent) : null,
+      },
+      byQuarter,
+    };
+  }
+
+  private quarterLabel(d: Date): string {
+    const date = new Date(d);
+    const quarter = Math.floor(date.getMonth() / 3) + 1;
+    return `${date.getFullYear()}-Q${quarter}`;
+  }
+
+  private quarterSortKey(label: string): number {
+    const [year, q] = label.split('-Q');
+    return Number(year) * 4 + (Number(q) - 1);
+  }
+
+  private round1(n: number): number {
+    return Math.round(n * 10) / 10;
   }
 }

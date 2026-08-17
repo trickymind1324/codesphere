@@ -110,7 +110,7 @@ export function AppLayout({ children }: AppLayoutProps) {
 
                   <div className="py-1">
                     <Link
-                      to="/profile"
+                      to={isRecruiter ? '/recruiter/profile' : '/profile'}
                       className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 rounded-md"
                     >
                       <div className="flex items-center gap-2">
