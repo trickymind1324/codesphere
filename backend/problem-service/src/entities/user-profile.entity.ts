@@ -28,8 +28,9 @@ export class UserProfile {
   @Column({ type: 'varchar', length: 120, nullable: true })
   displayName: string | null;
 
+  // Occupation / role, e.g. "Software Developer", "Student", "Banker".
   @Column({ type: 'varchar', length: 160, nullable: true })
-  headline: string | null;
+  designation: string | null;
 
   @Column({ type: 'text', nullable: true })
   bio: string | null;

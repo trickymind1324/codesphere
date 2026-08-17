@@ -35,7 +35,7 @@ class ExperienceItemDto {
 
 export class UpdateProfileDto {
   @IsOptional() @IsString() @MaxLength(160)
-  headline?: string;
+  designation?: string;
 
   @IsOptional() @IsString() @MaxLength(2000)
   bio?: string;

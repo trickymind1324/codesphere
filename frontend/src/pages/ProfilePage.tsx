@@ -68,7 +68,7 @@ export function ProfilePage() {
   useEffect(() => {
     if (data?.profile) {
       setForm({
-        headline: data.profile.headline ?? '',
+        designation: data.profile.designation ?? '',
         bio: data.profile.bio ?? '',
         college: data.profile.college ?? '',
         location: data.profile.location ?? '',
@@ -263,13 +263,13 @@ export function ProfilePage() {
             </h1>
             {editing ? (
               <input
-                value={form.headline ?? ''}
-                onChange={(e) => setForm({ ...form, headline: e.target.value })}
-                placeholder="Headline (e.g. Full-stack developer)"
+                value={form.designation ?? ''}
+                onChange={(e) => setForm({ ...form, designation: e.target.value })}
+                placeholder="Designation (e.g. Software Developer, Student, Banker)"
                 className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-1.5 text-sm text-foreground"
               />
             ) : (
-              profile.headline && <p className="mt-1 text-muted-foreground">{profile.headline}</p>
+              profile.designation && <p className="mt-1 text-muted-foreground">{profile.designation}</p>
             )}
             <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
               {editing ? (

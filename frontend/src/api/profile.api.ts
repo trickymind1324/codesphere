@@ -12,7 +12,7 @@ export interface ExperienceItem {
 export interface UserProfile {
   userId: string;
   displayName: string | null;
-  headline: string | null;
+  designation: string | null;
   bio: string | null;
   college: string | null;
   location: string | null;
@@ -49,7 +49,7 @@ export interface ProfileResponse {
 export type UpdateProfileData = Partial<
   Pick<
     UserProfile,
-    'headline' | 'bio' | 'college' | 'location' | 'githubUrl' | 'linkedinUrl' | 'websiteUrl' | 'skills' | 'experience'
+    'designation' | 'bio' | 'college' | 'location' | 'githubUrl' | 'linkedinUrl' | 'websiteUrl' | 'skills' | 'experience'
   >
 >;
 
