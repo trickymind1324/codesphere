@@ -68,9 +68,12 @@ export function DebuggingProblemPage() {
   const [activeFile, setActiveFile] = useState<string | null>(null);
   const [modifiedFiles, setModifiedFiles] = useState<Set<string>>(new Set());
 
-  // Terminal state
+  // Terminal state. The completion banner lives in its own footer so it always
+  // renders after both stdout and stderr — otherwise a stderr warning (shown
+  // below stdout) looks like it happened after "Run completed".
   const [terminalOutput, setTerminalOutput] = useState('');
   const [terminalError, setTerminalError] = useState('');
+  const [terminalFooter, setTerminalFooter] = useState('');
 
   // WebSocket execution
   const { executeProject: wsExecuteProject, killExecution, connected: wsConnected } = useExecutionSocket();
@@ -194,6 +197,7 @@ export function DebuggingProblemPage() {
       : '═══ Run started ═══\n';
     setTerminalOutput(banner);
     setTerminalError('');
+    setTerminalFooter('');
     if (mode === 'submit') setIsSubmitting(true);
     setIsRunning(true);
 
@@ -214,7 +218,7 @@ export function DebuggingProblemPage() {
 
     const appendFooter = (status: string) => {
       const label = mode === 'submit' ? 'Submission' : 'Run';
-      setTerminalOutput((prev) => `${prev}\n═══ ${label} completed: ${status} ═══\n`);
+      setTerminalFooter(`═══ ${label} completed: ${status} ═══`);
     };
 
     if (wsConnected) {
@@ -302,6 +306,7 @@ export function DebuggingProblemPage() {
   const handleClearTerminal = () => {
     setTerminalOutput('');
     setTerminalError('');
+    setTerminalFooter('');
   };
 
   const isLoading = problemLoading || filesLoading;
@@ -504,6 +509,7 @@ export function DebuggingProblemPage() {
           <Terminal
             output={terminalOutput}
             error={terminalError}
+            footer={terminalFooter}
             isRunning={isRunning}
             isConnected={wsConnected}
             onClear={handleClearTerminal}
