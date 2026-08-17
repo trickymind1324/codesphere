@@ -478,6 +478,13 @@ export function DebuggingProblemPage() {
             {activeFile && currentFile ? (
               <Editor
                 height="100%"
+                // path gives each file its own Monaco model, so switching files
+                // swaps the whole model (content, undo history, cursor) instead
+                // of mutating one shared model — which previously raced with
+                // onChange and could leave the prior file's content on screen.
+                // Namespaced by slug so identical filenames across problems
+                // (e.g. main.py) never reuse each other's lingering model.
+                path={`${slug ?? 'problem'}/${activeFile}`}
                 language={getLanguageFromFile(activeFile)}
                 value={currentFile.content}
                 onChange={handleCodeChange}
