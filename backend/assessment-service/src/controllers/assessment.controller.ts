@@ -47,6 +47,13 @@ export class AssessmentController {
     return this.assessmentService.findAll(userId, pageNum, pageSizeNum);
   }
 
+  // Recruiter's own aggregated hiring stats. Declared before `:id` so the
+  // static path is never captured by the id param. Scoped to req.user.sub.
+  @Get('recruiter/me/stats')
+  async getRecruiterStats(@Request() req) {
+    return this.assessmentService.getRecruiterStats(req.user.sub);
+  }
+
   @Get(':id')
   async findOne(@Param('id') id: string) {
     return this.assessmentService.findOne(id);

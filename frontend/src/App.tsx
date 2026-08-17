@@ -12,6 +12,7 @@ import { ProblemRouter } from '@/pages/ProblemRouter';
 import { SubmissionsPage } from '@/pages/SubmissionsPage';
 import { PlaybackPage } from '@/pages/PlaybackPage';
 import { RecruiterDashboard } from '@/pages/RecruiterDashboard';
+import { RecruiterProfilePage } from '@/pages/RecruiterProfilePage';
 import { AssessmentForm } from '@/pages/AssessmentForm';
 import { AssessmentDetail } from '@/pages/AssessmentDetail';
 import { InvitationForm } from '@/pages/InvitationForm';
@@ -120,6 +121,14 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={['recruiter', 'company_admin', 'platform_admin']}>
                 <RecruiterDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/recruiter/profile"
+            element={
+              <ProtectedRoute allowedRoles={['recruiter', 'company_admin', 'platform_admin']}>
+                <RecruiterProfilePage />
               </ProtectedRoute>
             }
           />
