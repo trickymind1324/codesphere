@@ -5,13 +5,22 @@ import { cn } from '@/lib/utils';
 interface TerminalProps {
   output: string;
   error?: string;
+  /** Completion banner, rendered after both stdout and stderr. */
+  footer?: string;
   isRunning?: boolean;
   isConnected?: boolean;
   onClear: () => void;
   className?: string;
 }
 
-export function Terminal({ output, error, isRunning, isConnected, onClear, className }: TerminalProps) {
+// The sandbox mounts the project at /app, so tracebacks and warnings surface
+// internal paths like `/app/main.py:19`. Strip the mount prefix so paths read
+// as the candidate's own filenames (`main.py:19`).
+function stripMountPath(text: string): string {
+  return text.replace(/\/app\//g, '');
+}
+
+export function Terminal({ output, error, footer, isRunning, isConnected, onClear, className }: TerminalProps) {
   const outputRef = useRef<HTMLPreElement>(null);
 
   // Auto-scroll to bottom when output changes
@@ -19,9 +28,11 @@ export function Terminal({ output, error, isRunning, isConnected, onClear, class
     if (outputRef.current) {
       outputRef.current.scrollTop = outputRef.current.scrollHeight;
     }
-  }, [output, error]);
+  }, [output, error, footer]);
 
-  const hasOutput = output || error;
+  const cleanOutput = output ? stripMountPath(output) : output;
+  const cleanError = error ? stripMountPath(error) : error;
+  const hasOutput = cleanOutput || cleanError || footer;
 
   return (
     <div className={cn('flex flex-col bg-gray-900 border-t border-gray-700', className)}>
@@ -70,13 +81,24 @@ export function Terminal({ output, error, isRunning, isConnected, onClear, class
             Executing code...
           </span>
         )}
-        {output && (
-          <span className="text-green-400 whitespace-pre-wrap">{output}</span>
+        {cleanOutput && (
+          <span className="text-green-400 whitespace-pre-wrap">{cleanOutput}</span>
         )}
-        {error && (
+        {cleanError && (
           <>
-            {output && '\n'}
-            <span className="text-red-400 whitespace-pre-wrap">{error}</span>
+            {cleanOutput && '\n'}
+            <span className="mt-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-red-400/70">
+              <span className="h-px flex-1 bg-red-400/20" />
+              stderr
+              <span className="h-px flex-1 bg-red-400/20" />
+            </span>
+            <span className="text-red-400 whitespace-pre-wrap">{cleanError}</span>
+          </>
+        )}
+        {footer && (
+          <>
+            {(cleanOutput || cleanError) && '\n'}
+            <span className="mt-2 block text-gray-400 whitespace-pre-wrap">{footer}</span>
           </>
         )}
       </pre>
