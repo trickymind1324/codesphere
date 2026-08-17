@@ -2,8 +2,10 @@
 
 **Version:** 1.0
 **Last Updated:** December 2025
-**Status:** Draft
+**Status:** Draft — product requirements
 **Owner:** Product Team
+
+> **This is a product requirements document describing intended behaviour, not current status.** Assessment creation, invitations, the timed candidate flow, results, and Glass Box analytics are built. Several enterprise features described here are **not**: live proctoring/monitoring, the System Design Whiteboard, browser fingerprinting, ATS integrations (Greenhouse/Lever), and Slack/Teams integrations. For what is actually built, see [IMPLEMENTATION_STATUS.md](../IMPLEMENTATION_STATUS.md).
 
 ## 1. Executive Summary
 

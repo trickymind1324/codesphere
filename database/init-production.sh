@@ -12,7 +12,8 @@ POSTGRES_USER=${POSTGRES_USER:-postgres}
 POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
 
 # Database names
-AUTH_DB=${AUTH_DB:-codesphere_auth}
+# Identity data lives in Keycloak's own database, not here — the auth-service
+# is a stateless Keycloak proxy with no database of its own.
 PROBLEMS_DB=${PROBLEMS_DB:-codesphere_problems}
 ASSESSMENTS_DB=${ASSESSMENTS_DB:-codesphere_assessments}
 
@@ -35,15 +36,9 @@ run_psql() {
 
 # Create databases
 echo "Creating databases..."
-run_psql -c "CREATE DATABASE $AUTH_DB;" 2>/dev/null || echo "Database $AUTH_DB already exists"
 run_psql -c "CREATE DATABASE $PROBLEMS_DB;" 2>/dev/null || echo "Database $PROBLEMS_DB already exists"
 run_psql -c "CREATE DATABASE $ASSESSMENTS_DB;" 2>/dev/null || echo "Database $ASSESSMENTS_DB already exists"
 echo ""
-
-# Initialize auth service schema
-echo "Initializing $AUTH_DB schema..."
-run_psql -d "$AUTH_DB" < "$SCRIPT_DIR/schema/auth-service-schema.sql"
-echo "Done."
 
 # Initialize problem service schema
 echo "Initializing $PROBLEMS_DB schema..."
@@ -58,12 +53,6 @@ echo "Done."
 # Insert baseline migration records
 echo ""
 echo "Recording baseline migrations..."
-
-run_psql -d "$AUTH_DB" -c "
-INSERT INTO migrations (timestamp, name) VALUES
-    (1701000000000, 'CreateUsersTable1701000000000')
-ON CONFLICT DO NOTHING;
-"
 
 run_psql -d "$PROBLEMS_DB" -c "
 INSERT INTO migrations (timestamp, name) VALUES
@@ -83,6 +72,5 @@ echo ""
 echo "=== Database initialization complete ==="
 echo ""
 echo "Databases created and initialized:"
-echo "  - $AUTH_DB"
 echo "  - $PROBLEMS_DB"
 echo "  - $ASSESSMENTS_DB"

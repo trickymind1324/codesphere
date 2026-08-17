@@ -2,8 +2,10 @@
 
 **Version:** 1.0
 **Last Updated:** December 2025
-**Status:** Draft
+**Status:** Draft — product requirements
 **Owner:** Product Team
+
+> **This is a product requirements document describing intended behaviour, not current status.** The core IDE, code execution, test running, AI tutor, and submission flows are built. Some specifics stated here are not: the supported languages are Python, JavaScript, TypeScript, Java, C, C++, and Go (no Rust or SQL runtime), and the interactive terminal, solutions/discussions forum, PWA/offline mode, and system-design integration are unbuilt. For what is actually built, see [IMPLEMENTATION_STATUS.md](../IMPLEMENTATION_STATUS.md).
 
 ## 1. Executive Summary
 

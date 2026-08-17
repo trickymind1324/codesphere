@@ -2,6 +2,8 @@
 
 **Target Audience:** Recruiters, Engineering Managers, CTOs
 
+> **This is one of the original vision documents that framed the product; it describes intended features, not current status.** Several features stated here in the present tense are not yet built — the live System Design Whiteboard and load simulation, and the "Honor Guard" browser fingerprinting / copy-paste stylometry. What is built today are the tab-switch/window-blur and paste signals surfaced in the Glass Box report. For what is actually built, see [IMPLEMENTATION_STATUS.md](../IMPLEMENTATION_STATUS.md).
+
 ## 1. Overview {#overview}
 
 The **Enterprise Hiring Hub** is the \"HackerRank\" alternative. It

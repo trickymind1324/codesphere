@@ -2,7 +2,11 @@
 
 **Version:** 1.0
 **Last Updated:** December 2025
-**Status:** Draft
+**Status:** Draft — forward-looking design (does not match the shipped stack)
+
+> **⚠️ This document is an early design exploration and does NOT describe the system as built.** It weighs technology options (Go, Rust, Elasticsearch, ClickHouse, RabbitMQ, AWS/Kubernetes, an Analytics service) that were **not** adopted. Do not treat any technology or service named here as implemented.
+>
+> **What is actually built:** all backend services are **NestJS/TypeScript** — `auth-service` (a stateless Keycloak/OIDC proxy, no database), `problem-service`, `execution-service`, and `assessment-service` — plus a **Python/FastAPI** `ai-service`. The edge is **Kong**; identity is **Keycloak**; datastores are **PostgreSQL** and **Redis**; code runs in **Docker**-sandboxed runtimes. There is no Go, Rust, Elasticsearch, ClickHouse, RabbitMQ, Kubernetes, AWS, or separate Analytics service. For the authoritative picture, see [IMPLEMENTATION_STATUS.md](../IMPLEMENTATION_STATUS.md).
 
 ## 1. Overview
 

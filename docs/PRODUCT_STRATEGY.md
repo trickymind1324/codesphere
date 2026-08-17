@@ -1,5 +1,7 @@
 # Product Strategy: CodeSphere (Working Title)
 
+> **This is the original product-strategy and vision document.** It describes where the product is headed and includes features and roadmap phases that are not yet built (e.g. the interactive System Design Whiteboard with load simulation, the marketplace, live interview mode). For the authoritative record of what is actually built and how the phases have actually landed, see [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md).
+
 ## 1. Executive Summary {#executive-summary}
 
 **CodeSphere** is a unified technical skill platform that bridges the
@@ -76,9 +78,10 @@ ecosystems:
 - **Cheating Detection:** Tab-switch tracking and copy-paste velocity
   > analysis.
 
-- **System Design Board:** Basic drag-and-drop architecture tool.
-
 ### Phase 3: The Ecosystem (Months 7-12)
+
+- **System Design Board:** Interactive drag-and-drop architecture tool
+  > with load simulation.
 
 - **Marketplace:** Users can create and sell their own
   > courses/challenges.

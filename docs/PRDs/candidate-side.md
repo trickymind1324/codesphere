@@ -2,6 +2,8 @@
 
 **Target Audience:** Students, Job Seekers, Upskilling Developers
 
+> **This is one of the original vision documents that framed the product; it describes intended features, not current status.** Some features stated here in the present tense — AI problem recommendations based on weak spots, the efficiency score — are not yet built. For what is actually built, see [IMPLEMENTATION_STATUS.md](../IMPLEMENTATION_STATUS.md).
+
 ## 1. Overview {#overview}
 
 The **Candidate Learning Zone** is the \"LeetCode\" alternative. It is

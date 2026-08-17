@@ -2,7 +2,9 @@
 
 **Version:** 1.0
 **Last Updated:** December 2025
-**Status:** Draft
+**Status:** Draft — forward-looking design
+
+> **This is a forward-looking design document, not a description of the shipped system.** The only datastores actually in use are **PostgreSQL** and **Redis**. Other datastores named here (ClickHouse/TimescaleDB, Elasticsearch, S3/GCS, Pinecone) and several tables (whiteboards, Stripe subscriptions, per-keystroke capture) are aspirational and **not** implemented. Identity data lives in **Keycloak**, not in an application-owned users table. For what is actually built, see [IMPLEMENTATION_STATUS.md](../IMPLEMENTATION_STATUS.md).
 
 ## 1. Overview
 
