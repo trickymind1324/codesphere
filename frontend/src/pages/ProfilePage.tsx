@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { profileApi, type UpdateProfileData, type ExperienceItem } from '@/api/profile.api';
+import { profileApi, type UpdateProfileData, type ExperienceItem, type Badge } from '@/api/profile.api';
 import { suggestTechnologies } from '@/lib/technologies';
 
 function initials(name?: string | null) {
@@ -173,7 +173,7 @@ export function ProfilePage() {
     );
   }
 
-  const { profile, stats, isOwner } = data;
+  const { profile, stats, isOwner, badges } = data;
   const canEdit = isOwner && !isPublic;
   const acceptance =
     stats?.totalSubmissions && stats?.acceptedSubmissions
@@ -388,15 +388,36 @@ export function ProfilePage() {
 
         {/* Badges */}
         <section className="surface-raised rounded-2xl p-6">
-          <h2 className="text-lg font-semibold text-foreground">Badges</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Earn badges by hitting milestones — solve problems, keep streaks, and master languages.
-          </p>
-          <div className="mt-4 flex flex-wrap gap-4">
-            {BADGE_PLACEHOLDERS.map((b) => (
-              <Badge key={b.label} {...b} />
-            ))}
+          <div className="flex items-center gap-2">
+            <svg className="h-5 w-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15a5 5 0 100-10 5 5 0 000 10zm0 0v6l-3-2-3 2v-6" />
+            </svg>
+            <h2 className="text-lg font-semibold text-foreground">Badges</h2>
           </div>
+          {badges.length > 0 ? (
+            <div className="mt-5 flex flex-wrap gap-6">
+              {badges.map((b) => (
+                <BadgeHex key={b.id} badge={b} />
+              ))}
+            </div>
+          ) : (
+            <div className="mt-4 rounded-xl border border-dashed border-border p-8 text-center">
+              <p className="text-sm font-medium text-foreground">No badges yet</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {canEdit
+                  ? 'Solve problems and keep a streak to earn badges — Bronze to Gold, up to 5 stars.'
+                  : 'This developer has not earned any badges yet.'}
+              </p>
+              {canEdit && (
+                <Link
+                  to="/problems"
+                  className="mt-4 inline-block rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                >
+                  Solve challenges
+                </Link>
+              )}
+            </div>
+          )}
         </section>
 
         {/* Experience */}
@@ -511,45 +532,97 @@ function SkillsEditor({ value, onChange }: { value: string[]; onChange: (v: stri
   );
 }
 
-interface BadgeDef {
-  label: string;
-  symbol: string;
-  stars: number;
-  tone: 'primary' | 'pass' | 'warning' | 'running';
+const TIER_STYLE: Record<Badge['level'], { grad: string; ring: string; star: string; label: string }> = {
+  bronze: {
+    grad: 'linear-gradient(150deg, #f0b49a 0%, #d98863 55%, #b96a45 100%)',
+    ring: '#e19878',
+    star: '#7c4a2d',
+    label: 'Bronze',
+  },
+  silver: {
+    grad: 'linear-gradient(150deg, #e9edf1 0%, #c3cbd4 55%, #9aa5b1 100%)',
+    ring: '#cdd4dc',
+    star: '#5b6673',
+    label: 'Silver',
+  },
+  gold: {
+    grad: 'linear-gradient(150deg, #f6d768 0%, #e8bd3c 55%, #cf9a1f 100%)',
+    ring: '#eecb52',
+    star: '#7a5a12',
+    label: 'Gold',
+  },
+};
+
+const HEX_CLIP = 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)';
+
+function shareUrls(badge: Badge) {
+  const text = encodeURIComponent(`I earned the ${badge.label} badge (${TIER_STYLE[badge.level].label}) on CodeSphere!`);
+  const url = encodeURIComponent(window.location.href);
+  return {
+    twitter: `https://twitter.com/intent/tweet?text=${text}&url=${url}`,
+    linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${url}`,
+  };
 }
 
-const BADGE_PLACEHOLDERS: BadgeDef[] = [
-  { label: 'Problem Solver', symbol: 'PS', stars: 1, tone: 'primary' },
-  { label: 'Python', symbol: 'Py', stars: 1, tone: 'pass' },
-  { label: '30 Days of Code', symbol: '30', stars: 5, tone: 'warning' },
-  { label: 'SQL', symbol: 'SQL', stars: 1, tone: 'running' },
-];
-
-function Badge({ label, symbol, stars, tone }: BadgeDef) {
-  const toneClass = {
-    primary: 'text-primary',
-    pass: 'text-state-pass',
-    warning: 'text-state-warning',
-    running: 'text-state-running',
-  }[tone];
+function BadgeHex({ badge }: { badge: Badge }) {
+  const t = TIER_STYLE[badge.level];
+  const share = shareUrls(badge);
   return (
-    <div className="flex w-[104px] flex-col items-center" title={`${label} — locked`}>
-      <div
-        className="relative flex h-[104px] w-[104px] flex-col items-center justify-center bg-muted opacity-60"
-        style={{ clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' }}
-      >
-        <span className={`text-xl font-bold ${toneClass}`}>{symbol}</span>
-        <svg className="mt-1 h-4 w-4 text-muted-foreground" fill="currentColor" viewBox="0 0 20 20">
-          <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
-        </svg>
+    <div className="group relative flex w-[108px] flex-col items-center">
+      {/* Hexagon */}
+      <div className="relative h-[112px] w-[104px]" style={{ filter: 'drop-shadow(0 6px 10px rgba(0,0,0,0.35))' }}>
+        {/* subtle outer ring for depth */}
+        <div className="absolute inset-0" style={{ clipPath: HEX_CLIP, background: t.ring }} />
+        <div
+          className="absolute inset-[3px] flex flex-col items-center justify-center"
+          style={{ clipPath: HEX_CLIP, background: t.grad }}
+        >
+          <span className="px-1 text-center text-lg font-extrabold leading-none" style={{ color: t.star }}>
+            {badge.symbol}
+          </span>
+        </div>
       </div>
-      <span className="mt-2 text-center text-sm font-medium text-foreground">{label}</span>
-      <div className="mt-0.5 flex gap-0.5">
+      <span className="mt-2 text-center text-sm font-semibold text-foreground">{badge.label}</span>
+      {/* stars */}
+      <div className="mt-1 flex gap-0.5">
         {Array.from({ length: 5 }).map((_, i) => (
-          <svg key={i} className={`h-3 w-3 ${i < stars ? toneClass : 'text-border'}`} fill="currentColor" viewBox="0 0 20 20">
+          <svg key={i} className="h-3.5 w-3.5" viewBox="0 0 20 20" style={{ color: i < badge.stars ? t.star : 'hsl(var(--border))' }} fill="currentColor">
             <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.96a1 1 0 00.95.69h4.162c.969 0 1.371 1.24.588 1.81l-3.37 2.449a1 1 0 00-.363 1.118l1.287 3.96c.3.922-.755 1.688-1.54 1.118l-3.37-2.448a1 1 0 00-1.175 0l-3.37 2.448c-.784.57-1.838-.196-1.539-1.118l1.287-3.96a1 1 0 00-.363-1.118L2.98 9.037c-.783-.57-.38-1.81.588-1.81h4.162a1 1 0 00.95-.69l1.287-3.96z" />
           </svg>
         ))}
+      </div>
+
+      {/* Hover card */}
+      <div className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 w-64 -translate-x-1/2 scale-95 opacity-0 transition-all duration-150 group-hover:pointer-events-auto group-hover:scale-100 group-hover:opacity-100">
+        <div className="rounded-xl border border-border bg-popover p-4 shadow-xl">
+          <div className="flex items-start justify-between">
+            <h4 className="font-semibold text-foreground">{badge.label}</h4>
+            <div className="flex items-center gap-2">
+              <a href={share.twitter} target="_blank" rel="noopener noreferrer" title="Share on X" className="text-muted-foreground hover:text-foreground">
+                <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>
+              </a>
+              <a href={share.linkedin} target="_blank" rel="noopener noreferrer" title="Share on LinkedIn" className="text-muted-foreground hover:text-foreground">
+                <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M19 3a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h14zM8.34 17V9.99H6.01V17h2.33zM7.17 8.86a1.35 1.35 0 100-2.7 1.35 1.35 0 000 2.7zM18 17v-3.86c0-2.06-1.1-3.02-2.57-3.02-1.19 0-1.72.65-2.02 1.11v-.95h-2.33c.03.66 0 7.02 0 7.02h2.33v-3.92c0-.21.02-.42.08-.57.16-.42.55-.86 1.19-.86.84 0 1.17.64 1.17 1.57V17H18z" /></svg>
+              </a>
+            </div>
+          </div>
+          <p className="mt-1 text-sm font-medium" style={{ color: t.star }}>{t.label} level</p>
+          <p className="mt-1 text-sm text-muted-foreground">{badge.description}</p>
+          {badge.pointsToNext != null ? (
+            <p className="mt-2 border-t border-border pt-2 text-sm text-muted-foreground">
+              Earn {badge.pointsToNext} more {badge.category === 'days' ? 'active day' : 'point'}
+              {badge.pointsToNext === 1 ? '' : 's'} to get your next star.
+            </p>
+          ) : (
+            <p className="mt-2 border-t border-border pt-2 text-sm text-muted-foreground">Max stars reached — nice work.</p>
+          )}
+          <Link
+            to="/problems"
+            className="pointer-events-auto mt-3 inline-block rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+          >
+            Solve Challenges
+          </Link>
+        </div>
       </div>
     </div>
   );

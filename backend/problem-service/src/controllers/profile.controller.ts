@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common';
 import { ProfileService } from '../services/profile.service';
 import { SubmissionService } from '../services/submission.service';
+import { BadgeService } from '../services/badge.service';
 import { UpdateProfileDto, SetAvatarDto, SetResumeDto } from '../dto/update-profile.dto';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { OptionalAuthGuard } from '../guards/optional-auth.guard';
@@ -22,6 +23,7 @@ export class ProfileController {
   constructor(
     private readonly profileService: ProfileService,
     private readonly submissionService: SubmissionService,
+    private readonly badgeService: BadgeService,
   ) {}
 
   private displayName(user: any): string | undefined {
@@ -39,7 +41,8 @@ export class ProfileController {
     const userId = req.user.sub;
     const profile = await this.profileService.getOwn(userId, this.displayName(req.user));
     const stats = await this.submissionService.getUserStats(userId);
-    return { profile: this.withHasResume(profile), stats, email: req.user.email, isOwner: true };
+    const badges = await this.badgeService.computeBadges(userId);
+    return { profile: this.withHasResume(profile), stats, badges, email: req.user.email, isOwner: true };
   }
 
   @Put('me')
@@ -83,7 +86,8 @@ export class ProfileController {
     if (!profile) {
       throw new NotFoundException('Profile not found');
     }
-    return { profile: this.withHasResume(profile), stats, isOwner: req.user?.sub === userId };
+    const badges = await this.badgeService.computeBadges(userId);
+    return { profile: this.withHasResume(profile), stats, badges, isOwner: req.user?.sub === userId };
   }
 
   /** Résumé for preview/download — public. */

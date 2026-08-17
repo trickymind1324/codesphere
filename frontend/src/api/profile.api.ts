@@ -26,9 +26,22 @@ export interface UserProfile {
   updatedAt: string;
 }
 
+export interface Badge {
+  id: string;
+  category: 'problem-solving' | 'language' | 'days';
+  label: string;
+  symbol: string;
+  level: 'bronze' | 'silver' | 'gold';
+  stars: number;
+  points: number;
+  pointsToNext: number | null;
+  description: string;
+}
+
 export interface ProfileResponse {
   profile: UserProfile;
   stats: UserStats;
+  badges: Badge[];
   email?: string;
   isOwner: boolean;
 }
