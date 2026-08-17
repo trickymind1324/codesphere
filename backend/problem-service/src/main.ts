@@ -1,12 +1,18 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { json, urlencoded } from 'express';
 import { AppModule } from './app.module';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  // Disable the default body parser so we can raise the limit — profile
+  // avatar/resume uploads send base64 data URLs (a 5MB PDF ≈ 6.7MB of JSON),
+  // which far exceeds Express's ~100KB default. Kept under Kong's 10MB cap.
+  const app = await NestFactory.create(AppModule, { bodyParser: false });
+  app.use(json({ limit: '9mb' }));
+  app.use(urlencoded({ extended: true, limit: '9mb' }));
   const configService = app.get(ConfigService);
 
   // Security middleware

@@ -46,6 +46,7 @@ services:
           - /api/v1/tags
           - /api/v1/submissions
           - /api/v1/playback
+          - /api/v1/profile
         protocols:
           - https
         https_redirect_status_code: 301
