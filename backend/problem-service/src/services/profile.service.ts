@@ -63,10 +63,10 @@ export class ProfileService {
 
   async setResume(userId: string, dataUrl: string, fileName: string, displayName?: string): Promise<void> {
     if (!dataUrl.startsWith('data:application/pdf')) {
-      throw new BadRequestException('Résumé must be a PDF');
+      throw new BadRequestException('Resume must be a PDF');
     }
     if (this.base64Bytes(dataUrl) > MAX_RESUME_BYTES) {
-      throw new BadRequestException('Résumé is too large (max 5MB)');
+      throw new BadRequestException('Resume is too large (max 5MB)');
     }
     const profile = await this.getOwn(userId, displayName);
     profile.resumeData = dataUrl;
@@ -78,7 +78,7 @@ export class ProfileService {
     await this.profileRepo.update({ userId }, { resumeData: null, resumeName: null });
   }
 
-  /** Fetch the résumé (data URL) for preview/download; public. */
+  /** Fetch the resume (data URL) for preview/download; public. */
   async getResume(userId: string): Promise<{ fileName: string; dataUrl: string }> {
     const row = await this.profileRepo
       .createQueryBuilder('p')
@@ -86,7 +86,7 @@ export class ProfileService {
       .where('p.userId = :userId', { userId })
       .getOne();
     if (!row?.resumeData) {
-      throw new NotFoundException('No résumé on file');
+      throw new NotFoundException('No resume on file');
     }
     return { fileName: row.resumeName ?? 'resume.pdf', dataUrl: row.resumeData };
   }

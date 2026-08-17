@@ -57,8 +57,8 @@ export class UserProfile {
   @Column({ type: 'jsonb', default: () => "'[]'::jsonb" })
   skills: string[];
 
-  // Résumé (PDF) as a data URL — excluded from default queries so profile
-  // responses stay light; fetched via the dedicated résumé endpoint.
+  // Resume (PDF) as a data URL — excluded from default queries so profile
+  // responses stay light; fetched via the dedicated resume endpoint.
   @Column({ type: 'text', nullable: true, select: false })
   resumeData: string | null;
 

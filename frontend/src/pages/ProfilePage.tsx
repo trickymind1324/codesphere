@@ -127,15 +127,15 @@ export function ProfilePage() {
   const onResumePick = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.type !== 'application/pdf') { toast.error('Résumé must be a PDF'); return; }
-    if (file.size > 5 * 1024 * 1024) { toast.error('Résumé must be under 5MB'); return; }
+    if (file.type !== 'application/pdf') { toast.error('Resume must be a PDF'); return; }
+    if (file.size > 5 * 1024 * 1024) { toast.error('Resume must be under 5MB'); return; }
     try {
       const dataUrl = await readFileAsDataUrl(file);
       await profileApi.setResume(dataUrl, file.name);
       queryClient.invalidateQueries({ queryKey: ['profile', 'me'] });
-      toast.success('Résumé uploaded');
+      toast.success('Resume uploaded');
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Could not upload résumé');
+      toast.error(err.response?.data?.message || 'Could not upload resume');
     } finally {
       e.target.value = '';
     }
@@ -147,14 +147,14 @@ export function ProfilePage() {
       const win = window.open();
       if (win) win.document.write(`<iframe src="${dataUrl}" style="border:0;width:100%;height:100%" title="resume"></iframe>`);
     } catch {
-      toast.error('Could not open résumé');
+      toast.error('Could not open resume');
     }
   };
 
   const removeResume = async () => {
     await profileApi.deleteResume();
     queryClient.invalidateQueries({ queryKey: ['profile', 'me'] });
-    toast.success('Résumé removed');
+    toast.success('Resume removed');
   };
 
   if (isLoading) {
@@ -352,20 +352,20 @@ export function ProfilePage() {
           )}
         </section>
 
-        {/* Résumé */}
+        {/* Resume */}
         {(canEdit || profile.hasResume) && (
           <section className="surface-raised rounded-2xl p-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <h2 className="text-lg font-semibold text-foreground">Résumé</h2>
+                <h2 className="text-lg font-semibold text-foreground">Resume</h2>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  {profile.hasResume ? 'A résumé is attached to this profile.' : 'No résumé uploaded yet.'}
+                  {profile.hasResume ? 'A resume is attached to this profile.' : 'No resume uploaded yet.'}
                 </p>
               </div>
               <div className="flex items-center gap-2">
                 {profile.hasResume && (
                   <button onClick={viewResume} className="rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted">
-                    View résumé
+                    View resume
                   </button>
                 )}
                 {canEdit && (

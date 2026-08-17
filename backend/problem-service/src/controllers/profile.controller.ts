@@ -90,7 +90,7 @@ export class ProfileController {
     return { profile: this.withHasResume(profile), stats, badges, isOwner: req.user?.sub === userId };
   }
 
-  /** Résumé for preview/download — public. */
+  /** Resume for preview/download — public. */
   @Get(':userId/resume')
   async getResume(@Param('userId') userId: string) {
     return this.profileService.getResume(userId);
