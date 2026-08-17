@@ -37,10 +37,12 @@ CodeSphere is an open coding platform that combines a modern cloud IDE, real-wor
 ## Tech Stack
 
 - **Frontend:** React 18, TypeScript, Vite, Monaco Editor, Tailwind CSS
-- **Backend:** Node.js (API Gateway, Auth), Go (Problems, Assessments), Rust (Code Execution), Python (AI/ML)
-- **Databases:** PostgreSQL, Redis, Elasticsearch, ClickHouse
-- **Infrastructure:** Docker, Kubernetes, AWS
-- **Realtime:** WebSockets for code execution streaming and collaborative editing
+- **Backend:** NestJS (TypeScript) microservices — Auth, Problems, Code Execution, Assessments — plus a Python (FastAPI) AI service
+- **Identity & Gateway:** Keycloak (OIDC) for authentication; Kong as the API gateway (TLS termination, routing, rate limiting)
+- **Sandboxed execution:** Dockerized runtimes for the languages users write in — Python, JavaScript, TypeScript, Java, C, C++, and Go
+- **Databases:** PostgreSQL and Redis
+- **Infrastructure:** Docker and Docker Compose
+- **Realtime:** WebSockets for streaming code-execution output
 
 ---
 
@@ -111,9 +113,9 @@ npm run format         # Format code with Prettier
 ```text
 .
 ├── frontend/          # React + TypeScript client (Monaco-based IDE)
-├── backend/           # Microservices (API Gateway, Auth, Problems, Execution, AI)
+├── backend/           # Microservices — Auth, Problems, Execution, Assessments (NestJS), AI (Python)
 ├── database/          # Schema files and migrations
-├── infrastructure/    # Docker, Kubernetes, and deployment configs
+├── infrastructure/    # Kong gateway, Keycloak realm, and deployment configs
 ├── docs/              # Product, technical, and API documentation
 └── scripts/           # Utility and tooling scripts
 ```
