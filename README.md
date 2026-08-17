@@ -19,18 +19,29 @@ CodeSphere is an open coding platform that combines a modern cloud IDE, real-wor
 
 ### For Developers
 
-- **Modern Cloud IDE** — Monaco Editor with multi-file support and integrated terminal
-- **Real-World Scenarios** — Debug memory leaks, race conditions, slow queries, and broken services
+- **Modern Cloud IDE** — Monaco Editor with multi-file support, sandboxed execution, and real-time output streaming
+- **Real-World Scenarios** — Multi-file debugging tasks alongside classic algorithmic problems
 - **AI Socratic Tutor** — Guided hints that nudge without spoiling the solution
 - **Code Playback** — Replay your coding sessions to review your approach
-- **Progress Analytics** — Heatmaps, skill tracking, and personalized recommendations
+- **Progress Dashboard** — Problems solved, acceptance rate, languages used, and submission history
 
 ### For Companies
 
-- **Glass Box Analytics** — Insight into *how* candidates solve problems (keystrokes, debugging flow, code quality)
-- **Anti-Cheating Tools** — Tab switch detection, paste analysis, and code style consistency checks
-- **Customizable Assessments** — Mix algorithms, real-world debugging, and system design
-- **Candidate-Friendly Experience** — Modern IDE with optional immediate feedback
+- **Glass Box Analytics** — Insight into *how* candidates solve problems, with an AI-written summary of their approach
+- **Integrity Signals** — Tab-switch and window-blur tracking and paste detection, surfaced per session
+- **Customizable Assessments** — Mix algorithmic challenges and real-world debugging tasks, with timed sessions and unique invite links
+- **Candidate-Friendly Experience** — The same modern IDE candidates practice in, with clear results reporting
+
+---
+
+## Roadmap
+
+CodeSphere's north star is to evaluate *how* people build, not just whether tests pass. Building toward that, planned work includes:
+
+- **Richer analytics** — activity heatmaps and skill-graph tracking for candidates
+- **AI-driven recommendations** — surface the next problem based on a developer's weak spots
+- **System Design board** — a collaborative canvas with traffic simulation for design interviews
+- **Live pair-programming mode** — real-time interviews with shared editing and audio/video
 
 ---
 
