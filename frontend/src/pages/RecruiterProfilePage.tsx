@@ -105,7 +105,7 @@ export function RecruiterProfilePage() {
       return profileApi.updateMine(payload);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['profile', 'me'] });
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
       setEditing(false);
       toast.success('Profile saved');
     },
@@ -120,7 +120,7 @@ export function RecruiterProfilePage() {
     try {
       const dataUrl = await resizeImage(file);
       await profileApi.setAvatar(dataUrl);
-      queryClient.invalidateQueries({ queryKey: ['profile', 'me'] });
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
       toast.success('Photo updated');
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Could not update photo');

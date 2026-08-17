@@ -27,9 +27,10 @@ export function ResultsPage() {
     enabled: !!id,
   });
 
-  // Fetch statistics
+  // Fetch statistics (same key AssessmentDetail + InvitationForm use, so
+  // sending invitations / completions invalidate this consistently)
   const { data: statistics } = useQuery({
-    queryKey: ['statistics', id],
+    queryKey: ['assessment-statistics', id],
     queryFn: () => assessmentApi.getStatistics(id!),
     enabled: !!id,
   });
