@@ -84,8 +84,9 @@ npm run dev
 
 ### Local Login (seed accounts)
 
-For a local setup, a recruiter account is created by the seed script
-(`backend/auth-service/src/scripts/create-recruiter-user.ts`):
+Identity is handled by Keycloak. A recruiter account is seeded automatically
+when Keycloak imports the realm on first start
+(`infrastructure/keycloak/realm-codesphere.json`):
 
 | Role | Email | Password |
 |---|---|---|
@@ -139,8 +140,8 @@ Comprehensive documentation lives in the [`docs/`](./docs/) directory:
 
 - **[Implementation Status](./docs/IMPLEMENTATION_STATUS.md)** — What's built, current phase, known limitations
 - **[Product Strategy](./docs/PRODUCT_STRATEGY.md)** — Vision, differentiators, roadmap
-- **Technical Specifications (FRDs)** — Frontend, backend, database, infrastructure, security, AI/ML
-- **Product Requirements (PRDs)** — Authentication, IDE, assessments
+- **Technical Specifications (FRDs)** — Frontend, backend, database, and AI/ML architecture, plus the Universal Code Execution Engine spec
+- **Product Requirements (PRDs)** — Candidate learning zone, enterprise hiring hub, the IDE, and assessments
 
 See [docs/README.md](./docs/README.md) for the full index.
 

@@ -16,6 +16,13 @@ that unblocks the old SMTP launch blocker.
 
 Phase 3 (ecosystem) is not started.
 
+**Platform architecture:** requests enter through **Kong** (the API gateway —
+TLS termination, routing, rate limiting) and identity is handled by
+**Keycloak** (OIDC). Behind the gateway sit five services — `auth-service`
+(a stateless Keycloak proxy), `problem-service`, `execution-service`,
+`assessment-service` (NestJS/TypeScript), and `ai-service` (Python/FastAPI) —
+backed by PostgreSQL and Redis.
+
 ---
 
 ## Phase 1 — MVP ✅ Complete
@@ -26,7 +33,10 @@ Phase 3 (ecosystem) is not started.
   execution with WebSocket streaming
 - Multi-file debugging interface with file tree
 - Submissions history, user statistics dashboard
-- Auth: email/password + Google/GitHub OAuth, RS256 JWT, MFA, password reset
+- Candidate profiles: bio, designation, skills, resume upload, and earned badges
+- Auth: Keycloak (OIDC) handles identity — login, registration, token issuance,
+  password reset, and MFA all run in Keycloak. The `auth-service` is a thin,
+  stateless registration/login proxy in front of it (no database of its own)
 
 **Enterprise side**
 - Assessment CRUD with drag-and-drop problem selection and points
@@ -49,8 +59,9 @@ Phase 3 (ecosystem) is not started.
   (`tsc && vite build`, code-split bundles), and the Python ai-service
 - Production Dockerfiles for every service (multi-stage, non-root where possible)
   and frontend (nginx with API reverse proxy)
-- `docker-compose.prod.yml`: full stack — 3× Postgres, Redis, MailHog, 5 backend
-  services, frontend
+- `docker-compose.prod.yml`: full stack — Kong (API gateway, TLS), Keycloak
+  (identity), 3× Postgres (problems, assessments, Keycloak), Redis, MailHog,
+  5 backend services (auth, problem, execution, assessment, ai), and the frontend
 - **Email blocker resolved**: MailHog relay works out of the box (UI on :8025);
   real SMTP is a 3-env-var override
 - `scripts/build-runtime-images.sh` builds the 5 sandbox runtime images

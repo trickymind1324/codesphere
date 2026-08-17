@@ -1,5 +1,7 @@
 # Feature Requirement Document (FRD): Universal Code Execution Engine (UCE)
 
+> **This is an early design spec, not a description of the shipped engine.** Some Day-1 specifics here differ from what was built: execution uses **Docker**-sandboxed runtimes (not Firecracker MicroVMs), and the live languages are Python, JavaScript, TypeScript, Java, C, C++, and Go (WebContainer-based React and a SQL runtime are not built). For what is actually built, see [../IMPLEMENTATION_STATUS.md](../IMPLEMENTATION_STATUS.md).
+
 ## 1. Introduction {#introduction}
 
 The **UCE (Universal Code Engine)** is the backend service responsible

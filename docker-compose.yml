@@ -1,24 +1,6 @@
 version: '3.8'
 
 services:
-  # PostgreSQL for Auth Service
-  postgres-auth:
-    image: postgres:16-alpine
-    container_name: codesphere-postgres-auth
-    environment:
-      POSTGRES_DB: codesphere_auth
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    ports:
-      - "5434:5432"
-    volumes:
-      - postgres-auth-data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
   # PostgreSQL for Problem Service
   postgres-problems:
     image: postgres:16-alpine
@@ -63,7 +45,7 @@ services:
       - "1025:1025"
       - "8025:8025"
 
-  # Redis for Auth Service
+  # Redis — shared cache and rate-limiting store
   redis:
     image: redis:7-alpine
     container_name: codesphere-redis
@@ -78,7 +60,6 @@ services:
       retries: 5
 
 volumes:
-  postgres-auth-data:
   postgres-problems-data:
   postgres-assessments-data:
   redis-data:

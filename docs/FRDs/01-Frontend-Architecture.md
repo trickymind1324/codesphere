@@ -2,7 +2,9 @@
 
 **Version:** 1.0
 **Last Updated:** December 2025
-**Status:** Draft
+**Status:** Draft — forward-looking design
+
+> **This is a forward-looking design document, not a description of the shipped system.** It captures intended architecture and options weighed during planning; some technologies, directory layouts, and features described here (e.g. the System Design Whiteboard, React Flow) are aspirational and are **not** implemented. For what is actually built, see [IMPLEMENTATION_STATUS.md](../IMPLEMENTATION_STATUS.md).
 
 ## 1. Overview
 

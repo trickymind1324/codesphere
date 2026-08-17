@@ -2,7 +2,9 @@
 
 **Version:** 1.0
 **Last Updated:** December 2025
-**Status:** Draft
+**Status:** Draft — forward-looking design
+
+> **This is a forward-looking design document, not a description of the shipped system.** What is actually built is the **Socratic Tutor** and **Glass Box summary** in the Python/FastAPI `ai-service`, which defaults to a local **Ollama** provider behind a swappable provider interface (no OpenAI/Anthropic wired in by default). The endpoints are `/api/v1/ai/socratic` and `/api/v1/ai/glass-box-summary`. Everything else here — problem recommendations, plagiarism/stylometry detection, code-quality scoring, Pinecone/CodeBERT pipelines — is aspirational and **not** implemented. See [IMPLEMENTATION_STATUS.md](../IMPLEMENTATION_STATUS.md).
 
 ## 1. Overview
 
