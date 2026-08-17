@@ -10,9 +10,10 @@ COPY backend/execution-service/package.json backend/execution-service/
 COPY backend/assessment-service/package.json backend/assessment-service/
 RUN npm ci --ignore-scripts
 COPY frontend frontend
-# Auth mode is baked at build time (Vite). Default 'legacy'; set 'oidc' plus the
-# Keycloak endpoints to switch the SPA to Keycloak login.
-ARG VITE_AUTH_MODE=legacy
+# Auth mode is baked at build time (Vite). Default 'oidc' — Keycloak is the
+# identity provider. 'legacy' targets the decommissioned custom auth-service
+# login (POST /api/v1/auth/login), which now 404s, so it is only an escape hatch.
+ARG VITE_AUTH_MODE=oidc
 ARG VITE_OIDC_AUTHORITY=https://localhost/realms/codesphere
 ARG VITE_OIDC_CLIENT_ID=codesphere-frontend
 ENV VITE_AUTH_MODE=$VITE_AUTH_MODE \
