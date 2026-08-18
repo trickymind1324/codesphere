@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { assessmentApi, AssessmentStatus, QueryAssessmentsParams } from '@/api/assessment.api';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 
 export function RecruiterDashboard() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [filters, setFilters] = useState<QueryAssessmentsParams>({
     page: 1,
     pageSize: 20,
@@ -14,10 +15,18 @@ export function RecruiterDashboard() {
     search: '',
   });
 
-  const { data: assessmentsData, isLoading, error, refetch } = useQuery({
+  const { data: assessmentsData, isLoading, error } = useQuery({
     queryKey: ['assessments', filters],
     queryFn: () => assessmentApi.getAssessments(filters),
   });
+
+  // Refresh both the list and any open assessment detail after a change, so a
+  // publish/archive/delete here is reflected on the detail/invite/results pages.
+  const refreshAssessment = (id: string) => {
+    queryClient.invalidateQueries({ queryKey: ['assessments'] });
+    queryClient.invalidateQueries({ queryKey: ['assessment', id] });
+    queryClient.invalidateQueries({ queryKey: ['assessment-statistics', id] });
+  };
 
   const handleDeleteAssessment = async (id: string, title: string) => {
     if (!confirm(`Are you sure you want to delete "${title}"? This action cannot be undone.`)) {
@@ -27,7 +36,7 @@ export function RecruiterDashboard() {
     try {
       await assessmentApi.deleteAssessment(id);
       toast.success('Assessment deleted successfully');
-      refetch();
+      refreshAssessment(id);
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to delete assessment');
     }
@@ -37,7 +46,7 @@ export function RecruiterDashboard() {
     try {
       await assessmentApi.updateStatus(id, AssessmentStatus.ARCHIVED);
       toast.success(`"${title}" archived successfully`);
-      refetch();
+      refreshAssessment(id);
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to archive assessment');
     }
@@ -47,7 +56,7 @@ export function RecruiterDashboard() {
     try {
       await assessmentApi.updateStatus(id, AssessmentStatus.PUBLISHED);
       toast.success(`"${title}" published successfully`);
-      refetch();
+      refreshAssessment(id);
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to publish assessment');
     }

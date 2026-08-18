@@ -90,7 +90,7 @@ export function ProfilePage() {
       return profileApi.updateMine(payload);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['profile', 'me'] });
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
       setEditing(false);
       toast.success('Profile saved');
     },
@@ -115,7 +115,7 @@ export function ProfilePage() {
     try {
       const dataUrl = await resizeImage(file);
       await profileApi.setAvatar(dataUrl);
-      queryClient.invalidateQueries({ queryKey: ['profile', 'me'] });
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
       toast.success('Photo updated');
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Could not update photo');
@@ -132,7 +132,7 @@ export function ProfilePage() {
     try {
       const dataUrl = await readFileAsDataUrl(file);
       await profileApi.setResume(dataUrl, file.name);
-      queryClient.invalidateQueries({ queryKey: ['profile', 'me'] });
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
       toast.success('Resume uploaded');
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Could not upload resume');
@@ -153,7 +153,7 @@ export function ProfilePage() {
 
   const removeResume = async () => {
     await profileApi.deleteResume();
-    queryClient.invalidateQueries({ queryKey: ['profile', 'me'] });
+    queryClient.invalidateQueries({ queryKey: ['profile'] });
     toast.success('Resume removed');
   };
 

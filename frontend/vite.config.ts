@@ -9,6 +9,12 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      // Pre-launch: the precache service worker was serving stale JS bundles
+      // (rebuilds didn't take effect until the SW updated). selfDestroying
+      // ships a SW that unregisters any previously-installed worker and clears
+      // its caches, so browsers stop serving cached app code. Re-enable the
+      // full PWA/precache once offline support is actually needed.
+      selfDestroying: true,
       includeAssets: ['favicon.ico', 'robots.txt', 'apple-touch-icon.png'],
       manifest: {
         name: 'CodeSphere',

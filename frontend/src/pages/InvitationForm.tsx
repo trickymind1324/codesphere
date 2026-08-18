@@ -34,7 +34,9 @@ export function InvitationForm() {
     onSuccess: (invitations) => {
       queryClient.invalidateQueries({ queryKey: ['invitations', id] });
       queryClient.invalidateQueries({ queryKey: ['assessment', id] });
-      queryClient.invalidateQueries({ queryKey: ['statistics', id] });
+      queryClient.invalidateQueries({ queryKey: ['assessment-statistics', id] });
+      // Refresh the dashboard list so its invitation/completion counts update.
+      queryClient.invalidateQueries({ queryKey: ['assessments'] });
       toast.success(`Successfully sent ${invitations.length} invitation(s)`);
       navigate(`/recruiter/assessments/${id}/results`);
     },

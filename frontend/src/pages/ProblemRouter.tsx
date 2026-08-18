@@ -15,12 +15,13 @@ import { DebuggingProblemPage } from './DebuggingProblemPage';
 export function ProblemRouter() {
   const { slug } = useParams<{ slug: string }>();
 
-  // Fetch minimal problem data to determine the type
+  // Fetch the problem to determine its type. Shares the ['problem', slug] key
+  // with ProblemDetailPage/DebuggingProblemPage so it's one cached fetch, and
+  // inherits the global staleTime rather than pinning 5-minute-stale routing.
   const { data: problem, isLoading, error } = useQuery({
-    queryKey: ['problem-type', slug],
+    queryKey: ['problem', slug],
     queryFn: () => problemApi.getProblem(slug!),
     enabled: !!slug,
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   });
 
   if (isLoading) {
