@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import Editor from '@monaco-editor/react';
+import Editor, { type OnMount } from '@monaco-editor/react';
+import type * as monacoNs from 'monaco-editor';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import {
@@ -52,6 +53,38 @@ function getLanguageFromFile(filePath: string): string {
   return map[ext || ''] || 'plaintext';
 }
 
+// Static editor options (identity-stable so the wrapper never re-applies them).
+// readOnly is intentionally NOT here — it is per-file and applied imperatively
+// via editor.updateOptions() on every file switch.
+const EDITOR_OPTIONS: monacoNs.editor.IStandaloneEditorConstructionOptions = {
+  minimap: { enabled: false },
+  fontSize: 14,
+  lineNumbers: 'on',
+  scrollBeyondLastLine: false,
+  automaticLayout: true,
+  tabSize: 2,
+  wordWrap: 'on',
+};
+
+/**
+ * Multi-file editor architecture (the pattern Monaco itself is built around —
+ * one editor instance, N text models):
+ *
+ * File contents live in Monaco models ONLY (modelsRef) — they are never
+ * mirrored into React state, and the <Editor> is fully uncontrolled (no
+ * `value`, `path` or `onChange` props). Switching files is an imperative
+ * editor.setModel(); Run/Submit reads model.getValue() directly.
+ *
+ * Why not the wrapper's controlled `value`/`path` mode: with per-file
+ * readOnly, @monaco-editor/react's value-sync effect takes a readOnly branch
+ * that calls editor.setValue() unconditionally and WITHOUT its internal
+ * prevent-trigger guard, while the onChange subscription is re-attached in a
+ * later effect. On a file switch this fired the previous file's onChange
+ * closure with the new file's content, silently cross-writing file contents
+ * (main.py showing data_fetcher.py, etc.). Uncontrolled models make that
+ * entire class of race impossible: each model's change listener closes over
+ * its own file path.
+ */
 export function DebuggingProblemPage() {
   const { slug } = useParams<{ slug: string }>();
   const [selectedLanguage, setSelectedLanguage] = useState('python');
@@ -59,14 +92,25 @@ export function DebuggingProblemPage() {
   const [isRunning, setIsRunning] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // File management state
-  const [files, setFiles] = useState<Map<string, { content: string; isReadOnly: boolean }>>(
-    new Map()
-  );
-  const [originalFiles, setOriginalFiles] = useState<Map<string, string>>(new Map());
+  // UI file state. Contents are NOT here — they live in the Monaco models.
   const [openFiles, setOpenFiles] = useState<string[]>([]);
   const [activeFile, setActiveFile] = useState<string | null>(null);
   const [modifiedFiles, setModifiedFiles] = useState<Set<string>>(new Set());
+
+  // Monaco handles (imperative world)
+  const editorRef = useRef<monacoNs.editor.IStandaloneCodeEditor | null>(null);
+  const monacoRef = useRef<typeof monacoNs | null>(null);
+  const modelsRef = useRef<Map<string, monacoNs.editor.ITextModel>>(new Map());
+  const listenersRef = useRef<monacoNs.IDisposable[]>([]);
+  const originalsRef = useRef<Map<string, string>>(new Map());
+  const readOnlyRef = useRef<Map<string, boolean>>(new Map());
+  const viewStatesRef = useRef<Map<string, monacoNs.editor.ICodeEditorViewState | null>>(new Map());
+  const prevActiveRef = useRef<string | null>(null);
+  // Which problem+language the current models were built for; guards against
+  // rebuilding (and wiping edits) when a background refetch returns new array
+  // identity for the same data.
+  const initKeyRef = useRef<string | null>(null);
+  const [editorGen, setEditorGen] = useState(0);
 
   // Terminal state. The completion banner lives in its own footer so it always
   // renders after both stdout and stderr — otherwise a stderr warning (shown
@@ -85,48 +129,164 @@ export function DebuggingProblemPage() {
     enabled: !!slug,
   });
 
-  // Fetch problem files when problem and language are available
-  const { data: problemFiles, isLoading: filesLoading } = useQuery({
+  // Fetch problem files when problem and language are available. Previous data
+  // is kept as placeholder during a language switch so the editor never
+  // unmounts (unmounting would dispose the editor under our refs).
+  const {
+    data: problemFiles,
+    isLoading: filesLoading,
+    isFetching: filesFetching,
+  } = useQuery({
     queryKey: ['problem-files', problem?.id, selectedLanguage],
     queryFn: () => problemApi.getProblemFiles(problem!.id, selectedLanguage),
     enabled: !!problem?.id && problem?.problemType === 'debugging',
+    placeholderData: (prev) => prev,
   });
 
-  // Initialize files when problem files are loaded
+  const fileMeta = useMemo(
+    () =>
+      (problemFiles ?? []).map((f) => ({
+        filePath: f.filePath,
+        isReadOnly: !!f.isReadOnly,
+        isEntryPoint: !!f.isEntryPoint,
+      })),
+    [problemFiles],
+  );
+
+  /** Dispose all models and their listeners; detach from the editor first. */
+  const disposeAllModels = useCallback(() => {
+    listenersRef.current.forEach((l) => l.dispose());
+    listenersRef.current = [];
+    try {
+      editorRef.current?.setModel(null);
+    } catch {
+      // editor already disposed — models are independent, keep going
+    }
+    modelsRef.current.forEach((m) => {
+      if (!m.isDisposed()) m.dispose();
+    });
+    modelsRef.current.clear();
+    originalsRef.current.clear();
+    readOnlyRef.current.clear();
+    viewStatesRef.current.clear();
+    prevActiveRef.current = null;
+  }, []);
+
+  /** Point the editor at a file's model and apply its readOnly flag. */
+  const attachModel = useCallback((filePath: string) => {
+    const editor = editorRef.current;
+    if (!editor) return;
+    const model = modelsRef.current.get(filePath);
+    if (!model || model.isDisposed()) return;
+    try {
+      if (editor.getModel() !== model) {
+        const prev = prevActiveRef.current;
+        if (prev && editor.getModel()) {
+          viewStatesRef.current.set(prev, editor.saveViewState());
+        }
+        editor.setModel(model);
+        const viewState = viewStatesRef.current.get(filePath);
+        if (viewState) editor.restoreViewState(viewState);
+      }
+      editor.updateOptions({ readOnly: readOnlyRef.current.get(filePath) ?? false });
+      prevActiveRef.current = filePath;
+    } catch {
+      // editor disposed mid-flight (page teardown) — nothing to attach to
+    }
+  }, []);
+
+  const handleEditorMount: OnMount = (editor, monaco) => {
+    editorRef.current = editor;
+    monacoRef.current = monaco;
+    // A fresh editor instance needs models (re)attached even for the same key.
+    initKeyRef.current = null;
+    setEditorGen((g) => g + 1);
+  };
+
+  // Build models whenever we have an editor + a fresh set of files for a
+  // problem/language we haven't built yet.
   useEffect(() => {
-    if (problemFiles && problemFiles.length > 0) {
-      const newFiles = new Map<string, { content: string; isReadOnly: boolean }>();
-      const newOriginal = new Map<string, string>();
+    const monaco = monacoRef.current;
+    if (!editorRef.current || !monaco) return;
+    if (!problem?.id || !problemFiles || problemFiles.length === 0) return;
+    // While a language switch is in flight, problemFiles is placeholder (old
+    // language) data — never build models from it.
+    if (filesFetching) return;
 
-      problemFiles.forEach((file) => {
-        newFiles.set(file.filePath, {
-          content: file.content,
-          isReadOnly: file.isReadOnly,
-        });
-        newOriginal.set(file.filePath, file.content);
-      });
+    const key = `${problem.id}:${selectedLanguage}`;
+    if (initKeyRef.current === key) return;
+    initKeyRef.current = key;
 
-      setFiles(newFiles);
-      setOriginalFiles(newOriginal);
-      setModifiedFiles(new Set());
+    disposeAllModels();
 
-      // Open the entry point file or first file
-      const entryFile = problemFiles.find((f) => f.isEntryPoint);
-      const firstFile = entryFile || problemFiles[0];
-      if (firstFile) {
-        setOpenFiles([firstFile.filePath]);
-        setActiveFile(firstFile.filePath);
+    problemFiles.forEach((file) => {
+      const uri = monaco.Uri.parse(
+        `inmemory://codesphere/${encodeURIComponent(problem.id)}/${selectedLanguage}/${file.filePath}`,
+      );
+      // A model can linger under this URI (StrictMode remount, prior visit) —
+      // always start a problem session from the seeded content.
+      monaco.editor.getModel(uri)?.dispose();
+      const model = monaco.editor.createModel(
+        file.content,
+        getLanguageFromFile(file.filePath),
+        uri,
+      );
+      modelsRef.current.set(file.filePath, model);
+      originalsRef.current.set(file.filePath, file.content);
+      readOnlyRef.current.set(file.filePath, !!file.isReadOnly);
+
+      // Per-model change listener, closed over ITS OWN path — a change in one
+      // file can never be attributed to another, regardless of switch timing.
+      listenersRef.current.push(
+        model.onDidChangeContent(() => {
+          const dirty = model.getValue() !== originalsRef.current.get(file.filePath);
+          setModifiedFiles((prev) => {
+            if (prev.has(file.filePath) === dirty) return prev;
+            const next = new Set(prev);
+            if (dirty) next.add(file.filePath);
+            else next.delete(file.filePath);
+            return next;
+          });
+        }),
+      );
+    });
+
+    setModifiedFiles(new Set());
+
+    // Open the entry point file or first file
+    const entryFile = problemFiles.find((f) => f.isEntryPoint) || problemFiles[0];
+    setOpenFiles([entryFile.filePath]);
+    setActiveFile(entryFile.filePath);
+    attachModel(entryFile.filePath);
+  }, [editorGen, problem?.id, problemFiles, filesFetching, selectedLanguage, disposeAllModels, attachModel]);
+
+  // Keep the editor pointed at the active file's model.
+  useEffect(() => {
+    if (activeFile) {
+      attachModel(activeFile);
+    } else {
+      try {
+        editorRef.current?.setModel(null);
+      } catch {
+        // editor gone — nothing to clear
       }
     }
-  }, [problemFiles]);
+  }, [activeFile, editorGen, attachModel]);
 
-  // Handle file selection from tree
+  // Dispose everything when leaving the page.
+  useEffect(
+    () => () => {
+      disposeAllModels();
+      initKeyRef.current = null;
+    },
+    [disposeAllModels],
+  );
+
+  // Handle file selection from tree/tabs
   const handleFileSelect = useCallback((filePath: string) => {
-    if (!openFiles.includes(filePath)) {
-      setOpenFiles((prev) => [...prev, filePath]);
-    }
+    setOpenFiles((prev) => (prev.includes(filePath) ? prev : [...prev, filePath]));
     setActiveFile(filePath);
-  }, [openFiles]);
+  }, []);
 
   // Handle closing a file tab
   const handleCloseFile = useCallback((filePath: string) => {
@@ -141,32 +301,6 @@ export function DebuggingProblemPage() {
     });
   }, [activeFile]);
 
-  // Handle code changes
-  const handleCodeChange = useCallback((value: string | undefined) => {
-    if (!activeFile || value === undefined) return;
-
-    setFiles((prev) => {
-      const newFiles = new Map(prev);
-      const fileData = newFiles.get(activeFile);
-      if (fileData) {
-        newFiles.set(activeFile, { ...fileData, content: value });
-      }
-      return newFiles;
-    });
-
-    // Check if file is modified
-    const original = originalFiles.get(activeFile);
-    setModifiedFiles((prev) => {
-      const newSet = new Set(prev);
-      if (value !== original) {
-        newSet.add(activeFile);
-      } else {
-        newSet.delete(activeFile);
-      }
-      return newSet;
-    });
-  }, [activeFile, originalFiles]);
-
   // Handle language change
   const handleLanguageChange = (language: string) => {
     if (modifiedFiles.size > 0) {
@@ -180,6 +314,8 @@ export function DebuggingProblemPage() {
     setModifiedFiles(new Set());
     setTerminalOutput('');
     setTerminalError('');
+    setTerminalFooter('');
+    // Models for the new language are built by the effect once files arrive.
   };
 
   // Shared run/submit core. Mode controls banner text and which toasts fire
@@ -189,6 +325,10 @@ export function DebuggingProblemPage() {
   const executeProject = async (mode: 'run' | 'submit') => {
     if (!problem?.executionConfig?.entryCommand) {
       toast.error('No entry command configured for this problem');
+      return;
+    }
+    if (modelsRef.current.size === 0) {
+      toast.error('Files are still loading');
       return;
     }
 
@@ -201,10 +341,13 @@ export function DebuggingProblemPage() {
     if (mode === 'submit') setIsSubmitting(true);
     setIsRunning(true);
 
-    const projectFiles = Array.from(files.entries()).map(([filePath, data]) => ({
-      filePath,
-      content: data.content,
-    }));
+    // The models are the single source of truth for file contents.
+    const projectFiles = Array.from(modelsRef.current.entries()).map(
+      ([filePath, model]) => ({
+        filePath,
+        content: model.getValue(),
+      }),
+    );
 
     const finishToast = (status: string) => {
       const label = mode === 'submit' ? 'Submission' : 'Run';
@@ -284,8 +427,8 @@ export function DebuggingProblemPage() {
   const handleRun = () => executeProject('run');
   const handleSubmit = () => executeProject('submit');
 
-  // Cmd+S / Ctrl+S — edits live in React state and are sent to the runner
-  // on Run/Submit, so "save" is just a confirmation of the in-session model.
+  // Cmd+S / Ctrl+S — edits live in the editor models and are sent to the
+  // runner on Run/Submit, so "save" is just a confirmation of the session.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
@@ -309,12 +452,13 @@ export function DebuggingProblemPage() {
     setTerminalFooter('');
   };
 
-  const isLoading = problemLoading || filesLoading;
-  const currentFile = activeFile ? files.get(activeFile) : null;
-  const filesList = Array.from(files.entries()).map(([filePath, data]) => ({
-    filePath,
-    content: data.content,
-    isReadOnly: data.isReadOnly,
+  // Full-page spinner only before the first file set ever arrives; language
+  // switches keep the page (and the editor instance) mounted.
+  const isLoading = problemLoading || (filesLoading && !problemFiles);
+  const filesList = fileMeta.map((f) => ({
+    filePath: f.filePath,
+    content: '',
+    isReadOnly: f.isReadOnly,
   }));
 
   if (isLoading) {
@@ -478,35 +622,17 @@ export function DebuggingProblemPage() {
             </div>
           </div>
 
-          {/* Monaco editor */}
-          <div className="flex-1 min-h-0">
-            {activeFile && currentFile ? (
-              <Editor
-                height="100%"
-                // path gives each file its own Monaco model, so switching files
-                // swaps the whole model (content, undo history, cursor) instead
-                // of mutating one shared model — which previously raced with
-                // onChange and could leave the prior file's content on screen.
-                // Namespaced by slug so identical filenames across problems
-                // (e.g. main.py) never reuse each other's lingering model.
-                path={`${slug ?? 'problem'}/${activeFile}`}
-                language={getLanguageFromFile(activeFile)}
-                value={currentFile.content}
-                onChange={handleCodeChange}
-                theme="vs-dark"
-                options={{
-                  readOnly: currentFile.isReadOnly,
-                  minimap: { enabled: false },
-                  fontSize: 14,
-                  lineNumbers: 'on',
-                  scrollBeyondLastLine: false,
-                  automaticLayout: true,
-                  tabSize: 2,
-                  wordWrap: 'on',
-                }}
-              />
-            ) : (
-              <div className="flex items-center justify-center h-full text-gray-500">
+          {/* Monaco editor — uncontrolled; models are attached imperatively */}
+          <div className="flex-1 min-h-0 relative">
+            <Editor
+              height="100%"
+              theme="vs-dark"
+              options={EDITOR_OPTIONS}
+              onMount={handleEditorMount}
+              keepCurrentModel
+            />
+            {!activeFile && (
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-900 text-gray-500">
                 Select a file from the tree to edit
               </div>
             )}
