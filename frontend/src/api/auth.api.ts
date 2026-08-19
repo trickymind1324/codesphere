@@ -165,15 +165,4 @@ export const authApi = {
     const response = await api.post('/api/v1/auth/mfa/disable', { password, code });
     return response.data;
   },
-
-  /**
-   * OAuth login URL generators
-   */
-  getGoogleOAuthUrl(): string {
-    return `/api/v1/auth/oauth/google`;
-  },
-
-  getGithubOAuthUrl(): string {
-    return `/api/v1/auth/oauth/github`;
-  },
 };
