@@ -61,6 +61,11 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     volumes:
       - postgres-problems-data:/var/lib/postgresql/data
+      # Applied automatically (in filename order) on FIRST boot of an empty
+      # volume — a fresh clone gets the full schema AND the 60-problem library
+      # with zero manual steps.
+      - ./database/schema/problem-service-schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./database/schema/problem-library-data.sql:/docker-entrypoint-initdb.d/02-problem-library.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
@@ -77,6 +82,8 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     volumes:
       - postgres-assessments-data:/var/lib/postgresql/data
+      # Applied automatically on FIRST boot of an empty volume.
+      - ./database/schema/assessment-service-schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
@@ -295,6 +302,14 @@ services:
       # gemma3:4b: best instruction-following/summarization quality that fits
       # an 8GB machine; llama3.2:3b is a lighter fallback.
       OLLAMA_MODEL: ${OLLAMA_MODEL:-gemma3:4b}
+      # Bring-your-own-key alternatives (set LLM_PROVIDER accordingly; see
+      # backend/ai-service/.env.example for details, incl. Gemini via the
+      # OpenAI-compatible endpoint).
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-sonnet-4-6}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.openai.com/v1}
       CORS_ORIGIN: ${FRONTEND_URL:-http://localhost}
     extra_hosts:
       - "host.docker.internal:host-gateway"

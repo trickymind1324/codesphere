@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict t25JhLWuURR9dZanyfsFJxZDXeuyE25jIcJzi88eNGyhDftH3R8VZGWsAm5FpVT
+\restrict rAl4qzpZNckJgNM1ygjR6DVubOLSyMY1Me2rdfedzua4EygEv7Y50hHxR0kmYke
 
 -- Dumped from database version 16.11
 -- Dumped by pg_dump version 16.11
@@ -149,6 +149,42 @@ ALTER SEQUENCE public.migrations_id_seq OWNED BY public.migrations.id;
 
 
 --
+-- Name: playback_events; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.playback_events (
+    id bigint NOT NULL,
+    session_id uuid NOT NULL,
+    user_id uuid NOT NULL,
+    problem_id uuid,
+    language character varying(20) NOT NULL,
+    event_type character varying(16) NOT NULL,
+    offset_ms integer NOT NULL,
+    payload jsonb NOT NULL,
+    recorded_at timestamp without time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: playback_events_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.playback_events_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: playback_events_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.playback_events_id_seq OWNED BY public.playback_events.id;
+
+
+--
 -- Name: problem_files; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -284,10 +320,41 @@ CREATE TABLE public.test_cases (
 
 
 --
+-- Name: user_profiles; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.user_profiles (
+    "userId" character varying(64) NOT NULL,
+    "displayName" character varying(120),
+    designation character varying(160),
+    bio text,
+    college character varying(160),
+    location character varying(120),
+    "githubUrl" character varying(200),
+    "linkedinUrl" character varying(200),
+    "websiteUrl" character varying(200),
+    experience jsonb DEFAULT '[]'::jsonb NOT NULL,
+    "createdAt" timestamp with time zone DEFAULT now() NOT NULL,
+    "updatedAt" timestamp with time zone DEFAULT now() NOT NULL,
+    "avatarUrl" text,
+    skills jsonb DEFAULT '[]'::jsonb NOT NULL,
+    "resumeData" text,
+    "resumeName" character varying(200)
+);
+
+
+--
 -- Name: migrations id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.migrations ALTER COLUMN id SET DEFAULT nextval('public.migrations_id_seq'::regclass);
+
+
+--
+-- Name: playback_events id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.playback_events ALTER COLUMN id SET DEFAULT nextval('public.playback_events_id_seq'::regclass);
 
 
 --
@@ -347,6 +414,14 @@ ALTER TABLE ONLY public.tags
 
 
 --
+-- Name: user_profiles PK_user_profiles; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_profiles
+    ADD CONSTRAINT "PK_user_profiles" PRIMARY KEY ("userId");
+
+
+--
 -- Name: tags UQ_b3aa10c29ea4e61a830362bd25a; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -360,6 +435,14 @@ ALTER TABLE ONLY public.tags
 
 ALTER TABLE ONLY public.problems
     ADD CONSTRAINT "UQ_ed0948d10a4b9dff13c9461090b" UNIQUE (slug);
+
+
+--
+-- Name: playback_events playback_events_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.playback_events
+    ADD CONSTRAINT playback_events_pkey PRIMARY KEY (id);
 
 
 --
@@ -489,6 +572,20 @@ CREATE INDEX "IDX_test_cases_problemId_isHidden" ON public.test_cases USING btre
 
 
 --
+-- Name: idx_playback_events_session_offset; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_playback_events_session_offset ON public.playback_events USING btree (session_id, offset_ms);
+
+
+--
+-- Name: idx_playback_events_user_problem; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_playback_events_user_problem ON public.playback_events USING btree (user_id, problem_id);
+
+
+--
 -- Name: test_cases FK_0126d367e92400b37cd7da0cda6; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -540,5 +637,5 @@ ALTER TABLE ONLY public.problem_tags
 -- PostgreSQL database dump complete
 --
 
-\unrestrict t25JhLWuURR9dZanyfsFJxZDXeuyE25jIcJzi88eNGyhDftH3R8VZGWsAm5FpVT
+\unrestrict rAl4qzpZNckJgNM1ygjR6DVubOLSyMY1Me2rdfedzua4EygEv7Y50hHxR0kmYke
 
