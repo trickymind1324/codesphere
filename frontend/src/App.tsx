@@ -20,7 +20,6 @@ import { ResultsPage } from '@/pages/ResultsPage';
 import { AssessmentLanding } from '@/pages/AssessmentLanding';
 import { AssessmentIDE } from '@/pages/AssessmentIDE';
 import { AssessmentCompleted } from '@/pages/AssessmentCompleted';
-import { OAuthCallbackPage } from '@/pages/OAuthCallbackPage';
 import { EmailVerificationPage } from '@/pages/EmailVerificationPage';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { HomeRedirect } from '@/components/auth/HomeRedirect';
@@ -74,8 +73,6 @@ function App() {
               </ProtectedRoute>
             }
           />
-          <Route path="/auth/google/callback" element={<OAuthCallbackPage />} />
-          <Route path="/auth/github/callback" element={<OAuthCallbackPage />} />
           <Route
             path="/dashboard"
             element={
