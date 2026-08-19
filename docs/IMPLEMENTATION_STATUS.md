@@ -28,7 +28,7 @@ backed by PostgreSQL and Redis.
 ## Phase 1 — MVP ✅ Complete
 
 **Candidate side**
-- Problem library (60 algorithmic problems + 10 multi-file debugging tasks)
+- Problem library (60 problems: 50 algorithmic + 10 multi-file debugging tasks)
 - Monaco IDE, 7 languages (Python, JS, TS, Java, C++, C, Go), Docker-sandboxed
   execution with WebSocket streaming
 - Multi-file debugging interface with file tree

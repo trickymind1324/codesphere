@@ -61,26 +61,35 @@ CodeSphere's north star is to evaluate *how* people build, not just whether test
 
 ### Prerequisites
 
-- Node.js 20+
-- Docker and Docker Compose
-- Git
+- **Docker** (Docker Desktop, or Docker Engine with Compose v2) — this is all
+  you need to run the platform
+- **[Ollama](https://ollama.com)** — optional, for the AI features with a free
+  local model (or bring your own API key — see below)
+- **Node.js 20+** — only needed if you want to hack on the code
 
-### Quick Start
+### Quick Start — run the whole platform
 
 ```bash
-# Clone the repository
-git clone https://github.com/yourusername/codesphere.git
+# 1. Clone
+git clone https://github.com/trickymind1324/codesphere.git
 cd codesphere
 
-# Start database services (PostgreSQL, Redis)
-docker-compose up -d
+# 2. One-time setup: self-signed TLS cert + code-execution sandbox images
+bash scripts/generate-local-tls.sh
+bash scripts/build-runtime-images.sh
 
-# Install dependencies
-npm install
-
-# Start the development servers (frontend + backend)
-npm run dev
+# 3. Bring up the full stack (frontend, 5 services, Kong, Keycloak, Postgres, Redis, MailHog)
+docker compose -f docker-compose.prod.yml up -d --build
 ```
+
+Open **https://localhost** (the cert is self-signed, so accept the browser
+warning: *Advanced → Proceed*). That's it — on first boot the databases are
+created with the full schema **and the 60-problem library** (50 algorithmic +
+10 multi-file debugging tasks) automatically, and Keycloak imports the realm
+with a demo recruiter.
+
+> If a page returns a 502 right after a rebuild, Kong may be holding a stale
+> container address: `docker compose -f docker-compose.prod.yml restart kong`.
 
 ### Local Login (seed accounts)
 
@@ -94,29 +103,70 @@ when Keycloak imports the realm on first start
 
 Candidate accounts can be registered normally through the UI; candidates
 taking an assessment access it via the invitation link (no account needed).
+Invitation emails land in the local MailHog inbox (no real SMTP needed).
 
-### Production Deployment
+### AI features (Socratic Tutor & Glass Box summaries)
 
-The entire stack (frontend, 5 backend services, databases, Redis, mail relay)
-runs with one command:
+The AI features are optional — everything else works without them, and the UI
+degrades with a clear message when no LLM is reachable. Pick one of:
+
+**Option A — free local model via Ollama (default)**
 
 ```bash
-./scripts/build-runtime-images.sh                            # once
-docker compose -f docker-compose.prod.yml up -d --build
-bash scripts/smoke-test.sh                                   # verify
+# Install Ollama from https://ollama.com (or: brew install ollama)
+ollama pull gemma3:4b        # ~3GB — the default model
+# keep Ollama running (the desktop app, or `ollama serve`)
 ```
 
-Detailed setup and deployment guides are maintained privately by the team.
+The containers reach your host's Ollama automatically
+(`host.docker.internal:11434`). To use a lighter model:
+`OLLAMA_MODEL=llama3.2:3b docker compose -f docker-compose.prod.yml up -d ai-service`.
 
-### Common Scripts
+**Option B — bring your own API key (Anthropic, OpenAI, or Gemini)**
+
+Create a `.env` file next to `docker-compose.prod.yml` with one of:
 
 ```bash
-npm run dev            # Start frontend and backend in dev mode
+# Anthropic
+LLM_PROVIDER=anthropic
+ANTHROPIC_API_KEY=sk-ant-...
+
+# OpenAI
+LLM_PROVIDER=openai
+OPENAI_API_KEY=sk-...
+OPENAI_MODEL=gpt-4o-mini
+
+# Google Gemini (via its OpenAI-compatible endpoint)
+LLM_PROVIDER=openai
+OPENAI_API_KEY=<your Gemini API key>
+OPENAI_MODEL=gemini-2.0-flash
+OPENAI_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai
+```
+
+Then apply it: `docker compose -f docker-compose.prod.yml up -d ai-service`.
+Any OpenAI-compatible endpoint (Groq, Together, Mistral, …) works the same
+way via `OPENAI_BASE_URL`. See
+[backend/ai-service/README.md](./backend/ai-service/README.md) for details.
+
+### Developing
+
+```bash
+npm install            # Install all workspace dependencies
 npm run build          # Build all workspaces
-npm test               # Run tests across workspaces
 npm run lint           # Lint all workspaces
 npm run format         # Format code with Prettier
 ```
+
+For iterating on a single service, see the service READMEs (e.g.
+[backend/ai-service](./backend/ai-service/README.md),
+[backend/execution-service](./backend/execution-service/README.md)). The
+Docker Compose stack above is the supported way to run the full platform —
+auth flows require Kong and Keycloak, so a bare `npm run dev` frontend won't
+be able to sign in on its own.
+
+Deployment to a real domain is the same compose stack with real TLS certs at
+the same paths; detailed production guides are maintained privately by the
+team.
 
 ---
 

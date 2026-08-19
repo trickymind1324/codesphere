@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict kpJZxH2cMP5SqkflcM2O1k2Ehmto4RqGRu1g2P0TGEzMnaZJ3Sln5sST1HKLmYA
+\restrict CZx9PA8wL9x6cbVpVRX9yaPdUjByfQNCM8Al3DmXVpcnmDxj3dRECvfU8rMuAFb
 
 -- Dumped from database version 16.11
 -- Dumped by pg_dump version 16.11
@@ -75,6 +75,21 @@ CREATE TABLE public.assessment_problems (
 
 
 --
+-- Name: assessment_results; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.assessment_results (
+    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    "invitationId" uuid NOT NULL,
+    "problemId" uuid NOT NULL,
+    passed boolean DEFAULT false NOT NULL,
+    "pointsAwarded" integer DEFAULT 0 NOT NULL,
+    "createdAt" timestamp with time zone DEFAULT now() NOT NULL,
+    "updatedAt" timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
 -- Name: assessments; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -93,6 +108,41 @@ CREATE TABLE public.assessments (
     "deletedAt" timestamp with time zone,
     CONSTRAINT "CHK_assessment_status" CHECK (((status)::text = ANY ((ARRAY['draft'::character varying, 'published'::character varying, 'archived'::character varying])::text[])))
 );
+
+
+--
+-- Name: candidate_events; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.candidate_events (
+    id bigint NOT NULL,
+    invitation_id uuid NOT NULL,
+    user_id uuid,
+    problem_id uuid,
+    event_type character varying(24) NOT NULL,
+    offset_ms integer NOT NULL,
+    metadata jsonb DEFAULT '{}'::jsonb NOT NULL,
+    created_at timestamp without time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: candidate_events_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.candidate_events_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: candidate_events_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.candidate_events_id_seq OWNED BY public.candidate_events.id;
 
 
 --
@@ -127,6 +177,13 @@ ALTER SEQUENCE public.migrations_id_seq OWNED BY public.migrations.id;
 
 
 --
+-- Name: candidate_events id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.candidate_events ALTER COLUMN id SET DEFAULT nextval('public.candidate_events_id_seq'::regclass);
+
+
+--
 -- Name: migrations id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -142,11 +199,27 @@ ALTER TABLE ONLY public.migrations
 
 
 --
+-- Name: assessment_results PK_assessment_results; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.assessment_results
+    ADD CONSTRAINT "PK_assessment_results" PRIMARY KEY (id);
+
+
+--
 -- Name: assessment_problems UQ_assessment_problem; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.assessment_problems
     ADD CONSTRAINT "UQ_assessment_problem" UNIQUE ("assessmentId", "problemId");
+
+
+--
+-- Name: assessment_results UQ_assessment_result_invitation_problem; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.assessment_results
+    ADD CONSTRAINT "UQ_assessment_result_invitation_problem" UNIQUE ("invitationId", "problemId");
 
 
 --
@@ -182,6 +255,14 @@ ALTER TABLE ONLY public.assessments
 
 
 --
+-- Name: candidate_events candidate_events_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.candidate_events
+    ADD CONSTRAINT candidate_events_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: IDX_assessment_problems_assessmentId; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -200,6 +281,13 @@ CREATE INDEX "IDX_assessment_problems_order" ON public.assessment_problems USING
 --
 
 CREATE INDEX "IDX_assessment_problems_problemId" ON public.assessment_problems USING btree ("problemId");
+
+
+--
+-- Name: IDX_assessment_results_invitationId; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX "IDX_assessment_results_invitationId" ON public.assessment_results USING btree ("invitationId");
 
 
 --
@@ -259,6 +347,20 @@ CREATE INDEX "IDX_invitations_token" ON public.assessment_invitations USING btre
 
 
 --
+-- Name: idx_candidate_events_invitation_offset; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_candidate_events_invitation_offset ON public.candidate_events USING btree (invitation_id, offset_ms);
+
+
+--
+-- Name: idx_candidate_events_invitation_type; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_candidate_events_invitation_type ON public.candidate_events USING btree (invitation_id, event_type);
+
+
+--
 -- Name: assessment_invitations FK_assessment_invitations_assessment; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -278,5 +380,5 @@ ALTER TABLE ONLY public.assessment_problems
 -- PostgreSQL database dump complete
 --
 
-\unrestrict kpJZxH2cMP5SqkflcM2O1k2Ehmto4RqGRu1g2P0TGEzMnaZJ3Sln5sST1HKLmYA
+\unrestrict CZx9PA8wL9x6cbVpVRX9yaPdUjByfQNCM8Al3DmXVpcnmDxj3dRECvfU8rMuAFb
 
