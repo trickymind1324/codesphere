@@ -95,23 +95,27 @@ export function usePlaybackRecorder({
     if (!enabled) return;
     const id = window.setInterval(flush, flushIntervalMs);
     const beforeUnload = () => {
-      // Best-effort final flush. Browsers may drop async work on unload, but
-      // keepalive lets the request finish.
+      // Best-effort final flush. sendBeacon cannot attach the Authorization
+      // header, so the endpoint always rejected it with a 401 — a keepalive
+      // fetch survives unload AND carries the JWT.
       if (buffer.current.length > 0) {
-        navigator.sendBeacon?.(
-          '/api/v1/playback/events',
-          new Blob(
-            [
-              JSON.stringify({
-                sessionId,
-                problemId,
-                language,
-                events: buffer.current,
-              }),
-            ],
-            { type: 'application/json' },
-          ),
-        );
+        const accessToken = localStorage.getItem('accessToken');
+        void fetch('/api/v1/playback/events', {
+          method: 'POST',
+          keepalive: true,
+          headers: {
+            'Content-Type': 'application/json',
+            ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+          },
+          body: JSON.stringify({
+            sessionId,
+            problemId,
+            language,
+            events: buffer.current,
+          }),
+        }).catch(() => {
+          // best-effort telemetry — never surface unload errors
+        });
         buffer.current = [];
       }
     };

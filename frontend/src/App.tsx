@@ -105,10 +105,14 @@ function App() {
               </ProtectedRoute>
             }
           />
+          {/* Candidates replay their own sessions; recruiter-side roles can
+              open a shared playback link when reviewing a candidate. */}
           <Route
             path="/playback/:sessionId"
             element={
-              <ProtectedRoute allowedRoles={['candidate']}>
+              <ProtectedRoute
+                allowedRoles={['candidate', 'recruiter', 'company_admin', 'platform_admin']}
+              >
                 <PlaybackPage />
               </ProtectedRoute>
             }
