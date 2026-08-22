@@ -435,9 +435,52 @@ export function RecruiterProfilePage() {
                   </div>
                 )}
 
+                {/* Per-role breakdown */}
+                {(stats!.byRole?.length ?? 0) > 0 && (
+                  <div className="surface-raised mt-6 overflow-x-auto rounded-xl">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-border text-left text-muted-foreground">
+                          <th className="px-5 py-3 font-medium">Role</th>
+                          <th className="px-5 py-3 text-right font-medium">Assessments</th>
+                          <th className="px-5 py-3 text-right font-medium">Invited</th>
+                          <th className="px-5 py-3 text-right font-medium">Completed</th>
+                          <th className="px-5 py-3 text-right font-medium">Avg score</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {stats!.byRole.map((r) => (
+                          <tr
+                            key={r.role}
+                            className="border-b border-border last:border-0"
+                          >
+                            <td className="px-5 py-3 font-medium text-foreground">
+                              {r.role}
+                            </td>
+                            <td className="px-5 py-3 text-right tabular-nums text-foreground">
+                              {r.assessmentsCreated}
+                            </td>
+                            <td className="px-5 py-3 text-right tabular-nums text-foreground">
+                              {r.invited}
+                            </td>
+                            <td className="px-5 py-3 text-right tabular-nums text-foreground">
+                              {r.completed}
+                            </td>
+                            <td className="px-5 py-3 text-right tabular-nums text-foreground">
+                              {r.averageScorePercent != null
+                                ? `${r.averageScorePercent}%`
+                                : '—'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
                 <p className="mt-3 text-xs text-muted-foreground">
-                  Grouped by quarter. Grouping by job role will be available once
-                  assessments carry a role field.
+                  Grouped by quarter and by job role. Set a job role on each
+                  assessment to break the numbers down per role.
                 </p>
               </>
             )}

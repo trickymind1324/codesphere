@@ -29,6 +29,14 @@ export class Assessment {
   @Column({ type: 'text', nullable: true })
   description: string;
 
+  @Column({
+    type: 'varchar',
+    length: 120,
+    nullable: true,
+    comment: 'Job role this assessment hires for (e.g. Backend Engineer)',
+  })
+  jobRole: string | null;
+
   @Column({ type: 'int', default: 120, comment: 'Duration in minutes' })
   durationMinutes: number;
 
