@@ -54,8 +54,12 @@ export class AssessmentController {
     return this.assessmentService.getRecruiterStats(req.user.sub);
   }
 
+  // Every per-assessment route below is ownership-scoped: the assessment must
+  // belong to the caller (createdBy = sub); platform_admin is exempt.
+
   @Get(':id')
-  async findOne(@Param('id') id: string) {
+  async findOne(@Param('id') id: string, @Request() req) {
+    await this.assessmentService.assertOwner(id, req.user);
     return this.assessmentService.findOne(id);
   }
 
@@ -65,12 +69,14 @@ export class AssessmentController {
     @Body() updateAssessmentDto: UpdateAssessmentDto,
     @Request() req,
   ) {
+    await this.assessmentService.assertOwner(id, req.user);
     return this.assessmentService.update(id, updateAssessmentDto, req.user.sub);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async remove(@Param('id') id: string) {
+  async remove(@Param('id') id: string, @Request() req) {
+    await this.assessmentService.assertOwner(id, req.user);
     await this.assessmentService.remove(id);
   }
 
@@ -79,7 +85,9 @@ export class AssessmentController {
   async addProblems(
     @Param('id') id: string,
     @Body() body: { problems: Array<{ problemId: string; order: number; points?: number }> },
+    @Request() req,
   ) {
+    await this.assessmentService.assertOwner(id, req.user);
     await this.assessmentService.addProblems(id, body.problems);
     return this.assessmentService.findOne(id);
   }
@@ -89,7 +97,9 @@ export class AssessmentController {
   async removeProblem(
     @Param('id') id: string,
     @Param('problemId') problemId: string,
+    @Request() req,
   ) {
+    await this.assessmentService.assertOwner(id, req.user);
     await this.assessmentService.removeProblem(id, problemId);
   }
 
@@ -99,11 +109,13 @@ export class AssessmentController {
     @Body() body: { status: AssessmentStatus },
     @Request() req,
   ) {
+    await this.assessmentService.assertOwner(id, req.user);
     return this.assessmentService.updateStatus(id, body.status, req.user.sub);
   }
 
   @Get(':id/statistics')
-  async getStatistics(@Param('id') id: string) {
+  async getStatistics(@Param('id') id: string, @Request() req) {
+    await this.assessmentService.assertOwner(id, req.user);
     return this.assessmentService.getStatistics(id);
   }
 }

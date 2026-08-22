@@ -7,6 +7,7 @@ import {
   Param,
   ParseUUIDPipe,
   Post,
+  Request,
   UseGuards,
 } from '@nestjs/common';
 
@@ -45,23 +46,33 @@ export class GlassBoxController {
   }
 
   /**
-   * Recruiter view — raw event stream for one invitation.
+   * Recruiter view — raw event stream for one invitation. Ownership-scoped:
+   * the invitation's assessment must belong to the caller.
    */
   @Get('invitations/:invitationId/events')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('recruiter', 'company_admin', 'platform_admin')
-  async listEvents(@Param('invitationId', ParseUUIDPipe) invitationId: string) {
+  async listEvents(
+    @Param('invitationId', ParseUUIDPipe) invitationId: string,
+    @Request() req,
+  ) {
+    await this.invitations.findOwnedById(invitationId, req.user);
     const events = await this.service.list(invitationId);
     return { invitationId, count: events.length, events };
   }
 
   /**
    * Recruiter view — aggregate summary for the candidate report.
+   * Ownership-scoped like the event stream.
    */
   @Get('invitations/:invitationId/summary')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('recruiter', 'company_admin', 'platform_admin')
-  async summary(@Param('invitationId', ParseUUIDPipe) invitationId: string) {
+  async summary(
+    @Param('invitationId', ParseUUIDPipe) invitationId: string,
+    @Request() req,
+  ) {
+    await this.invitations.findOwnedById(invitationId, req.user);
     return this.service.summarize(invitationId);
   }
 }

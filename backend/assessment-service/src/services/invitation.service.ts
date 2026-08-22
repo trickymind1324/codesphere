@@ -15,6 +15,7 @@ import { Assessment } from '../entities/assessment.entity';
 import { AssessmentResult } from '../entities/assessment-result.entity';
 import { CreateInvitationDto } from '../dto/create-invitation.dto';
 import { EmailService } from './email.service';
+import { assertAssessmentOwner, Requester } from '../auth/ownership';
 
 @Injectable()
 export class InvitationService {
@@ -70,10 +71,27 @@ export class InvitationService {
     }
   }
 
+  /**
+   * Ownership gate shared by the recruiter-facing methods: the assessment
+   * must exist and belong to the requester (platform_admin exempt).
+   */
+  private async assertOwner(assessmentId: string, user: Requester): Promise<void> {
+    const row = await this.assessmentRepository.findOne({
+      where: { id: assessmentId },
+      select: ['id', 'createdBy'],
+    });
+    if (!row) {
+      throw new NotFoundException(`Assessment with ID ${assessmentId} not found`);
+    }
+    assertAssessmentOwner(row.createdBy, user);
+  }
+
   async createInvitations(
     assessmentId: string,
     createInvitationDto: CreateInvitationDto,
+    user: Requester,
   ): Promise<AssessmentInvitation[]> {
+    await this.assertOwner(assessmentId, user);
     const assessment = await this.assessmentRepository.findOne({
       where: { id: assessmentId },
       relations: ['assessmentProblems'],
@@ -133,11 +151,35 @@ export class InvitationService {
     return invitations;
   }
 
-  async findByAssessment(assessmentId: string): Promise<AssessmentInvitation[]> {
+  async findByAssessment(
+    assessmentId: string,
+    user: Requester,
+  ): Promise<AssessmentInvitation[]> {
+    await this.assertOwner(assessmentId, user);
     return this.invitationRepository.find({
       where: { assessmentId },
       order: { createdAt: 'DESC' },
     });
+  }
+
+  /**
+   * Load an invitation with its parent assessment and verify the requester
+   * owns that assessment. Used by recruiter views keyed by invitation id
+   * (glass-box events/summary).
+   */
+  async findOwnedById(
+    invitationId: string,
+    user: Requester,
+  ): Promise<AssessmentInvitation> {
+    const invitation = await this.invitationRepository.findOne({
+      where: { id: invitationId },
+      relations: ['assessment'],
+    });
+    if (!invitation) {
+      throw new NotFoundException(`Invitation with ID ${invitationId} not found`);
+    }
+    assertAssessmentOwner(invitation.assessment?.createdBy, user);
+    return invitation;
   }
 
   async findByToken(token: string): Promise<AssessmentInvitation> {
@@ -248,7 +290,8 @@ export class InvitationService {
     return savedInvitation;
   }
 
-  async getResults(assessmentId: string): Promise<any[]> {
+  async getResults(assessmentId: string, user: Requester): Promise<any[]> {
+    await this.assertOwner(assessmentId, user);
     const invitations = await this.invitationRepository.find({
       where: { assessmentId },
       order: { percentage: 'DESC', completedAt: 'ASC' },
@@ -272,7 +315,7 @@ export class InvitationService {
     return crypto.randomBytes(32).toString('hex');
   }
 
-  async resendInvitation(invitationId: string): Promise<void> {
+  async resendInvitation(invitationId: string, user: Requester): Promise<void> {
     const invitation = await this.invitationRepository.findOne({
       where: { id: invitationId },
       relations: ['assessment', 'assessment.assessmentProblems'],
@@ -281,6 +324,8 @@ export class InvitationService {
     if (!invitation) {
       throw new NotFoundException('Invitation not found');
     }
+
+    assertAssessmentOwner(invitation.assessment?.createdBy, user);
 
     if (invitation.status === InvitationStatus.COMPLETED) {
       throw new BadRequestException('Cannot resend completed invitation');
