@@ -32,7 +32,7 @@ export class PlaybackController {
     @Param('sessionId', ParseUUIDPipe) sessionId: string,
     @Request() req,
   ) {
-    const events = await this.service.getSession(sessionId, req.user.sub);
+    const events = await this.service.getSession(sessionId, req.user);
     return { sessionId, count: events.length, events };
   }
 }

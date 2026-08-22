@@ -29,9 +29,21 @@ export class PlaybackService {
     return rows.length;
   }
 
-  async getSession(sessionId: string, userId: string): Promise<PlaybackEvent[]> {
+  /**
+   * Fetch a session's event stream. The recording user can always replay
+   * their own sessions; recruiter-side roles may replay any session (e.g. a
+   * candidate sharing a playback link with a recruiter reviewing them).
+   * Ingest stays owner-only — this widens reads, never writes.
+   */
+  async getSession(
+    sessionId: string,
+    user: { sub: string; role?: string },
+  ): Promise<PlaybackEvent[]> {
+    const isReviewer = ['recruiter', 'company_admin', 'platform_admin'].includes(
+      user.role ?? '',
+    );
     return this.repo.find({
-      where: { sessionId, userId },
+      where: isReviewer ? { sessionId } : { sessionId, userId: user.sub },
       order: { offsetMs: 'ASC' },
     });
   }
