@@ -4,6 +4,7 @@ import {
   Post,
   Body,
   Param,
+  Request,
   UseGuards,
   HttpCode,
   HttpStatus,
@@ -21,37 +22,40 @@ import { InternalKeyGuard } from '../guards/internal-key.guard';
 export class InvitationController {
   constructor(private readonly invitationService: InvitationService) {}
 
-  // Protected routes (require authentication)
+  // Protected routes (require authentication). All are ownership-scoped: the
+  // target assessment must belong to the caller (platform_admin exempt).
   @Post(':id/invite')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @HttpCode(HttpStatus.CREATED)
   async createInvitations(
     @Param('id') assessmentId: string,
     @Body() createInvitationDto: CreateInvitationDto,
+    @Request() req,
   ) {
     return this.invitationService.createInvitations(
       assessmentId,
       createInvitationDto,
+      req.user,
     );
   }
 
   @Get(':id/invitations')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  async getInvitations(@Param('id') assessmentId: string) {
-    return this.invitationService.findByAssessment(assessmentId);
+  async getInvitations(@Param('id') assessmentId: string, @Request() req) {
+    return this.invitationService.findByAssessment(assessmentId, req.user);
   }
 
   @Get(':id/results')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  async getResults(@Param('id') assessmentId: string) {
-    return this.invitationService.getResults(assessmentId);
+  async getResults(@Param('id') assessmentId: string, @Request() req) {
+    return this.invitationService.getResults(assessmentId, req.user);
   }
 
   @Post('invitations/:id/resend')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @HttpCode(HttpStatus.OK)
-  async resendInvitation(@Param('id') invitationId: string) {
-    await this.invitationService.resendInvitation(invitationId);
+  async resendInvitation(@Param('id') invitationId: string, @Request() req) {
+    await this.invitationService.resendInvitation(invitationId, req.user);
     return { message: 'Invitation resent successfully' };
   }
 }

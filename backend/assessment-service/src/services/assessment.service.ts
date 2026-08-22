@@ -14,6 +14,7 @@ import {
 import { CreateAssessmentDto } from '../dto/create-assessment.dto';
 import { UpdateAssessmentDto } from '../dto/update-assessment.dto';
 import { ProblemService } from './problem.service';
+import { assertAssessmentOwner, Requester } from '../auth/ownership';
 
 @Injectable()
 export class AssessmentService {
@@ -100,6 +101,44 @@ export class AssessmentService {
       });
     }
 
+    // Attach live invitation aggregates under the names the dashboard reads
+    // (invitationsCount / completedCount / averageScore). Counted from the
+    // invitations table rather than the cached counters so the numbers are
+    // always right.
+    if (data.length > 0) {
+      const invitations = await this.invitationRepository.find({
+        where: { assessmentId: In(data.map((a) => a.id)) },
+        select: ['assessmentId', 'status', 'percentage'],
+      });
+      const byAssessment = new Map<
+        string,
+        { invited: number; completed: number; scoreSum: number; scoreCount: number }
+      >();
+      for (const inv of invitations) {
+        let agg = byAssessment.get(inv.assessmentId);
+        if (!agg) {
+          agg = { invited: 0, completed: 0, scoreSum: 0, scoreCount: 0 };
+          byAssessment.set(inv.assessmentId, agg);
+        }
+        agg.invited++;
+        if (inv.status === InvitationStatus.COMPLETED) {
+          agg.completed++;
+          if (inv.percentage != null) {
+            agg.scoreSum += inv.percentage;
+            agg.scoreCount++;
+          }
+        }
+      }
+      data.forEach((assessment) => {
+        const agg = byAssessment.get(assessment.id);
+        (assessment as any).invitationsCount = agg?.invited ?? 0;
+        (assessment as any).completedCount = agg?.completed ?? 0;
+        (assessment as any).averageScore = agg?.scoreCount
+          ? Math.round((agg.scoreSum / agg.scoreCount) * 10) / 10
+          : null;
+      });
+    }
+
     return {
       data,
       total,
@@ -107,6 +146,22 @@ export class AssessmentService {
       pageSize,
       totalPages: Math.ceil(total / pageSize),
     };
+  }
+
+  /**
+   * Lightweight ownership gate for recruiter-facing routes: verifies the
+   * assessment exists and belongs to the requester (platform_admin exempt)
+   * without loading relations.
+   */
+  async assertOwner(assessmentId: string, user: Requester): Promise<void> {
+    const row = await this.assessmentRepository.findOne({
+      where: { id: assessmentId },
+      select: ['id', 'createdBy'],
+    });
+    if (!row) {
+      throw new NotFoundException(`Assessment with ID ${assessmentId} not found`);
+    }
+    assertAssessmentOwner(row.createdBy, user);
   }
 
   async findOne(id: string): Promise<Assessment> {
@@ -214,13 +269,51 @@ export class AssessmentService {
   async getStatistics(assessmentId: string) {
     const assessment = await this.findOne(assessmentId);
 
+    // Compute live from the invitations table (field names match what the
+    // frontend AssessmentStatistics type expects).
+    const invitations = await this.invitationRepository.find({
+      where: { assessmentId },
+      select: ['status', 'percentage', 'startedAt', 'completedAt'],
+    });
+
+    const completed = invitations.filter(
+      (i) => i.status === InvitationStatus.COMPLETED,
+    );
+    const scored = completed.filter((i) => i.percentage != null);
+    const timed = completed.filter((i) => i.startedAt && i.completedAt);
+
+    const round1 = (n: number) => Math.round(n * 10) / 10;
+
     return {
-      totalInvitations: assessment.totalInvitations,
-      completedSubmissions: assessment.completedSubmissions,
-      completionRate:
-        assessment.totalInvitations > 0
-          ? (assessment.completedSubmissions / assessment.totalInvitations) * 100
-          : 0,
+      totalInvitations: invitations.length,
+      completedCount: completed.length,
+      startedCount: invitations.filter(
+        (i) => i.status === InvitationStatus.STARTED,
+      ).length,
+      pendingCount: invitations.filter(
+        (i) => i.status === InvitationStatus.PENDING,
+      ).length,
+      averageScore: scored.length
+        ? round1(
+            scored.reduce((sum, i) => sum + (i.percentage as number), 0) /
+              scored.length,
+          )
+        : 0,
+      averageCompletionTime: timed.length
+        ? Math.round(
+            timed.reduce(
+              (sum, i) =>
+                sum +
+                (new Date(i.completedAt).getTime() -
+                  new Date(i.startedAt).getTime()) /
+                  60000,
+              0,
+            ) / timed.length,
+          )
+        : 0,
+      completionRate: invitations.length
+        ? round1((completed.length / invitations.length) * 100)
+        : 0,
       totalProblems: assessment.assessmentProblems?.length || 0,
       totalPoints: assessment.assessmentProblems?.reduce(
         (sum, ap) => sum + ap.points,
