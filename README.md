@@ -83,7 +83,9 @@ docker compose -f docker-compose.prod.yml up -d --build
 ```
 
 Open **https://localhost** (the cert is self-signed, so accept the browser
-warning: *Advanced → Proceed*). That's it — on first boot the databases are
+warning: *Advanced → Proceed*). To verify the stack end-to-end, run
+`bash scripts/smoke-test.sh` — it checks the frontend, Keycloak, login, the
+problems API, sandboxed code execution, and the assessments API. That's it — on first boot the databases are
 created with the full schema **and the 60-problem library** (50 algorithmic +
 10 multi-file debugging tasks) automatically, and Keycloak imports the realm
 with a demo recruiter.
