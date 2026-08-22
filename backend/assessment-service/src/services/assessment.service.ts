@@ -333,7 +333,7 @@ export class AssessmentService {
     // problem relation and automatically excludes soft-deleted rows.
     const assessments = await this.assessmentRepository
       .createQueryBuilder('a')
-      .select(['a.id', 'a.status', 'a.createdAt'])
+      .select(['a.id', 'a.status', 'a.createdAt', 'a.jobRole'])
       .where('a.createdBy = :userId', { userId })
       .getMany();
 
@@ -350,7 +350,13 @@ export class AssessmentService {
     const invitations = assessmentIds.length
       ? await this.invitationRepository
           .createQueryBuilder('i')
-          .select(['i.status', 'i.percentage', 'i.createdAt', 'i.completedAt'])
+          .select([
+            'i.assessmentId',
+            'i.status',
+            'i.percentage',
+            'i.createdAt',
+            'i.completedAt',
+          ])
           .where('i.assessmentId IN (:...ids)', { ids: assessmentIds })
           .getMany()
       : [];
@@ -427,6 +433,73 @@ export class AssessmentService {
           : null,
       }));
 
+    // Per-role buckets, keyed by each assessment's jobRole (assessments
+    // without one land under "Unspecified"). Invitations inherit the role of
+    // their parent assessment.
+    const roleOfAssessment = new Map<string, string>(
+      assessments.map((a) => [a.id, a.jobRole?.trim() || 'Unspecified']),
+    );
+    const roleBuckets = new Map<
+      string,
+      {
+        role: string;
+        assessmentsCreated: number;
+        invited: number;
+        completed: number;
+        scoreSum: number;
+        scoreCount: number;
+      }
+    >();
+    const roleBucketFor = (role: string) => {
+      let b = roleBuckets.get(role);
+      if (!b) {
+        b = {
+          role,
+          assessmentsCreated: 0,
+          invited: 0,
+          completed: 0,
+          scoreSum: 0,
+          scoreCount: 0,
+        };
+        roleBuckets.set(role, b);
+      }
+      return b;
+    };
+
+    for (const a of assessments) {
+      roleBucketFor(roleOfAssessment.get(a.id)!).assessmentsCreated++;
+    }
+    for (const i of invitations) {
+      const b = roleBucketFor(
+        roleOfAssessment.get(i.assessmentId) ?? 'Unspecified',
+      );
+      b.invited++;
+      if (i.status === InvitationStatus.COMPLETED) {
+        b.completed++;
+        if (i.percentage != null) {
+          b.scoreSum += i.percentage;
+          b.scoreCount++;
+        }
+      }
+    }
+
+    // Most active roles first; "Unspecified" always last.
+    const byRole = Array.from(roleBuckets.values())
+      .sort((x, y) => {
+        if (x.role === 'Unspecified') return 1;
+        if (y.role === 'Unspecified') return -1;
+        return y.invited - x.invited || y.assessmentsCreated - x.assessmentsCreated;
+      })
+      .map((b) => ({
+        role: b.role,
+        assessmentsCreated: b.assessmentsCreated,
+        invited: b.invited,
+        completed: b.completed,
+        averageScorePercent: b.scoreCount
+          ? this.round1(b.scoreSum / b.scoreCount)
+          : null,
+      }));
+
     return {
       totals: {
         assessmentsCreated: assessments.length,
@@ -438,6 +511,7 @@ export class AssessmentService {
           averageScorePercent != null ? this.round1(averageScorePercent) : null,
       },
       byQuarter,
+      byRole,
     };
   }
 

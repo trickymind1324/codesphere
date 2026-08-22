@@ -34,7 +34,7 @@ psql -U postgres -d codesphere_assessments < database/schema/assessment-service-
 
 # Insert baseline migration records (prevents migrations from re-running)
 psql -U postgres -d codesphere_problems -c "INSERT INTO migrations (timestamp, name) VALUES (1701100000000, 'CreateProblemTables1701100000000'), (1735000000000, 'CreateSubmissionsTable1735000000000'), (1738400000000, 'AddMultiFileSupport1738400000000'), (1748700000000, 'CreatePlaybackEvents1748700000000'), (1755700000000, 'CreateUserProfiles1755700000000'), (1755800000000, 'AddProfileMedia1755800000000'), (1755900000000, 'RenameHeadlineToDesignation1755900000000');"
-psql -U postgres -d codesphere_assessments -c "INSERT INTO migrations (timestamp, name) VALUES (1735300000000, 'CreateAssessmentTables1735300000000'), (1748800000000, 'CreateCandidateEvents1748800000000'), (1755600000000, 'CreateAssessmentResults1755600000000');"
+psql -U postgres -d codesphere_assessments -c "INSERT INTO migrations (timestamp, name) VALUES (1735300000000, 'CreateAssessmentTables1735300000000'), (1748800000000, 'CreateCandidateEvents1748800000000'), (1755600000000, 'CreateAssessmentResults1755600000000'), (1756000000000, 'AddAssessmentJobRole1756000000000');"
 ```
 
 ### Option 2: Run Migrations (For Existing Deployments)
@@ -68,8 +68,8 @@ done > database/schema/problem-library-data.sql
 
 ## Schema Version
 
-Last updated: 2026-08-19 (includes user profiles/badges, playback, assessment results)
+Last updated: 2026-08-22 (includes user profiles/badges, playback, assessment results, assessment job role)
 
 Includes migrations up to:
 - Problem Service: `1755900000000-RenameHeadlineToDesignation`
-- Assessment Service: `1755600000000-CreateAssessmentResults`
+- Assessment Service: `1756000000000-AddAssessmentJobRole`

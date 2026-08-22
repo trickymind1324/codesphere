@@ -21,6 +21,7 @@ export function AssessmentForm() {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
+    jobRole: '',
     durationMinutes: 120,
   });
 
@@ -42,6 +43,7 @@ export function AssessmentForm() {
       setFormData({
         title: existingAssessment.title,
         description: existingAssessment.description || '',
+        jobRole: existingAssessment.jobRole || '',
         durationMinutes: existingAssessment.durationMinutes,
       });
 
@@ -87,7 +89,7 @@ export function AssessmentForm() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: (data: { title: string; description?: string; durationMinutes: number }) =>
+    mutationFn: (data: { title: string; description?: string; jobRole?: string; durationMinutes: number }) =>
       assessmentApi.updateAssessment(id!, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['assessments'] });
@@ -123,11 +125,17 @@ export function AssessmentForm() {
       points: p.points,
     }));
 
+    // Don't send an empty job role — absent means "Unspecified" in stats.
+    const payload = {
+      ...formData,
+      jobRole: formData.jobRole.trim() || undefined,
+    };
+
     if (isEditMode) {
-      updateMutation.mutate(formData);
+      updateMutation.mutate(payload);
     } else {
       createMutation.mutate({
-        ...formData,
+        ...payload,
         problems,
         status,
       });
@@ -297,6 +305,24 @@ export function AssessmentForm() {
                     rows={4}
                     className="mt-2 w-full rounded-md border border-border bg-background px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                   />
+                </div>
+
+                <div>
+                  <label htmlFor="jobRole" className="block text-sm font-medium text-foreground">
+                    Job Role
+                  </label>
+                  <input
+                    type="text"
+                    id="jobRole"
+                    value={formData.jobRole}
+                    onChange={(e) => setFormData({ ...formData, jobRole: e.target.value })}
+                    placeholder="e.g., Backend Engineer, Data Analyst"
+                    maxLength={120}
+                    className="mt-2 w-full rounded-md border border-border bg-background px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Optional — groups your hiring stats by role on your profile.
+                  </p>
                 </div>
 
                 <div>

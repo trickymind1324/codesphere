@@ -29,6 +29,7 @@ export interface Assessment {
   id: string;
   title: string;
   description?: string;
+  jobRole?: string | null;
   durationMinutes: number;
   status: AssessmentStatus;
   createdBy: string;
@@ -62,6 +63,7 @@ export interface AssessmentInvitation {
 export interface CreateAssessmentDto {
   title: string;
   description?: string;
+  jobRole?: string;
   durationMinutes: number;
   problems?: {
     problemId: string;
@@ -73,6 +75,7 @@ export interface CreateAssessmentDto {
 export interface UpdateAssessmentDto {
   title?: string;
   description?: string;
+  jobRole?: string;
   durationMinutes?: number;
 }
 
@@ -125,6 +128,14 @@ export interface RecruiterQuarterStat {
   averageScorePercent: number | null;
 }
 
+export interface RecruiterRoleStat {
+  role: string;
+  assessmentsCreated: number;
+  invited: number;
+  completed: number;
+  averageScorePercent: number | null;
+}
+
 export interface RecruiterStats {
   totals: {
     assessmentsCreated: number;
@@ -135,6 +146,7 @@ export interface RecruiterStats {
     averageScorePercent: number | null;
   };
   byQuarter: RecruiterQuarterStat[];
+  byRole: RecruiterRoleStat[];
 }
 
 export interface QueryAssessmentsParams {

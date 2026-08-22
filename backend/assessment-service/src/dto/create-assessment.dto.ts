@@ -5,6 +5,7 @@ import {
   IsInt,
   Min,
   Max,
+  MaxLength,
   IsArray,
   ValidateNested,
   IsUUID,
@@ -37,6 +38,13 @@ export class CreateAssessmentDto {
   @IsString()
   @IsOptional()
   description?: string;
+
+  // Job role this assessment hires for (e.g. "Backend Engineer") — powers
+  // role-grouped hiring stats on the recruiter profile.
+  @IsString()
+  @MaxLength(120)
+  @IsOptional()
+  jobRole?: string;
 
   @IsInt()
   @Min(15)

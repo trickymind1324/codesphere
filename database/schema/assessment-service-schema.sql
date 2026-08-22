@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict CZx9PA8wL9x6cbVpVRX9yaPdUjByfQNCM8Al3DmXVpcnmDxj3dRECvfU8rMuAFb
+\restrict F8kKmhpE8n9neZyqIlJXSR2neg92DAsOqcI19d1iM917AzBAGDAIlOJt0ItAhqM
 
 -- Dumped from database version 16.11
 -- Dumped by pg_dump version 16.11
@@ -106,8 +106,16 @@ CREATE TABLE public.assessments (
     "createdAt" timestamp with time zone DEFAULT now() NOT NULL,
     "updatedAt" timestamp with time zone DEFAULT now() NOT NULL,
     "deletedAt" timestamp with time zone,
+    "jobRole" character varying(120),
     CONSTRAINT "CHK_assessment_status" CHECK (((status)::text = ANY ((ARRAY['draft'::character varying, 'published'::character varying, 'archived'::character varying])::text[])))
 );
+
+
+--
+-- Name: COLUMN assessments."jobRole"; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.assessments."jobRole" IS 'Job role this assessment hires for (e.g. Backend Engineer)';
 
 
 --
@@ -380,5 +388,5 @@ ALTER TABLE ONLY public.assessment_problems
 -- PostgreSQL database dump complete
 --
 
-\unrestrict CZx9PA8wL9x6cbVpVRX9yaPdUjByfQNCM8Al3DmXVpcnmDxj3dRECvfU8rMuAFb
+\unrestrict F8kKmhpE8n9neZyqIlJXSR2neg92DAsOqcI19d1iM917AzBAGDAIlOJt0ItAhqM
 
